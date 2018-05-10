@@ -10,11 +10,13 @@
 #
 
 # I. Packages
-#----------------------------------------------------------------------------------------------------------------------------------
+#-------------ss---------------------------------------------------------------------------------------------------------------------
 library(shiny) # Graphic web interface
 library(shinyBS) # Pop-up windows
 library(shinyjs) # Mask buttons/elements on graphic interface
+library(shinyWidgets) # Widgets supplementaires
 library(leaflet) # Interactive web map
+library(rgdal) # Input shapefile
 
 
 # II. Data
