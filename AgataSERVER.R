@@ -18,17 +18,27 @@ server <- function(input, output,session) {
     #               fill = TRUE, fillOpacity = 0.2,popup = ~paste(NOM_QP),layerId = ~paste(CODE_QP))
 
   })
-  
-  # I.2. Mise à jour de la carte leaflet à chaque chargement de carte
-  #-------------------------------------------------------------------
+
+  # I.2. Update leaflet with user map
+  #----------------------------------
   observeEvent(input$file1,{
     
     if (!is.null(input$file1)) {
+      # Boundary box
+      userMap.bbox <- as.data.frame(bbox(userMap()))
       # Update leaflet
-      leafletProxy("map") %>%
+      leafletProxy("mymap") %>%
+        fitBounds(lng1 = userMap.bbox$min[1],lat1 = userMap.bbox$max[2],lng2 = userMap.bbox$max[1],lat2 = userMap.bbox$min[2]) %>%
         addPolygons(data=userMap(),opacity = 3,
-                    color = "green", stroke = TRUE, weight = 2,
-                    fill = F, fillOpacity = 0.2)
+                                  color = "green", stroke = TRUE, weight = 2,
+                                  fill = TRUE, fillOpacity = 0.2,popup = ~paste(NOM_QP),layerId = ~paste(CODE_QP))
+        
+        
+        
+        
+        # addPolygons(data=qpv_stat,opacity = 3,
+        #             color = "green", stroke = TRUE, weight = 2,
+        #             fill = F, fillOpacity = 0.2,popup = ~paste(NOM_QP),layerId = ~paste(CODE_QP))
     }
   })
    
@@ -36,7 +46,7 @@ server <- function(input, output,session) {
 # II. Import user shapefile map
 #-----------------------------------------------------------------------------------------------------------------------------------
   userMap <- eventReactive(input$file1,{
-    myshape<- input$inputdata
+    myshape<- input$file1
     
     if (is.null(myshape)) 
       return(NULL)       
@@ -54,7 +64,45 @@ server <- function(input, output,session) {
   
   
   
-  
+# III. InfraCity statistical computation 
+#-----------------------------------------------------------------------------------------------------------------------------------
+  observeEvent(input$b_calcul, {
+    
+    t1 <- Sys.time()  
+    # Test de bar de progression
+    
+    # Create 0-row data frame which will be used to store data
+    dat <- data.frame(x = numeric(0), y = numeric(0))
+    
+    # withProgress calls can be nested, in which case the nested text appears
+    # below, and a second bar is shown.
+    withProgress(message = 'Generating data',style = "notification", detail = "part 0", value = 0, {
+      for (i in 1:10) {
+        # Each time through the loop, add another row of data. This a stand-in
+        # for a long-running computation.
+        dat <- rbind(dat, data.frame(x = rnorm(1), y = rnorm(1)))
+        
+        # Increment the progress bar, and update the detail text.
+        incProgress(0.1, detail = paste("part", i))
+        
+        # Pause for 0.1 seconds to simulate a long computation.
+        Sys.sleep(0.1)
+      }
+    })
+    
+    Sys.sleep(0.1)
+    
+    # Pop-up indiquant la fin du calcul
+    temps <- as.character(round(abs(difftime(t1,Sys.time(), units="secs")),2))
+    
+    shinyWidgets::sendSweetAlert(
+      session = session, 
+      title = "Terminé !", text = paste("Le calcul a été effectué en ",temps," secondes"), type = "success"
+    )
+    
+    # Ferme automatiquement le bsmodal options avancées
+    
+  })
   
   
 

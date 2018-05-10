@@ -31,11 +31,11 @@ library(rgdal) # Input shapefile
 
 # III. Graphic web interface
 #----------------------------------------------------------------------------------------------------------------------------------
-source("AgataUI.R")
+source("AgataUI.R",encoding = "UTF-8")
 
 # IV. Server
 #----------------------------------------------------------------------------------------------------------------------------------
-source("AgataSERVER.R")
+source("AgataSERVER.R",encoding = "UTF-8")
 
 
 # V. Run the application 
