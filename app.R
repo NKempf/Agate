@@ -1,5 +1,7 @@
-#
-# This is a Shiny web application. You can run the application by clicking
+#---------------------------------------------------------------------------------------------------------------------------#
+#                                             Agate - Main program                                                          #
+#---------------------------------------------------------------------------------------------------------------------------#
+# 
 # the 'Run App' button above.
 #
 # Find out more about building applications with Shiny here:
@@ -7,44 +9,34 @@
 #    http://shiny.rstudio.com/
 #
 
-library(shiny)
+# I. Packages
+#----------------------------------------------------------------------------------------------------------------------------------
+library(shiny) # Graphic web interface
+library(shinyBS) # Pop-up windows
+library(shinyjs) # Mask buttons/elements on graphic interface
+library(leaflet) # Interactive web map
 
-# Define UI for application that draws a histogram
-ui <- fluidPage(
-   
-   # Application title
-   titlePanel("Old Faithful Geyser Data"),
-   
-   # Sidebar with a slider input for number of bins 
-   sidebarLayout(
-      sidebarPanel(
-         sliderInput("bins",
-                     "Number of bins:",
-                     min = 1,
-                     max = 50,
-                     value = 30)
-      ),
-      
-      # Show a plot of the generated distribution
-      mainPanel(
-         plotOutput("distPlot")
-      )
-   )
-)
 
-# Define server logic required to draw a histogram
-server <- function(input, output) {
-   
-   output$distPlot <- renderPlot({
-      # generate bins based on input$bins from ui.R
-      x    <- faithful[, 2] 
-      bins <- seq(min(x), max(x), length.out = input$bins + 1)
-      
-      # draw the histogram with the specified number of bins
-      hist(x, breaks = bins, col = 'darkgray', border = 'white')
-   })
-}
+# II. Data
+#----------------------------------------------------------------------------------------------------------------------------------
 
-# Run the application 
+  # II.1. QPV (fake data)
+  #----------------------
+  load("Data/QPV/qpvFake.RData")
+  qpv_stat <- qpv_stat.fake
+  qpv_stat@data$idZonage <- qpv_stat@data$CODE_QP
+  rm(qpv_stat.fake)
+
+# III. Graphic web interface
+#----------------------------------------------------------------------------------------------------------------------------------
+source("AgataUI.R")
+
+# IV. Server
+#----------------------------------------------------------------------------------------------------------------------------------
+source("AgataSERVER.R")
+
+
+# V. Run the application 
+#----------------------------------------------------------------------------------------------------------------------------------
 shinyApp(ui = ui, server = server)
 
