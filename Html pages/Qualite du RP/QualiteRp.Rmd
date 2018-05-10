@@ -1,0 +1,27 @@
+---
+title: "Qualite du RP à l'infracommunal"
+author: "Nicolas Kempf"
+date: "16 mars 2018"
+output: 
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r,echo=FALSE,include=FALSE}
+library(prettydoc)
+```
+
+L'estimation de la qualite des données du RP à l'infra communal a été réalisée par Lionel Delta lors de son stage de 2eme année ENSAE. 
+
+
+# Estimation Analytique
+
+## Sans Calage
+
+## Avec Calage
+
+L'estimation par calage necessite les totaux de population par commune. Par conséquent, les estimations de la qualité sont moins pertinentes pour des zones à cheval sur plusieurs communes.
+
+
+

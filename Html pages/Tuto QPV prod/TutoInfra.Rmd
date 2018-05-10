@@ -1,0 +1,223 @@
+---
+title: "TutoInfra"
+author: "Nicolas Kempf"
+date: "23 février 2018"
+output: html_document
+---
+
+
+# Statistiques infra communales aux Antilles-Guyane
+
+Ce tutoriel explique les fonctions du programme en charge de calculer les statistiques infra communale.
+
+## Installation
+
+Les fonctions developpées necessite les bases de données suivantes : le repertoire d'immeubles geolocalisés, le recensement de la population et les fichiers fiscaux.
+
+Les fonctions spécifiques au fonctionnement du programme se trouve dans le dossier catalogue de fonctions.
+
+```{r,echo=FALSE}
+
+# library(rstudioapi)
+# # repertoire de travail
+# setwd(dir=dirname(rstudioapi::getActiveDocumentContext()$path))
+# getwd()
+
+# Chargement des fonctions
+source("../../Programmes/QPV prog/Catalogue fonctions/AppliShiny - Cartographie.R")
+source("../../Programmes/QPV prog/Catalogue fonctions/AppliShiny - Calcul statistiques_v2.R")
+source("../../Programmes/QPV prog/Catalogue fonctions/AppliShiny - Reporting QPV.R")
+
+```
+
+Ce programme necessite des librairies spécifiques à l'utilisation des objets spatiaux, du calcul de statistiques descriptives et d'export de données au format excel.
+
+```{r}
+# Chargement dans R
+library(rgdal) # Importer de nombreux formats de données spatiales
+library(tibble) # Eviter certains problemes spatiaux
+```
+
+## Import des cartes
+
+### Le répertoire d'immeubles géolocalisés (RIL)
+
+Le programme necessite le chargement du RIL. Il s'agit d'un objet de type "SpatialPointDataFrame". Cet objet contient les logements de type "habitation" de Guadeloupe, Martinique et Guyane. Le système de projection utilisé est le "epsg:3857". Il s'agit du système de coordonnée utilisé par Google. (NB : Pour l'utilisation du package "leaflet", il faut reprojeter les objets dans le système "epsg:4326"). 
+
+```{r}
+# Ril habitation
+#---------------
+load("../../Bdd/RData/Ril/ril15.RData")
+```
+
+### Le zonage
+
+Le programme necessite le chargement d'un zonage de type polygone. En R, le zonage est transformé en un objet de type "SpatialPolygonDataFrame" (issu du package sp). Attention, il faut transformer les coordonnées géolocalisées dans le système de projection "epsg:3857".
+
+Voici un exemple de chargement de la carte des qpv qui est stockée dans un format de type "ShapeFile". Ce format de stockage est un format classique en cartographie. Bien vérifier que l'on dispose des 4 fichiers necessaire (".shp",".prj",".shx",".dbf"). Le chargement de la carte des qpv est effectué à l'aide du package "rgdal"
+
+```{r}
+# Chargement du zonage
+qpv <- rgdal::readOGR(dsn = "../../Cartes/QPV/qpv.shp")
+```
+
+Le zonage est désormais chargé. Il faut maintenant changer le système de projection des coordonées. C'est une étape indispensable pour les données se superposent correctement. On utilise ici aussi le package "rgdal"
+
+```{r}
+  # Changement du système de projection
+  qpv <- spTransform(qpv, "+init=epsg:3857")
+```
+
+### Quelques bases sur l'utilisation des objets spatiaux
+
+Les objets spatiaux sont composées au choix de points, de ligne ou de polygones. Par exemple, le RIL est un objet de type point, un reseau routier de type lignes et les qpv de type polygones. 
+
+Dans le package "sp" utilisé dans ce programme, on retrouve cette distinction. Pour les couches de points, il s'agit d'objet de type "SpatialPointsDataFrame", pour les lignes des "SpatialLineDataFrame" et pour les polygones des "SpatialPolygonDataFrame".Il existe beaucoup de littérature sur le sujet notamment le livre "R et espace" disponible en telechargement gratuit à cette adresse XXX pour plus de précision.
+
+```{r}
+class(qpv)
+```
+
+
+Quoi qu'il en soit, les objets spatiaux sont composés d'un part des coordonnées géolocalisé (aussi appelé geometry) et d'une table d'attribut (c'est une base de données classique associé à chaque geometry). 
+
+Voici un exemple pour acceder à la table attributaire.
+
+```{r}
+# Acces à la table attributaire
+head(qpv@data)
+```
+
+On peut aussi obtenir le système de projection.
+
+```{r}
+# Système de projection utilisé
+qpv@proj4string
+```
+
+## Import des bases de données
+
+Les indicateurs sont calculés à partir de deux sources : le recensement de la population (niveau individu et niveau logement) et les fichiers fiscaux.
+
+Les bases ont été nettoyées au préalable (voir programmes du dossier "maintenance"). Ce nettoyage consiste à ne conserver que les variables utiles dans ce programme et d'enregistrer les données en RData pour chargement plus rapide.
+
+```{r}
+# Recensement de la population 2014
+#----------------------------------
+# load("../../Bdd/RData/Rp/rp14.RData")
+
+# Filosofi 2014
+#--------------
+# load("../../Bdd/RData/Filosofi/filo14.Rdata")
+
+```
+
+## Traitements géographiques
+
+Le principe est d'apparier le RIL, le recensement de la population et le zonage. Concretement, il s'agit d'obtenir pour chaque logement du recensement dans quelle zone il se situe. Le principe est d'ajouter une variable indiquant si le logement appartient ou non au zonage. Si oui, lequel. 
+
+A noter que certains logements du RP ne sont pas retrouvés dans le RIL. L'expertise de ces cas a montré qu'ils étaient répartis aléatoirement sur le territoire. On effectue un calage sur marge pour corriger la pondération des observations.
+
+Dans un premier, on apparie le RIL et le zonage. On obtient donc pour chaque habitation du RIL dans quelle zone elle se situe. 
+
+```{r}
+### Préparation du fond de carte zonage
+# qpv@data$idZonage <- qpv@data[,"CODE_QP"]
+
+### Jointure spatiale ril et zonage ###
+# Determine pour chaque logement du ril s'il se trouve dans le zonage. Si oui, lequel.
+# ril <- zonaRil(ril = rilhab15,zonage = qpv)
+
+# Affichage des colonnes de la table attributaire du RIL
+# colnames(ril@data)
+```
+
+La variable idZonage a été rajoutée au RIL. Désormais, il faut apparier le RIL avec le recensement.
+
+```{r}
+### Fusion du ril avec le RP logement ###
+# Objectif : obtenir l idZonage pour chaque logement du RP
+# rpl <- merge(rp14l,ril@data[,c("idx","idZonage")],by="idx",all.x=T)
+
+# Ajout des variables issues du zonage à la table RP individu
+# rpi <- merge(rp14i,ril@data[,c("idx","idZonage")], by="idx",all.x=T)
+```
+
+Ensuite, on applique le meme principe aux fichiers fiscaux. Filosofi est livré sous forme de data.frame contenant les coordonnées géolocalisées des ménages fiscaux. Dans un premier temps, on convertit ce fichier en objet spatial de type SpatialPointDataFrame. A noter, qu'il faut préciser le système de projection (aux Antilles-Guyane, "epsg:3857")
+
+```{r}
+### Jointure spatiale Filosofi et zonage
+# COnvertion du fichier filosofi en spatialpointdataframe
+# filo.sp <- SpatialPointsDataFrame(coords = filo[,c("x","y")],data = filo,proj4string = CRS("+init=epsg:3857"))
+```
+
+Dans un second temps, on applique la fonction zonaRil aux fichiers fiscaux. Le principe reste le même. On ajoute une variable aux fichiers fiscaux indiquant dans quel zone se trouve chaque ménage.
+
+```{r}
+# Determine pour chaque logement de filosofi  s'il se trouve dans le zonage. Si oui, lequel.
+# filo.sp <- zonaRil(ril = filo.sp,zonage = qpv)
+# filo <- filo.sp@data
+# rm(filo.sp)
+
+# Affichage des colonnes
+# colnames(filo)
+
+```
+
+## Traitements statistiques
+
+Maintenant, on dispose pour le RP et les fichiers fiscaux d'une variable renseignant sur le zonage. Il suffit de faire des statistiques descriptives simples sur ces deux bases.
+
+La fonction suivante calcule une serie d'indicateurs issus du RP sur le zonage. Elle renvoie une liste de data.frame contenant des tableaux et des données individuelles. 
+
+```{r}
+# Calcul des statistiques descritives sur le zonage
+# zona_statRP <- zonaStatRp(rpi = rpi,rpl = rpl,id = "idZonage")
+```
+
+On effectue le même calcul sur des zonages différents pour des comparaisons. 
+
+```{r}
+# Statistiques communales
+# com_statRP <- zonaStatRp(rpi = rpi,rpl = rpl,id = "com")
+# Statistiques communales hors zonage
+# Hzona_statRP <- zonaStatRp(rpi = rpi[is.na(rpi$idZonage),],rpl = rpl[is.na(rpi$idZonage),],id = "com")
+```
+
+Désormais, on calcul des indicateurs sur les fichiers fiscaux. La fonction suivante fonctionne de la même manière.
+
+```{r}
+# Calcule les statistiques de filosofi
+# filoStat <- zonaStatFilo(filo = filo,id = "idZonage")
+```
+
+On rassemble l'ensemble des statistiques dans une seule liste.
+
+```{r}
+# Enregsitrement des bases dans une liste
+# base <- list(statCom = com_statRP$tStatRP,statHZone=Hzona_statRP$tStatRP,rpi=rpi,rpl=rpl,
+#              filo=filo[,c("idx","idZonage","depcom","typmenR","nivviem")])
+
+# Fusion des listes
+# statZona <- c(zona_statRP,filoStat,base)
+```
+
+## Reporting
+
+Désormais, on dispose d'un ensemble de statistiques. On les exporte dans un rapport en excel. On utilise le package "xlsx". La fonction suivante convertit les objets R en un rapport excel.
+
+```{r}
+# nomRapport <- "Infra_Stat_Desc"
+
+# Création du rapport excel des indicateurs Stats
+# chemin <- paste("../../Reporting/Qpv/",nomRapport,"_",as.character(Sys.Date()),".xlsx",sep="")
+# zonaQpvReporting(statZona,file = chemin,sourceInsee = "Insee, RP 2014") 
+```
+
+Enfin, on enregistre les statistiques dans un RData.
+
+```{r}
+# save(statZona,file="../../Bdd/RData/statTmp.RData")
+```
+
+

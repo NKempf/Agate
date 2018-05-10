@@ -1,0 +1,42 @@
+---
+title: "Maintenance Agate"
+author: "Nicolas Kempf"
+date: "19 mars 2018"
+output: 
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r,echo=FALSE,include=FALSE}
+library(prettydoc)
+```
+
+La maintenance de l'application necessite l'ajout régulier de données fraîches. Pour fonctionner, cette application nécessite l'utilisation des données du recensement de la population, de répertoire d'immeubles géolocalisés, des fichiers fiscaux et des cartes des réseaux routiers
+
+# Recensement de la population
+
+Le recensement de la population necessite l'utilisation des bases niveau individu et niveau logement exploitation principale. A charger directement depuis le GEN.
+
+# Repertoire d'immeubles géolocalisés
+
+Le RIL est récuperé pour l'instant (au 14.03.2018) par P. Dorelon.
+
+# Fichiers fiscaux
+
+Les fichiers fiscaux (filosofi) se trouve sous AUS dans le coffre X:/FilosofiProd. Il faut demander un accès sous Siamoi. 
+
+# Réseaux routiers
+
+La maintenance du réseau routier est une opération complexe. Une page spécifique lui ait dédiée. 
+
+
+# Qualité des données 
+
+Base composite du recensement et du RIL agregée au niveau adresses.
+
+# Banque publique des équipements
+
+Fichiers transmis par P. Dorelon
+ 
+
