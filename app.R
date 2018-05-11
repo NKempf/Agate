@@ -15,9 +15,10 @@ library(shiny) # Graphic web interface
 library(shinyBS) # Pop-up windows
 library(shinyjs) # Mask buttons/elements on graphic interface
 library(shinyWidgets) # Widgets supplementaires
+library(shinydashboard) # Tools like infoBox
 library(leaflet) # Interactive web map
 library(rgdal) # Input shapefile
-
+library(plotly) # Interactive graphics
 
 # II. Data
 #----------------------------------------------------------------------------------------------------------------------------------

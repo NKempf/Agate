@@ -35,8 +35,6 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                               #--------------------
                                               useSweetAlert()
                                               
-                                              
-                                              
                                             ),
                                             style = "opacity: 0.75; z-index: 1000;" # IMPORTANT : Absolute panel not hidden by tiles
                               )
@@ -44,34 +42,34 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                               
                           ), # end div
                           
-                          # III.4. Panneau options avancées
-                          #--------------------------------
+                          # III.4. Advanced options
+                          #------------------------
                           bsModal(id = "bs_optad",title =  "Options avancées", trigger = "b_statInfra", size="large",
                                   
                                   fluidRow(
                                     # III.4.1. Instructions
                                     HTML('
-                                                             <p style="text-align:justify">Selectionner les bases géolocaliées qui seront utilisées pour calculer les indicateurs. '
+                                                             <p style="text-align:justify"> Select datasets'
                                     ),
-                                    # III.4.2. Selection du millesime du RIL
+                                    # III.4.2. Ril
                                     column(4,
-                                           selectInput(inputId = "SI_ril", label = "Millesime du ril", choices = c("2015"),
+                                           selectInput(inputId = "SI_ril", label = "Ril", choices = c("2015"),
                                                        selected = "2015" )
                                     ),
-                                    # III.4.3. Selection du millesime du RP
+                                    # III.4.3. Census
                                     column(4,
                                            
-                                           selectInput(inputId = "SI_Rp", label = "Millesime du RP", choices = c("2014","2013"),
+                                           selectInput(inputId = "SI_Rp", label = "Recensement de la population", choices = c("2014","2013"),
                                                        selected = "2014" )
                                     ),
-                                    # III.4.4. Selection du millesime de filosofi
+                                    # III.4.4. Filosofi
                                     column(4,
-                                           selectInput(inputId = "SI_filo", label = "Millesime des fichiers fiscaux",choices = c("2014"),
+                                           selectInput(inputId = "SI_filo", label = "Fichiers fiscaux",choices = c("2014"),
                                                        selected="2014")
                                     ),
-                                    # III.4.5. Calcul des statistiques infra-communales sur le zonage chargé
+                                    # III.4.5. Compute
                                     column(12,
-                                           actionButton("b_calcul", "Calculer")
+                                           actionButton("b_calcul", "Compute !")
                                     )
                                     
                                   )
