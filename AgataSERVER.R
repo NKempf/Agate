@@ -183,8 +183,7 @@ server <- function(input, output,session) {
   # IV.4. BoxPlot du Niveau de vie
   #-------------------------------
   # renderPlotly() also understands ggplot2 objects!
-  
-  output$plot <- callModule(plotlyBoxplotIncome)
+  output$plotly1 <- callModule(plotlyBoxplotIncome)
   
   # output$plot <- renderPlotly({
   #   # Selection de la commune
@@ -223,25 +222,27 @@ server <- function(input, output,session) {
 
   # VI.5. Pyramide des ages
   #------------------------
-  output$plot2 <- renderPlotly({
-
-    # Pyramide des ages
-    agePyramid <- statZona$t1d_pyramide[statZona$t1e_pyramide$idZonage %in% qpv_filtre()$idZonage,]
-
-    # Valeur des Hommes négatives
-    agePyramid$pop[agePyramid$SEXE=="homme"] <- - agePyramid$pop[agePyramid$SEXE=="homme"]
-
-    # Label pour plotly
-    agePyramid$abs_pop <- paste(abs(agePyramid$pop)," ",agePyramid$SEXE,"s de ",
-                                agePyramid$age," ans",sep="")
-
-    # Affichage de la pyramide
-    plot_ly(data = agePyramid,x= ~pop, y=~age,color=~SEXE,colors = c('#fb9a99','#a6cee3')) %>%
-      add_bars(orientation = 'h', hoverinfo = 'text', text = ~abs_pop) %>%
-      layout(bargap = 0.1, barmode = 'overlay',
-             xaxis = list(title = "Population",tickmode = "array"),
-             yaxis = list(title = "Age"))
-  })
+  output$plotly2 <- callModule(plotlyAgedPyramid)
+  
+  # output$plot2 <- renderPlotly({
+  # 
+  #   # Pyramide des ages
+  #   agePyramid <- statZona$t1d_pyramide[statZona$t1e_pyramide$idZonage %in% qpv_filtre()$idZonage,]
+  # 
+  #   # Valeur des Hommes négatives
+  #   agePyramid$pop[agePyramid$SEXE=="homme"] <- - agePyramid$pop[agePyramid$SEXE=="homme"]
+  # 
+  #   # Label pour plotly
+  #   agePyramid$abs_pop <- paste(abs(agePyramid$pop)," ",agePyramid$SEXE,"s de ",
+  #                               agePyramid$age," ans",sep="")
+  # 
+  #   # Affichage de la pyramide
+  #   plot_ly(data = agePyramid,x= ~pop, y=~age,color=~SEXE,colors = c('#fb9a99','#a6cee3')) %>%
+  #     add_bars(orientation = 'h', hoverinfo = 'text', text = ~abs_pop) %>%
+  #     layout(bargap = 0.1, barmode = 'overlay',
+  #            xaxis = list(title = "Population",tickmode = "array"),
+  #            yaxis = list(title = "Age"))
+  # })
   
   
   

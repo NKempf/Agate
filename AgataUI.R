@@ -105,13 +105,28 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                     box(
                                       title = "Niveau de vie annuel (en euros)", status = "primary", solidHeader = TRUE,
                                       collapsible = TRUE,
-                                      plotlyOutput("plot")
+                                      plotlyOutput("plotly1")
                                     ),
                                     # Pyramide des ages
                                     box(
                                       title = "Pyramide des ages", status = "primary", solidHeader = TRUE,
                                       collapsible = TRUE,
-                                      plotlyOutput("plot2")
+                                      plotlyOutput("plotly2")
+                                    )
+                                  ),
+                                  
+                                  fluidRow(
+                                    # Informations sur les individus
+                                    box(
+                                      title = "Informations sur les individus", status = "primary", solidHeader = TRUE,
+                                      collapsible = TRUE,
+                                      plotlyOutput("plotly3")
+                                    ),
+                                    # Informations sur les logements
+                                    box(
+                                      title = "Informations sur les logements", status = "primary", solidHeader = TRUE,
+                                      collapsible = TRUE,
+                                      plotlyOutput("plotly4")
                                     )
                                   )
                                   

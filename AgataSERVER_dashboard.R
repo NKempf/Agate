@@ -17,7 +17,6 @@ plotlyBoxplotIncome <- function(input, output, session){
     plot_ly(y = ~rnorm(50), type = "box") %>%
       add_trace(y = ~rnorm(50, 1))
 
- # boxplotIncome <-  renderPlotly({
  #    # Selection de la commune
  #    comZone <- statZona$filo$depcom[statZona$filo$idZonage %in% qpv_filtre()$idZonage][1]
  #    
@@ -54,6 +53,45 @@ plotlyBoxplotIncome <- function(input, output, session){
   
   return(boxplotIncome)
 }
+
+
+# I.2 Aged pyramid
+#-----------------
+plotlyAgedPyramid <- function(input, output, session){
+
+  AgedPyramid <- renderPlotly({
+    
+    plot_ly(
+      x = c("giraffes", "orangutans", "monkeys"),
+      y = c(20, 14, 23),
+      name = "SF Zoo",
+      type = "bar"
+    )
+    
+    # # Pyramide des ages
+    # agePyramid <- statZona$t1d_pyramide[statZona$t1e_pyramide$idZonage %in% qpv_filtre()$idZonage,]
+    # 
+    # # Valeur des Hommes négatives
+    # agePyramid$pop[agePyramid$SEXE=="homme"] <- - agePyramid$pop[agePyramid$SEXE=="homme"]
+    # 
+    # # Label pour plotly
+    # agePyramid$abs_pop <- paste(abs(agePyramid$pop)," ",agePyramid$SEXE,"s de ",
+    #                             agePyramid$age," ans",sep="")
+    # 
+    # # Affichage de la pyramide
+    # plot_ly(data = agePyramid,x= ~pop, y=~age,color=~SEXE,colors = c('#fb9a99','#a6cee3')) %>%
+    #   add_bars(orientation = 'h', hoverinfo = 'text', text = ~abs_pop) %>%
+    #   layout(bargap = 0.1, barmode = 'overlay',
+    #          xaxis = list(title = "Population",tickmode = "array"),
+    #          yaxis = list(title = "Age"))
+  })
+  
+  return(AgedPyramid)
+}
+
+# I.3 Informations about population
+#----------------------------------
+
 
 
 
