@@ -27,8 +27,8 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                             wellPanel(
                                               # I.1.2.1. Import ShapeFile
                                               #--------------------------
+                                              # Import button
                                               fileInput('file1', 'Import shapeFile',multiple = T),
-                                              
                                               
                                               # I.1.2.2. Statistical calculation
                                               #---------------------------------
@@ -40,7 +40,24 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                               
                                             ),
                                             style = "opacity: 0.75; z-index: 1000;" # IMPORTANT : Absolute panel not hidden by tiles
+                              ),
+                              # Import modal
+                              tags$head(tags$style("#bs_importShp .modal-footer{ display:none}")), # Remove BS modal footer
+                              bsModal(id = "bs_importShp",title =  "Parametres", trigger = "b_statInfra", size="large",
+                                      fluidRow(
+                                        column(6,
+                                               selectInput(inputId = "SI_id", label = "Identifiant", choices = textOutput("MapColnames")
+                                                           # ,selected = "2015" 
+                                               ),
+                                               selectInput(inputId = "SI_name", label = "Libelle", choices = c("2015"),
+                                                           selected = "" )
+                                               
+                                        )
+                                      )
+                                      
+                                      
                               )
+                              
                               
                               
                           ), # end div
@@ -51,6 +68,7 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                           
                           # I.2.1 Advanced options
                           #-----------------------
+                          tags$head(tags$style("#bs_optad .modal-footer{ display:none}")), # Remove BS modal footer
                           bsModal(id = "bs_optad",title =  "Options avancées", trigger = "b_statInfra", size="large",
                                   
                                   fluidRow(
@@ -128,9 +146,14 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                       collapsible = TRUE,
                                       plotlyOutput("plotly4")
                                     )
+                                  ),
+                                  
+                                  # I.2.2.2 Download Dashboard
+                                  #---------------------------
+                                  
+                                  fluidRow(
+                                    column(3, downloadButton("dl_dash", "Get Dashboard", class="btn-block"))
                                   )
-                                  
-                                  
                           )
                          
                         ),

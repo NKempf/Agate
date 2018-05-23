@@ -18,7 +18,6 @@ server <- function(input, output,session) {
       addPolygons(data=qpv_stat,opacity = 3,
                   color = "green", stroke = TRUE, weight = 2,
                   fill = TRUE, fillOpacity = 0.2,popup = ~paste(NOM_QP),layerId = ~paste(CODE_QP))
-
   })
 
   # I.2. Update leaflet with user map
@@ -39,39 +38,15 @@ server <- function(input, output,session) {
   # I.3. Open reactive dashboard on click
   #--------------------------------------
   observeEvent(input$mymap_shape_click,{
-    
     toggleModal(session, "boxPopUp1", toggle = "toggle")
-    
-    # click <- input$mymap_shape_click
-    
-    # # Reactive dashboard pop-up
-    # showModal(modalDialog(
-    #   title = "You selected a marker!",
-    #   tabPanel(
-    #     title = "Synthèse",
-    #     value = "page1",
-        # # Add CSS files : use infobox from shinydashboard package into a shinyApp
-        # includeCSS(path = "www/AdminLTE.css"),
-        # includeCSS(path = "www/shinydashboard.css"),
-        # fluidRow(
-        #   infoBoxOutput(outputId = "IB_pop"),
-        #   infoBoxOutput(outputId = "IB_rev"),
-        #   infoBoxOutput(outputId = "IB_chom")
-        # ),
-        # plotlyOutput("plot"))
-    # ))
-    
-    
-    # Mise a jour de la liste
-    # updateSelectInput(session = session,inputId = "SI_Poly",
-    #                   choices = levels(factor(qpv_stat@data[,1])), 
-    #                   selected = click$id)
   })
   
    
   
 # II. Import user shapefile map
 #-----------------------------------------------------------------------------------------------------------------------------------
+  
+  # II.1. Upload ShapeFile
   userMap <- eventReactive(input$file1,{
     myshape<- input$file1
     
@@ -89,7 +64,18 @@ server <- function(input, output,session) {
     return(map)
   })
   
+  # II.2. Open Modal
+  observeEvent(input$file1, {
+    lst_var <- colnames(userMap()@data)
+    # Update selectinput with usermap colnames
+    updateSelectInput(session = session,inputId = "SI_id",choices = lst_var,selected = lst_var[1])
+    updateSelectInput(session = session,inputId = "SI_name",choices = lst_var,selected = lst_var[2])
+    # open bsmodal
+    toggleModal(session, "bs_importShp", toggle = "toggle")
+  })
   
+
+
   
 # III. InfraCity statistical computation 
 #-----------------------------------------------------------------------------------------------------------------------------------
@@ -185,65 +171,43 @@ server <- function(input, output,session) {
   # renderPlotly() also understands ggplot2 objects!
   output$plotly1 <- callModule(plotlyBoxplotIncome)
   
-  # output$plot <- renderPlotly({
-  #   # Selection de la commune
-  #   comZone <- statZona$filo$depcom[statZona$filo$idZonage %in% qpv_filtre()$idZonage][1]
-  # 
-  #   plot_ly(type = 'box') %>%
-  #     # Boxplot d'un equipement
-  #     add_boxplot(y = statZona$filo$nivviem[statZona$filo$idZonage %in% qpv_filtre()$idZonage],
-  #                 boxpoints = FALSE,
-  #                 marker = list(color = 'rgb(255,69,0)'),
-  #                 line = list(color = 'rgb(255,69,0)'),
-  #                 name = "Zonage") %>%
-  #     # Boxplot des individus de la commune qui ne vivent pas le zonage
-  #     add_boxplot(y = statZona$filo$nivviem[!(statZona$filo$idZonage %in% qpv_filtre()$idZonage) &
-  #                                             statZona$filo$depcom %in% comZone],
-  #                 name = "Hors zonage", boxpoints = FALSE,
-  #                 marker = list(color = 'rgb(113,113,198)'),
-  #                 line = list(color = 'rgb(113,113,198)')) %>%
-  #     # Boxplot des individus de la commune
-  #     add_boxplot(y = statZona$filo$nivviem[statZona$filo$depcom %in% comZone],
-  #                 name = "Communal", boxpoints = FALSE,
-  #                 marker = list(color = 'rgb(113,198,113)'),
-  #                 line = list(color = 'rgb(113,198,113)')) %>%
-  # 
-  #     # Boxplot des individus des autres zonages du departement
-  #     # add_boxplot(y = statZona$filo$nivviem[!(statZona$filo$idZonage %in% qpv_filtre()$idZonage) & !is.na(statZona$filo$idZonage)
-  #     #                                       & substr(statZona$filo$depcom,1,3) %in% substr(comZone,1,3)],
-  #     #             name = "Autres zonages", boxpoints = FALSE,
-  #     #             marker = list(color = 'rgb(252,141,98)'),
-  #     #             line = list(color = 'rgb(252,141,98)')) %>%
-  # 
-  #     # Reglage des axes
-  #     layout(
-  #       yaxis = list(range = c(0, 50000)))
-  # })
-
-  # VI.5. Pyramide des ages
+  # IV.5. Pyramide des ages
   #------------------------
   output$plotly2 <- callModule(plotlyAgedPyramid)
   
-  # output$plot2 <- renderPlotly({
-  # 
-  #   # Pyramide des ages
-  #   agePyramid <- statZona$t1d_pyramide[statZona$t1e_pyramide$idZonage %in% qpv_filtre()$idZonage,]
-  # 
-  #   # Valeur des Hommes négatives
-  #   agePyramid$pop[agePyramid$SEXE=="homme"] <- - agePyramid$pop[agePyramid$SEXE=="homme"]
-  # 
-  #   # Label pour plotly
-  #   agePyramid$abs_pop <- paste(abs(agePyramid$pop)," ",agePyramid$SEXE,"s de ",
-  #                               agePyramid$age," ans",sep="")
-  # 
-  #   # Affichage de la pyramide
-  #   plot_ly(data = agePyramid,x= ~pop, y=~age,color=~SEXE,colors = c('#fb9a99','#a6cee3')) %>%
-  #     add_bars(orientation = 'h', hoverinfo = 'text', text = ~abs_pop) %>%
-  #     layout(bargap = 0.1, barmode = 'overlay',
-  #            xaxis = list(title = "Population",tickmode = "array"),
-  #            yaxis = list(title = "Age"))
-  # })
+  # IV.6 Informations about household
+  #----------------------------------
+  output$plotly3 <- callModule(plotlyInfoPopulation)
   
+  # IV.7 Informations about housing
+  #--------------------------------
+  output$plotly4 <- callModule(plotlyInfoHousing)
+  
+  # IV.8 Download Dashboard
+  #------------------------
+  output$dl_dash <- downloadHandler(
+    # # For PDF output, change this to "report.pdf"
+    # filename = "report.html",
+    # content = function(file) {
+    #   # Copy the report file to a temporary directory before processing it, in
+    #   # case we don't have write permissions to the current working dir (which
+    #   # can happen when deployed).
+    #   tempReport <- file.path(getwd(), "shinyFlex_tmp.Rmd")
+    #   file.copy("shinyFlex_v2.Rmd", tempReport, overwrite = TRUE)
+    #   
+    #   # Parametres transmis au fichier rmarkdown
+    #   params <- list(n = qpv_filtre()$idZonage)
+    #   
+    #   # Knit the document, passing in the `params` list, and eval it in a
+    #   # child of the global environment (this isolates the code in the document
+    #   # from the code in this app).
+    #   rmarkdown::render(tempReport, output_file = file,
+    #                     params = params,
+    #                     envir = new.env(parent = globalenv())
+    #   )
+    #   
+    # }
+  )
   
   
 }
