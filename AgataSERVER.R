@@ -6,7 +6,11 @@ source(file = "AgataSERVER_dashboard.R",encoding = "UTF-8")
 
 
 server <- function(input, output,session) {
+# 0. Reactive Values
+#----------------------------------------------------------------------------------------------------------------------------
+  rv <- reactiveValues(AgateMap=NULL)
   
+   
 # I. Interactive web map
 #----------------------------------------------------------------------------------------------------------------------------
   
@@ -41,6 +45,28 @@ server <- function(input, output,session) {
     toggleModal(session, "boxPopUp1", toggle = "toggle")
   })
   
+  # I.4. Update view on map clicks
+  #-------------------------------
+  observeEvent(input$mymap_shape_click, { 
+    
+    # # Polygon selection
+    # mapTmp <- userMap()[userMap()@data$id == input$mymap_shape_click$id,] 
+    # centroidCoord <- as.data.frame(coordinates(rgeos::gCentroid(mapTmp)))
+    # 
+    # # Update view
+    # leafletProxy("mymap") %>%
+    #   setView(lng=centroidCoord$x, lat=centroidCoord$y, input$Map_zoom) 
+    # %>% acm_defaults(p$lng, p$lat)
+    
+    
+    # p <- input$Map_marker_click
+    # proxy <- leafletProxy("Map")
+    # if(p$id=="Selected"){
+    #   proxy %>% removeMarker(layerId="Selected")
+    # } else {
+    #   proxy %>% setView(lng=p$lng, lat=p$lat, input$Map_zoom) %>% acm_defaults(p$lng, p$lat)
+    # }
+  })
    
   
 # II. Import user shapefile map
@@ -48,19 +74,23 @@ server <- function(input, output,session) {
   
   # II.1. Upload ShapeFile
   userMap <- eventReactive(input$file1,{
-    myshape<- input$file1
-    
-    if (is.null(myshape)) 
-      return(NULL)       
-    
-    dir<-dirname(myshape[1,4])
-    for ( i in 1:nrow(myshape)) {
-      file.rename(myshape[i,4], paste0(dir,"/",myshape[i,1]))
+    # !!! Solution temporaire !!!
+    if(exists("qpv_stat")){
+      map <- qpv_stat
+    }else{
+      myshape<- input$file1
+      if (is.null(myshape)) 
+        return(NULL)       
+      
+      dir<-dirname(myshape[1,4])
+      for ( i in 1:nrow(myshape)) {
+        file.rename(myshape[i,4], paste0(dir,"/",myshape[i,1]))
       }
-    getshp <- list.files(dir, pattern="*.shp", full.names=TRUE)
-    map <- readOGR(dsn = getshp)
-    # Changement du système de projection
-    map <- spTransform(map, "+init=epsg:4326")
+      getshp <- list.files(dir, pattern="*.shp", full.names=TRUE)
+      map <- readOGR(dsn = getshp)
+      # SIG update to fit leaflet
+      map <- spTransform(map, "+init=epsg:4326")
+    }
     return(map)
   })
   
@@ -72,8 +102,38 @@ server <- function(input, output,session) {
     updateSelectInput(session = session,inputId = "SI_name",choices = lst_var,selected = lst_var[2])
     # open bsmodal
     toggleModal(session, "bs_importShp", toggle = "toggle")
+
   })
   
+  # II.3. Update AgateMap
+  observeEvent(c(input$SI_id,input$SI_name), {
+    if(input$SI_id != "Defaut"){
+      rv$AgateMap <- userMap()
+      rv$AgateMap@data$idAgate <- rv$AgateMap@data[,input$SI_id]
+      rv$AgateMap@data$idAgate.name <- rv$AgateMap@data[,input$SI_name]
+      print(rv$AgateMap@data[,c("idAgate","idAgate.name")])
+    }
+  })
+  
+  
+  # 
+  # userMap <- eventReactive(c(input$SI_id,input$SI_name),{
+  #   map <- isolate(userMapTmp())
+  #   map@data$idAgate <- NA
+  #   print(map@data[,input$SI_id])
+  #   
+  #   if(input$SI_id != "Defaut"){
+  #     map@data$idAgate <- map@data[,input$SI_id]
+  #     map@data$idAgate.name <- map@data[,input$SI_name]
+  #     print("je marche!")
+  #   }
+  #   print(input$SI_id)
+  #   print(map@data$idAgate)
+  #   print(map@data$idAgate.name)
+  #   return(map)
+  # })
+  
+
 
 
   

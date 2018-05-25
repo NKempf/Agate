@@ -43,19 +43,15 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                               ),
                               # Import modal
                               tags$head(tags$style("#bs_importShp .modal-footer{ display:none}")), # Remove BS modal footer
-                              bsModal(id = "bs_importShp",title =  "Parametres", trigger = "b_statInfra", size="large",
+                              bsModal(id = "bs_importShp",title =  "Parametres de la couche cartographique", trigger = "b_statInfra", size="large",
                                       fluidRow(
                                         column(6,
-                                               selectInput(inputId = "SI_id", label = "Identifiant", choices = textOutput("MapColnames")
-                                                           # ,selected = "2015" 
-                                               ),
-                                               selectInput(inputId = "SI_name", label = "Libelle", choices = c("2015"),
-                                                           selected = "" )
-                                               
+                                               selectInput(inputId = "SI_id", label = "Identifiant", choices = c("Defaut"),selected = c("Defaut"))
+                                        ),
+                                        column(6,
+                                               selectInput(inputId = "SI_name", label = "Libelle", choices = c("Defaut"),selected = c("Defaut"))
                                         )
                                       )
-                                      
-                                      
                               )
                               
                               

@@ -20,6 +20,7 @@ library(shinyWidgets) # Widgets supplementaires
 library(shinydashboard) # Tools like infoBox
 library(leaflet) # Interactive web map
 library(rgdal) # Input shapefile
+library(rgeos) # Map tools
 library(plotly) # Interactive graphics
 
 # II. Data
