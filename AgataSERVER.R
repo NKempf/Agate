@@ -87,7 +87,7 @@ server <- function(input, output,session) {
         file.rename(myshape[i,4], paste0(dir,"/",myshape[i,1]))
       }
       getshp <- list.files(dir, pattern="*.shp", full.names=TRUE)
-      map <- readOGR(dsn = getshp)
+      map <- readOGR(dsn = getshp,encoding = "UTF-8")
       # SIG update to fit leaflet
       map <- spTransform(map, "+init=epsg:4326")
     }
