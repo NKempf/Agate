@@ -242,10 +242,11 @@ server <- function(input, output,session) {
   })
   # IV.6 Informations about household
   #----------------------------------
-  # output$plotly3 <- callModule(plotlyInfoPopulation)
-  # 
-  # # IV.7 Informations about housing
-  # #--------------------------------
+  output$plotly3 <- renderPlotly({
+    callModule(plotlyInfoPopulation,"plotly3")
+  })
+  # IV.7 Informations about housing
+  #--------------------------------
   # output$plotly4 <- callModule(plotlyInfoHousing)
   # 
   # # IV.8 Download Dashboard

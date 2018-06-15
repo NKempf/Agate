@@ -39,6 +39,10 @@ install.packages("rgdal")
 #------------------
 install.packages("rgeos")
 
+# tidyverse : tidy tools data
+#----------------------------
+install.packages("tidyverse")
+
 # Plotly : Interactive graphics 
 #------------------------------
 # NB : radar chart available only on Github

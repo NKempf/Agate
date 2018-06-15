@@ -110,12 +110,28 @@ plotlyAgedPyramid <- function(input, output, session){
 #---------------------------------
 plotlyInfoPopulation <- function(input, output, session){
   
-  InfoPopulation <- renderPlotly({  
-      plot_ly(alpha = 0.6) %>%
-      add_histogram(x = ~rnorm(500)) %>%
-      add_histogram(x = ~rnorm(500) + 1) %>%
-      layout(barmode = "overlay")
-    
+  plot_ly(
+    type = 'scatterpolar',
+    fill = 'toself'
+  ) %>%
+    add_trace(
+      r = c(39, 28, 8, 7, 28, 39),
+      theta = c('A','B','C', 'D', 'E', 'A'),
+      name = 'Group A'
+    ) %>%
+    add_trace(
+      r = c(1.5, 10, 39, 31, 15, 1.5),
+      theta = c('A','B','C', 'D', 'E', 'A'),
+      name = 'Group B'
+    ) %>%
+    layout(
+      polar = list(
+        radialaxis = list(
+          visible = T,
+          range = c(0,50)
+        )
+      )
+    )
     
     
   #   # Selection des variables
@@ -155,10 +171,7 @@ plotlyInfoPopulation <- function(input, output, session){
   #   p$x$layout$margin$l <- p$x$layout$margin$l + 30
   #   # p$x$layout$margin$b <- p$x$layout$margin$b + 30
   #   p
-  })
-  
-  return(InfoPopulation)
-  
+
 }
 
 # I.4 Informations about housing
