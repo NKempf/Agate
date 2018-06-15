@@ -22,6 +22,8 @@ server <- function(input, output,session) {
       addPolygons(data=qpv_stat,opacity = 3,
                   color = "green", stroke = TRUE, weight = 2,
                   fill = TRUE, fillOpacity = 0.2,popup = ~paste(NOM_QP),layerId = ~paste(CODE_QP))
+    
+    # cat("my output")
   })
 
   # I.2. Update leaflet with user map
@@ -229,45 +231,48 @@ server <- function(input, output,session) {
   # IV.4. BoxPlot du Niveau de vie
   #-------------------------------
   # renderPlotly() also understands ggplot2 objects!
-  output$plotly1 <- callModule(plotlyBoxplotIncome)
-  
+  output$plotly1 <- renderPlotly({
+    callModule(plotlyBoxplotIncome,"plotly1")
+  })
+   
   # IV.5. Pyramide des ages
   #------------------------
-  output$plotly2 <- callModule(plotlyAgedPyramid)
-  
+  output$plotly2 <- renderPlotly({
+    callModule(plotlyAgedPyramid,"plotly2")
+  })
   # IV.6 Informations about household
   #----------------------------------
-  output$plotly3 <- callModule(plotlyInfoPopulation)
-  
-  # IV.7 Informations about housing
-  #--------------------------------
-  output$plotly4 <- callModule(plotlyInfoHousing)
-  
-  # IV.8 Download Dashboard
-  #------------------------
-  output$dl_dash <- downloadHandler(
-    # # For PDF output, change this to "report.pdf"
-    # filename = "report.html",
-    # content = function(file) {
-    #   # Copy the report file to a temporary directory before processing it, in
-    #   # case we don't have write permissions to the current working dir (which
-    #   # can happen when deployed).
-    #   tempReport <- file.path(getwd(), "shinyFlex_tmp.Rmd")
-    #   file.copy("shinyFlex_v2.Rmd", tempReport, overwrite = TRUE)
-    #   
-    #   # Parametres transmis au fichier rmarkdown
-    #   params <- list(n = qpv_filtre()$idZonage)
-    #   
-    #   # Knit the document, passing in the `params` list, and eval it in a
-    #   # child of the global environment (this isolates the code in the document
-    #   # from the code in this app).
-    #   rmarkdown::render(tempReport, output_file = file,
-    #                     params = params,
-    #                     envir = new.env(parent = globalenv())
-    #   )
-    #   
-    # }
-  )
+  # output$plotly3 <- callModule(plotlyInfoPopulation)
+  # 
+  # # IV.7 Informations about housing
+  # #--------------------------------
+  # output$plotly4 <- callModule(plotlyInfoHousing)
+  # 
+  # # IV.8 Download Dashboard
+  # #------------------------
+  # output$dl_dash <- downloadHandler(
+  #   # # For PDF output, change this to "report.pdf"
+  #   # filename = "report.html",
+  #   # content = function(file) {
+  #   #   # Copy the report file to a temporary directory before processing it, in
+  #   #   # case we don't have write permissions to the current working dir (which
+  #   #   # can happen when deployed).
+  #   #   tempReport <- file.path(getwd(), "shinyFlex_tmp.Rmd")
+  #   #   file.copy("shinyFlex_v2.Rmd", tempReport, overwrite = TRUE)
+  #   #   
+  #   #   # Parametres transmis au fichier rmarkdown
+  #   #   params <- list(n = qpv_filtre()$idZonage)
+  #   #   
+  #   #   # Knit the document, passing in the `params` list, and eval it in a
+  #   #   # child of the global environment (this isolates the code in the document
+  #   #   # from the code in this app).
+  #   #   rmarkdown::render(tempReport, output_file = file,
+  #   #                     params = params,
+  #   #                     envir = new.env(parent = globalenv())
+  #   #   )
+  #   #   
+  #   # }
+  # )
   
   
 }

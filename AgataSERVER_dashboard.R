@@ -12,46 +12,67 @@
 #--------------------
 plotlyBoxplotIncome <- function(input, output, session){
   
-  boxplotIncome <-  renderPlotly({
+  # Exemple test
+  p <- plot_ly(midwest, x = ~percollege, color = ~state, type = "box")
+  p 
   
-    plot_ly(y = ~rnorm(50), type = "box") %>%
-      add_trace(y = ~rnorm(50, 1))
+  
+  # # Paramètres généraux
+  # idZonage <- "QP973010"
+  # typeVar.switch <- "dep"
+  # 
+  # 
+  # df_boxplot <- function(df,varKeep){
+  #   df <- as.data.frame(df)
+  #   df$Q_0.25_2 <- df$Q_0.25
+  #   df$Q_0.75_2 <-  df$Q_0.75
+  #   varQuantile <- c("Q_0.1","Q_0.25","Q_0.25_2","Q_0.5","Q_0.75","Q_0.75_2","Q_0.9")
+  #   df[,varQuantile] <- round(df[,varQuantile],digits = -1)
+  #   return(df[,as.character(c(varKeep,varQuantile))])
+  # }
+  # 
+  # # Trace zonage
+  # trace.name.zonage <- idZonage
+  # varKeep.zone <- c("com","idZonage")
+  # zone.boxplot <- df_boxplot(df = StatZona$tFilo.I.1,varKeep = varKeep.zone) 
+  # y <- as.character(zone.boxplot[zone.boxplot$idZonage == idZonage,!colnames(zone.boxplot) %in% varKeep.zone])
+  # 
+  # switch(typeVar.switch,
+  #        dep = {
+  #          varKeep <- c("dep")
+  #          trace.name <- substr(zone.boxplot$com[zone.boxplot$idZonage == idZonage],1,3)
+  #          reg.boxplot <- df_boxplot(df = statReg_rp14_filo14$tFilo.I.1,varKeep = varKeep)
+  #          z <-  as.character(reg.boxplot[reg.boxplot$dep == trace.name,!colnames(reg.boxplot) %in% varKeep])
+  #          
+  #        },
+  #        com = {
+  #          print("todo")
+  #        },
+  #        hzone = {
+  #          print("todo")
+  #        }
+  #        ,
+  #        {
+  #          z <- as.character(zone.boxplot[zone.boxplot$idZonage == typeVar,!colnames(zone.boxplot) %in% varKeep.zone])
+  #        }
+  # )
+  # 
+  # # Graphique plotly
+  # plot_ly() %>% 
+  #   add_trace(y=y, name=trace.name.zonage, type="box") %>% 
+  #   add_trace(y=z, name= trace.name, type="box") %>% 
+  #   layout(autosize=TRUE, boxmode="group", hovermode="closest", 
+  #          showlegend=TRUE,
+  #          xaxis = list(
+  #            autorange = TRUE, 
+  #            showticklabels = FALSE, 
+  #            type = "category"),
+  #          yaxis = list(
+  #            autorange = TRUE, 
+  #            type = "linear")
+  #   )
+  # 
 
- #    # Selection de la commune
- #    comZone <- statZona$filo$depcom[statZona$filo$idZonage %in% qpv_filtre()$idZonage][1]
- #    
- #    plot_ly(type = 'box') %>%
- #      # Boxplot d'un equipement
- #      add_boxplot(y = statZona$filo$nivviem[statZona$filo$idZonage %in% qpv_filtre()$idZonage],
- #                  boxpoints = FALSE,
- #                  marker = list(color = 'rgb(255,69,0)'),
- #                  line = list(color = 'rgb(255,69,0)'),
- #                  name = "Zonage") %>%
- #      # Boxplot des individus de la commune qui ne vivent pas le zonage
- #      add_boxplot(y = statZona$filo$nivviem[!(statZona$filo$idZonage %in% qpv_filtre()$idZonage) &
- #                                              statZona$filo$depcom %in% comZone],
- #                  name = "Hors zonage", boxpoints = FALSE,
- #                  marker = list(color = 'rgb(113,113,198)'),
- #                  line = list(color = 'rgb(113,113,198)')) %>%
- #      # Boxplot des individus de la commune
- #      add_boxplot(y = statZona$filo$nivviem[statZona$filo$depcom %in% comZone],
- #                  name = "Communal", boxpoints = FALSE,
- #                  marker = list(color = 'rgb(113,198,113)'),
- #                  line = list(color = 'rgb(113,198,113)')) %>%
- #      
- #      # Boxplot des individus des autres zonages du departement
- #      # add_boxplot(y = statZona$filo$nivviem[!(statZona$filo$idZonage %in% qpv_filtre()$idZonage) & !is.na(statZona$filo$idZonage)
- #      #                                       & substr(statZona$filo$depcom,1,3) %in% substr(comZone,1,3)],
- #      #             name = "Autres zonages", boxpoints = FALSE,
- #      #             marker = list(color = 'rgb(252,141,98)'),
- #      #             line = list(color = 'rgb(252,141,98)')) %>%
- #      
- #      # Reglage des axes
- #      layout(
- #        yaxis = list(range = c(0, 50000)))
-  })
-  
-  return(boxplotIncome)
 }
 
 
@@ -59,8 +80,7 @@ plotlyBoxplotIncome <- function(input, output, session){
 #-----------------
 plotlyAgedPyramid <- function(input, output, session){
 
-  AgedPyramid <- renderPlotly({
-    
+  # Exemple de test
     plot_ly(
       x = c("giraffes", "orangutans", "monkeys"),
       y = c(20, 14, 23),
@@ -84,9 +104,6 @@ plotlyAgedPyramid <- function(input, output, session){
     #   layout(bargap = 0.1, barmode = 'overlay',
     #          xaxis = list(title = "Population",tickmode = "array"),
     #          yaxis = list(title = "Age"))
-  })
-  
-  return(AgedPyramid)
 }
 
 # I.3 Informations about household
