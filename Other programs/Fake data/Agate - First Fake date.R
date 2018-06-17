@@ -21,6 +21,8 @@ library(rgdal) # Chargement des objets spatiaux
 library(tidyverse) # transform data
 library(writexl) # Export des données en excel
 
+source("Other programs/Fake data/Agate - Fake data fct.R")
+
 
 # I. Import des données du RP et de filosofi
 #-------------------------------------------------------------------------------------------------
@@ -69,6 +71,50 @@ filo <- faking_data(df = filo[data.filter,])
 # Enregistrement des fausses bases
 save(rpi,rpl,filo,file = "../Bases/R/fakeData.Rdata")
 
+
+# III. Creation d'une série de point aléatoire dans chaque département
+#-------------------------------------------------------------------------------------------------
+
+# Chargement de la carte des communes
+com <- readOGR(dsn = "../Cartes/Communes/communeDOM.shp")
+com <- spTransform(com, CRS("+init=epsg:3857"))
+
+# III.1. Guadeloupe
+#----------------
+
+# Chargement de la carte de Guadeloupe
+dep971 <- readOGR(dsn = "../Cartes/971/admin-departement.shp")
+dep971 <- spTransform(dep971, CRS("+init=epsg:3857"))
+
+# Generation des points aléatoires 200000 pour la Guadeloupe
+pts.971 <- spsample(dep971 , n = 200000,type = "random")
+
+# Ajout du département et de la commune
+pts.971 <- fake_zonaRil(zone = com,pts.aleas = pts.971)
+
+# III.2. Martinique
+#----------------
+
+# Chargement de la carte de Guadeloupe
+dep972 <- readOGR(dsn = "../Cartes/972/admin-departement.shp")
+dep972 <- spTransform(dep972, CRS("+init=epsg:3857"))
+
+# Generation des points aléatoires 200000 pour la Guadeloupe
+pts.972 <- spsample(dep972 , n = 200000,type = "random")
+
+
+# III.3. Guyane
+#------------
+
+# Chargement de la carte de Guadeloupe
+dep973 <- readOGR(dsn = "../Cartes/973/admin-departement.shp")
+dep973 <- spTransform(dep973, CRS("+init=epsg:3857"))
+
+# Generation des points aléatoires 200000 pour la Guadeloupe
+pts.973 <- spsample(dep973 , n = 200000,type = "random")
+
+# Enregistrement des points 
+save(pts.971,pts.972,pts.973,file="Data/fakePts.RData")
 
 
 
