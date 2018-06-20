@@ -12,8 +12,8 @@
 ### Working directory 
 # Paramètre automatiquement le dossier dans lequel se trouve le programme comme espace de travail
 # Ne fonction que pour une version de R supérieure à 3.3
-setwd(dir=dirname(rstudioapi::getActiveDocumentContext()$path))
-getwd()
+# setwd(dir=dirname(rstudioapi::getActiveDocumentContext()$path))
+# getwd()
 
 # Packages nécessaires
 #---------------------
@@ -80,41 +80,64 @@ com <- readOGR(dsn = "../Cartes/Communes/communeDOM.shp")
 com <- spTransform(com, CRS("+init=epsg:3857"))
 
 # III.1. Guadeloupe
-#----------------
+#------------------
+nObs <- 100000
 
 # Chargement de la carte de Guadeloupe
 dep971 <- readOGR(dsn = "../Cartes/971/admin-departement.shp")
 dep971 <- spTransform(dep971, CRS("+init=epsg:3857"))
 
 # Generation des points aléatoires 200000 pour la Guadeloupe
-pts.971 <- spsample(dep971 , n = 200000,type = "random")
+pts.971 <- spsample(dep971 , n = nObs,type = "random")
 
 # Ajout du département et de la commune
-pts.971 <- fake_zonaRil(zone = com,pts.aleas = pts.971)
+pts.971 <- fake_zonaRil(zone = com,pts.alea = pts.971)
 
 # III.2. Martinique
-#----------------
+#------------------
 
 # Chargement de la carte de Guadeloupe
 dep972 <- readOGR(dsn = "../Cartes/972/admin-departement.shp")
 dep972 <- spTransform(dep972, CRS("+init=epsg:3857"))
 
 # Generation des points aléatoires 200000 pour la Guadeloupe
-pts.972 <- spsample(dep972 , n = 200000,type = "random")
+pts.972 <- spsample(dep972 , n = nObs,type = "random")
 
+# Ajout du département et de la commune
+pts.972 <- fake_zonaRil(zone = com,pts.alea = pts.972)
 
 # III.3. Guyane
-#------------
+#--------------
 
 # Chargement de la carte de Guadeloupe
 dep973 <- readOGR(dsn = "../Cartes/973/admin-departement.shp")
 dep973 <- spTransform(dep973, CRS("+init=epsg:3857"))
 
 # Generation des points aléatoires 200000 pour la Guadeloupe
-pts.973 <- spsample(dep973 , n = 200000,type = "random")
+pts.973 <- spsample(dep973 , n = nObs,type = "random")
+
+# Ajout du département et de la commune
+pts.973 <- fake_zonaRil(zone = com,pts.alea = pts.973)
+
+# IV. Fusion des bases
+#-----------------------------------------------------------------------------------------------------------------
+pts.fake <- rbind(pts.971,pts.972) %>% 
+  rbind(pts.973)
+
+# Identifiant fictif
+pts.fake@data$idx <- paste0("id",rownames(pts.fake@data))
+
+# 
+# load("Data/fakeData.Rdata")
+# 
+# # Fake rpi
+# rpi.fake <- faking_data(rpi,nrow(pts.fake))
+# rpl.fake <- faking_data(rpl,nrow(pts.fake))
+# filo.fake <- faking_data(filo,nrow(pts.fake))
+
 
 # Enregistrement des points 
-save(pts.971,pts.972,pts.973,file="Data/fakePts.RData")
+save(pts.fake,file="Data/fakePts.RData")
 
 
 

@@ -6,7 +6,7 @@
 
 # Nicolas Kempf
 
-fake_zonaRil <- function(zone,pts.aleas){
+fake_zonaRil <- function(zone,pts.alea){
   
   # # Points aléatoire au sein des communes des DOM
   # # Rq : pour des questions de rapidité, il faut travailler département par département
@@ -27,13 +27,6 @@ fake_zonaRil <- function(zone,pts.aleas){
   return(pts.alea)
   
 }
-
-
-
-
-
-
-
 
 
 spatial_fakedata <- function(zone,nbObs){
@@ -57,3 +50,18 @@ spatial_fakedata <- function(zone,nbObs){
   return(pts.alea)
   
 }
+
+# Simule des fausses données ayant la structure de vrai données
+faking_data <- function(df,nObs){
+  L <- lapply(colnames(df), nObs = nObs,function(x,nObs){
+    return(sample(df[,x],replace = TRUE,size = nObs))
+  })
+  df2 <-  data.frame(do.call(data.frame, L))
+  colnames(df2) <-  colnames(df)
+  return(df2)
+}
+
+
+
+
+
