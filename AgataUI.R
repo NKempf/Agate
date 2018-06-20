@@ -37,7 +37,6 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                               # I.1.2.3. Sweet pop-up
                                               #----------------------
                                               useSweetAlert()
-                                              
                                             ),
                                             style = "opacity: 0.75; z-index: 1000;" # IMPORTANT : Absolute panel not hidden by tiles
                               ),
@@ -153,9 +152,20 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                           )
                          
                         ),
+                 
+                 # II. Statistics
+                 #-------------------------------------------------------------------------------------------------------------                 
+                 tabPanel("Statistiques",value="vis",
+                          titlePanel("To do")
+                          ),
+                 
+                 # III. Qualité
+                 #-------------------------------------------------------------------------------------------------------------                 
+                 tabPanel("Qualité",value="vis",
+                          titlePanel("To do")
+                 ),                       
                           
-                          
-                  # II. Documentation
+                  # III. Documentation
                   #-------------------------------------------------------------------------------------------------------------
                   navbarMenu("Documentation",
 

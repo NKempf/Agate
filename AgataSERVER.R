@@ -8,9 +8,9 @@ source(file = "AgataSERVER_dashboard.R",encoding = "UTF-8")
 server <- function(input, output,session) {
 # 0. Reactive Values
 #----------------------------------------------------------------------------------------------------------------------------
-  rv <- reactiveValues(AgateMap=NULL)
+  rv <- reactiveValues(AgateMap=NULL,
+                       statZone=NULL)
   
-   
 # I. Interactive web map
 #----------------------------------------------------------------------------------------------------------------------------
   
@@ -18,33 +18,47 @@ server <- function(input, output,session) {
   #----------------------------------
   output$mymap <- renderLeaflet({
     leaflet("map") %>% addTiles()%>% 
-      fitBounds(lng1 = -65,lat1 = 18,lng2 = -45,lat2 = 3) %>%
-      addPolygons(data=qpv_stat,opacity = 3,
-                  color = "green", stroke = TRUE, weight = 2,
-                  fill = TRUE, fillOpacity = 0.2,popup = ~paste(NOM_QP),layerId = ~paste(CODE_QP))
+      fitBounds(lng1 = -65,lat1 = 18,lng2 = -45,lat2 = 3) 
+    # %>%
+    #   addPolygons(data=qpv_stat,opacity = 3,
+    #               color = "green", stroke = TRUE, weight = 2,
+    #               fill = TRUE, fillOpacity = 0.2,popup = ~paste(NOM_QP),layerId = ~paste(CODE_QP))
     
-    # cat("my output")
   })
 
   # I.2. Update leaflet with user map
   #----------------------------------
-  observeEvent(input$file1,{
-    if (!is.null(input$file1)) {
+  observeEvent(rv$AgateMap,{
+    if (!is.null(rv$AgateMap@data$idAgate) & !is.null(rv$AgateMap@data$idAgate.name)) {
       # Boundary box
-      userMap.bbox <- as.data.frame(bbox(userMap()))
+      AgateMap.bbox <- as.data.frame(bbox(rv$AgateMap))
       # Update leaflet
       leafletProxy("mymap") %>%
-        fitBounds(lng1 = userMap.bbox$min[1],lat1 = userMap.bbox$max[2],lng2 = userMap.bbox$max[1],lat2 = userMap.bbox$min[2]) %>%
-        addPolygons(data=userMap(),opacity = 3,
-                                  color = "green", stroke = TRUE, weight = 2,
-                                  fill = TRUE, fillOpacity = 0.2,popup = ~paste(NOM_QP),layerId = ~paste(CODE_QP))
+        fitBounds(lng1 = AgateMap.bbox$min[1],lat1 = AgateMap.bbox$max[2],lng2 = AgateMap.bbox$max[1],lat2 = AgateMap.bbox$min[2]) %>%
+        addPolygons(data=rv$AgateMap,opacity = 3,
+                    color = "green", stroke = TRUE, weight = 2,
+                    fill = TRUE, fillOpacity = 0.2,popup = ~paste(idAgate.name),layerId = ~paste(idAgate))
     }
   })
+  # observeEvent(input$file1,{
+  #   if (!is.null(input$file1)) {
+  #     # Boundary box
+  #     userMap.bbox <- as.data.frame(bbox(userMap()))
+  #     # Update leaflet
+  #     leafletProxy("mymap") %>%
+  #       fitBounds(lng1 = userMap.bbox$min[1],lat1 = userMap.bbox$max[2],lng2 = userMap.bbox$max[1],lat2 = userMap.bbox$min[2]) %>%
+  #       addPolygons(data=userMap(),opacity = 3,
+  #                                 color = "green", stroke = TRUE, weight = 2,
+  #                                 fill = TRUE, fillOpacity = 0.2,popup = ~paste(NOM_QP),layerId = ~paste(CODE_QP))
+  #   }
+  # })
   
   # I.3. Open reactive dashboard on click
   #--------------------------------------
   observeEvent(input$mymap_shape_click,{
-    toggleModal(session, "boxPopUp1", toggle = "toggle")
+    if(!is.null(rv$statZone)){
+      toggleModal(session, "boxPopUp1", toggle = "toggle")
+    }
   })
   
   # I.4. Update view on map clicks
@@ -117,65 +131,100 @@ server <- function(input, output,session) {
     }
   })
   
-  
-  # 
-  # userMap <- eventReactive(c(input$SI_id,input$SI_name),{
-  #   map <- isolate(userMapTmp())
-  #   map@data$idAgate <- NA
-  #   print(map@data[,input$SI_id])
-  #   
-  #   if(input$SI_id != "Defaut"){
-  #     map@data$idAgate <- map@data[,input$SI_id]
-  #     map@data$idAgate.name <- map@data[,input$SI_name]
-  #     print("je marche!")
-  #   }
-  #   print(input$SI_id)
-  #   print(map@data$idAgate)
-  #   print(map@data$idAgate.name)
-  #   return(map)
-  # })
-  
 
-
-
-  
 # III. InfraCity statistical computation 
 #-----------------------------------------------------------------------------------------------------------------------------------
   observeEvent(input$b_calcul, {
+  
+    t1 <- Sys.time()
     
-    t1 <- Sys.time()  
-    # Test de bar de progression
+    withProgress(message = "Creation de l'identifiant",style = "notification", value = 0, {
     
-    # Create 0-row data frame which will be used to store data
-    dat <- data.frame(x = numeric(0), y = numeric(0))
+    # Creation de la variable zonage
+    zonage <- isolate(rv$AgateMap)
+  
+    # Creation de l'identifiant idZonage
+    zonage@data$idZonage <- zonage@data$idAgate
+  
+    # Determine pour chaque point dans quel zone il se situe
+    incProgress(amount = 0.1,message = "Appariement entre la zone et les points")
     
-    # withProgress calls can be nested, in which case the nested text appears
-    # below, and a second bar is shown.
-    withProgress(message = 'Generating data',style = "notification", detail = "part 0", value = 0, {
-      for (i in 1:10) {
-        # Each time through the loop, add another row of data. This a stand-in
-        # for a long-running computation.
-        dat <- rbind(dat, data.frame(x = rnorm(1), y = rnorm(1)))
-        
-        # Increment the progress bar, and update the detail text.
-        incProgress(0.1, detail = paste("part", i))
-        
-        # Pause for 0.1 seconds to simulate a long computation.
-        Sys.sleep(0.1)
-      }
+    pts.sp <- zonaPts(pts.sp = pts.fake,zonage = zonage)
+    
+    # Faking data
+    incProgress(amount = 0.4,message = "Ajout des données fictives")
+    
+    lst_var <- c("idx","idZonage","dep","com","com.lib")
+    rpi <- cbind(pts.sp@data[,lst_var],faking_data(rpi,nrow(pts.sp)))
+    rpl <- cbind(pts.sp@data[,lst_var],faking_data(rpl,nrow(pts.sp)))
+    filo <- cbind(pts.sp@data[,lst_var],faking_data(filo,nrow(pts.sp)))
+    
+    # Attention placer ce bout de code ici (pas avant car sinon le temps de calcul explose)
+    typmen.label <- c("famille monoparentale","couple sans enfant","couple avec enfant(s)","menage complexe",
+                      "femme seule","homme seul")
+    filo <- as_tibble(filo) %>%
+      # filter(com %in% lstCom) %>%
+      mutate(typmenR.lib = factor(typmenR,labels = typmen.label))
+    
+    # Cacul des statistiques
+    incProgress(amount = 0.6,message = "Calcul des statistiques")
+    
+    rv$statZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("com","com.lib","idZonage"))
+
     })
     
-    Sys.sleep(0.1)
-    
+    # print(StatZona$tRp.II.2)
+
     # Pop-up indiquant la fin du calcul
     temps <- as.character(round(abs(difftime(t1,Sys.time(), units="secs")),2))
     
-    shinyWidgets::sendSweetAlert(
-      session = session, 
-      title = "Terminé !", text = paste("Le calcul a été effectué en ",temps," secondes"), type = "success"
-    )
+    if(!is.null(rv$statZone)){
+
+      shinyWidgets::sendSweetAlert(
+        session = session, 
+        title = "Terminé !", text = paste("Le calcul a été effectué en ",temps," secondes"), type = "success"
+      )
+    }
     
-    # Ferme automatiquement le bsmodal options avancées
+    
+    
+    
+    
+    
+    
+    #   
+    # # Test de bar de progression
+    # 
+    # # Create 0-row data frame which will be used to store data
+    # dat <- data.frame(x = numeric(0), y = numeric(0))
+    # 
+    # # withProgress calls can be nested, in which case the nested text appears
+    # # below, and a second bar is shown.
+    # withProgress(message = 'Generating data',style = "notification", detail = "part 0", value = 0, {
+    #   for (i in 1:10) {
+    #     # Each time through the loop, add another row of data. This a stand-in
+    #     # for a long-running computation.
+    #     dat <- rbind(dat, data.frame(x = rnorm(1), y = rnorm(1)))
+    #     
+    #     # Increment the progress bar, and update the detail text.
+    #     incProgress(0.1, detail = paste("part", i))
+    #     
+    #     # Pause for 0.1 seconds to simulate a long computation.
+    #     Sys.sleep(0.1)
+    #   }
+    # })
+    # 
+    # Sys.sleep(0.1)
+    
+    # # Pop-up indiquant la fin du calcul
+    # temps <- as.character(round(abs(difftime(t1,Sys.time(), units="secs")),2))
+    # 
+    # shinyWidgets::sendSweetAlert(
+    #   session = session, 
+    #   title = "Terminé !", text = paste("Le calcul a été effectué en ",temps," secondes"), type = "success"
+    # )
+    # 
+    # # Ferme automatiquement le bsmodal options avancées
     
   })
   

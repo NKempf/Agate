@@ -130,6 +130,10 @@ pts.fake@data$idx <- paste0("id",rownames(pts.fake@data))
 # Departement
 pts.fake@data$dep <- substr(pts.fake@data$com,1,3)
 
+# Filtre
+pts.fake <- pts.fake[!is.na(pts.fake@data$dep),]
+
+
 # load("Data/fakeData.Rdata")
 # 
 # # Fake rpi

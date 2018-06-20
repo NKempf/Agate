@@ -212,7 +212,6 @@ zonaPts <- function(pts.sp,zonage){
   return(pts.sp)
 }
 
-table(pts.sp@data$idZonage)
 
 
 
