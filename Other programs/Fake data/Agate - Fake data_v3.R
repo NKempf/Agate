@@ -13,7 +13,9 @@
 # Ne fonction que pour une version de R supérieure à 3.3
 # setwd(dir=dirname(rstudioapi::getActiveDocumentContext()$path))
 # getwd()
+
 t1 <- Sys.time()
+
 # Packages nécessaires
 #---------------------
 library(sp) # Objets spatiaux
@@ -27,7 +29,6 @@ library(writexl) # Export des données en excel
 source ("Other programs/Fake data/Agate - Fake data fct.R")
 source("Other programs/Zonage/Agate - Cartographie fct.R")
 source("Other programs/StatZonage/Agate - Statistics Zonage_v3.R")
-
 
 # I. Import des bases
 #-------------------------------------------------------------------------------------------------
@@ -82,17 +83,12 @@ StatZona <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("com",
 class(filo$idZonage)
 table(filo$idZonage)
 
-
-
 # IV. Sortie excel
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------
 write_xlsx(StatZona,path = "Output/Agate_stat.xlsx")
 
 
 
-
-
-Sys.time() - t1
 
 
 
