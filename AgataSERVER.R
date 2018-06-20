@@ -185,13 +185,7 @@ server <- function(input, output,session) {
         title = "Terminé !", text = paste("Le calcul a été effectué en ",temps," secondes"), type = "success"
       )
     }
-    
-    
-    
-    
-    
-    
-    
+  
     #   
     # # Test de bar de progression
     # 
@@ -238,8 +232,8 @@ server <- function(input, output,session) {
     print(input$mymap_shape_click)
 
     if(is.null(input$mymap_shape_click)) return(NULL)
-    # A modifier quand tout sera branché en amont
-    df <- qpv_stat@data[qpv_stat@data$CODE_QP == input$mymap_shape_click$id,]
+    df <- rv$AgateMap@data[rv$AgateMap@data$idAgate == input$mymap_shape_click$id,]
+    # df <- qpv_stat@data[qpv_stat@data$CODE_QP == input$mymap_shape_click$id,]
     return(df)
   })
   
@@ -247,7 +241,7 @@ server <- function(input, output,session) {
   #----------------------------
   output$modalTitle <- renderText({ 
     if(is.null(qpv_filtre())) {return("Informations sur la zone")}
-    paste("Zone : ",qpv_filtre()$CODE_QP," - ",qpv_filtre()$NOM_QP,sep="") 
+    paste("Zone : ",qpv_filtre()$idAgate," - ",qpv_filtre()$idAgate.name,sep="") 
     })
 
   # IV.1. Total population infobox

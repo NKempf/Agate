@@ -10,7 +10,6 @@
 
 statistics_zone <- function(rpi,rpl,filo,group_var){
   
-  
 #----------------------------------------------------------------------------------------------------------------------------------------------#
 #                                             A. Recensement de la population                                                                  #
 #----------------------------------------------------------------------------------------------------------------------------------------------#
@@ -341,31 +340,6 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
 #                                             VI. Synthèse des statistiques                                                                    #
 #----------------------------------------------------------------------------------------------------------------------------------------------#
   
-  # VI.1 Synthèse des indicateurs au niveau zonage
-  #------------------------------------------------
-  
-  # VI.1. 
-  # tSynth.I.1 <- tRp.II.1 %>% 
-  #   select(-freq,-freq_p,-part_np) %>% 
-  #   spread(age,part_p)
-  # 
-  # tSynth.I.2 <- tRp.II.2 %>% 
-  #   select(-freq,-freq_p,-part_np) %>% 
-  #   spread(age,part_p)  
-  # 
-  # tSynth.I.3 <- tRp.II.3 %>% 
-  #   select(-freq,-freq_p,-part_np) %>% 
-  #   spread(SEXE,part_p) 
-  # 
-  # tSynth.I.4 <- tRp.II.4 %>% 
-  #   select(-freq,-freq_p,-part_np) %>% 
-  #   spread(SEXE,part_p)
-  
-  
-  
-#----------------------------------------------------------------------------------------------------------------------------------------------#
-#                                             VII. Listes de tableaux finaux                                                                   #
-#----------------------------------------------------------------------------------------------------------------------------------------------#
   list_tab <- list(tRp.I.1 = tRp.I.1,
                    tRp.I.2 = tRp.I.2,
                    tRp.II.1 = tRp.II.1,
@@ -393,7 +367,53 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
                    tFilo.I.4 = tFilo.I.4,
                    tFilo.II.1 = tFilo.II.1,
                    tFilo.II.2 = tFilo.II.2
-                   )
+  )
+  
+  
+  
+  # VI.1 Synthèse des indicateurs au niveau zonage
+  #------------------------------------------------
+  
+  # Synthèse des données
+  #---------------------
+  # stat_synthese <- function(df){
+  #   # var <- enquo(var)
+  #   # df %>% 
+  #   #   ungroup() %>% 
+  #   #   select(com,idZonage, !! var,part_p) %>% 
+  #   #   spread(key = !! var,value = part_p)
+  #   df <- df[,colnames(df)[c(1,3,4,8)]]
+  #   spread(df,key = colnames(df)[3],value = colnames(df)[4])
+  # }
+  # StatZona.reduit <- StatZona[c("tRp.II.1","tRp.II.3","tRp.III.2","tRp.III.3","tRp.III.4","tRp.IV.1","tRp.IV.2","tRp.IV.4","tRp.V.1","tRp.V.2")]
+  # StatZona.synthese <- lapply(StatZona.reduit, stat_synthese)
+  # StatZona.synthese <- Reduce(function(...) merge(..., by = c('com', 'idZonage')), StatZona.synthese) 
+  
+  
+  
+  # VI.1. 
+  # tSynth.I.1 <- tRp.II.1 %>% 
+  #   select(-freq,-freq_p,-part_np) %>% 
+  #   spread(age,part_p)
+  # 
+  # tSynth.I.2 <- tRp.II.2 %>% 
+  #   select(-freq,-freq_p,-part_np) %>% 
+  #   spread(age,part_p)  
+  # 
+  # tSynth.I.3 <- tRp.II.3 %>% 
+  #   select(-freq,-freq_p,-part_np) %>% 
+  #   spread(SEXE,part_p) 
+  # 
+  # tSynth.I.4 <- tRp.II.4 %>% 
+  #   select(-freq,-freq_p,-part_np) %>% 
+  #   spread(SEXE,part_p)
+  
+  
+  
+#----------------------------------------------------------------------------------------------------------------------------------------------#
+#                                             VII. Listes de tableaux finaux                                                                   #
+#----------------------------------------------------------------------------------------------------------------------------------------------#
+ 
   
 return(list_tab)  
   
