@@ -10,100 +10,109 @@
 
 # I.1. BoxPlot Income
 #--------------------
-plotlyBoxplotIncome <- function(input, output, session){
+plotlyBoxplotIncome <- function(input, output, session,statZone,statHZone,zone_filtre,compare){
   
-  # Exemple test
-  p <- plot_ly(midwest, x = ~percollege, color = ~state, type = "box")
-  p 
-  
-  
-  # # Paramètres généraux
-  # idZonage <- "QP973010"
-  # typeVar.switch <- "dep"
-  # 
-  # 
-  # df_boxplot <- function(df,varKeep){
-  #   df <- as.data.frame(df)
-  #   df$Q_0.25_2 <- df$Q_0.25
-  #   df$Q_0.75_2 <-  df$Q_0.75
-  #   varQuantile <- c("Q_0.1","Q_0.25","Q_0.25_2","Q_0.5","Q_0.75","Q_0.75_2","Q_0.9")
-  #   df[,varQuantile] <- round(df[,varQuantile],digits = -1)
-  #   return(df[,as.character(c(varKeep,varQuantile))])
-  # }
-  # 
-  # # Trace zonage
-  # trace.name.zonage <- idZonage
-  # varKeep.zone <- c("com","idZonage")
-  # zone.boxplot <- df_boxplot(df = StatZona$tFilo.I.1,varKeep = varKeep.zone) 
-  # y <- as.character(zone.boxplot[zone.boxplot$idZonage == idZonage,!colnames(zone.boxplot) %in% varKeep.zone])
-  # 
-  # switch(typeVar.switch,
-  #        dep = {
-  #          varKeep <- c("dep")
-  #          trace.name <- substr(zone.boxplot$com[zone.boxplot$idZonage == idZonage],1,3)
-  #          reg.boxplot <- df_boxplot(df = statReg_rp14_filo14$tFilo.I.1,varKeep = varKeep)
-  #          z <-  as.character(reg.boxplot[reg.boxplot$dep == trace.name,!colnames(reg.boxplot) %in% varKeep])
-  #          
-  #        },
-  #        com = {
-  #          print("todo")
-  #        },
-  #        hzone = {
-  #          print("todo")
-  #        }
-  #        ,
-  #        {
-  #          z <- as.character(zone.boxplot[zone.boxplot$idZonage == typeVar,!colnames(zone.boxplot) %in% varKeep.zone])
-  #        }
-  # )
-  # 
-  # # Graphique plotly
-  # plot_ly() %>% 
-  #   add_trace(y=y, name=trace.name.zonage, type="box") %>% 
-  #   add_trace(y=z, name= trace.name, type="box") %>% 
-  #   layout(autosize=TRUE, boxmode="group", hovermode="closest", 
-  #          showlegend=TRUE,
-  #          xaxis = list(
-  #            autorange = TRUE, 
-  #            showticklabels = FALSE, 
-  #            type = "category"),
-  #          yaxis = list(
-  #            autorange = TRUE, 
-  #            type = "linear")
-  #   )
-  # 
+  idZonage <- as.character(unique(zone_filtre$idZonage))
+  idZonage.com <- as.character(statHZone$tFilo.I.1$com[statHZone$tFilo.I.1$idZonage == idZonage][1])
+  idZonage.dep <- substr(idZonage.com,1,3)
 
+  # Zone d'étude
+  varKeep.zone <- c("idZonage")
+  zone.boxplot <- df_boxplot(df = statZone$tFilo.I.1,varKeep = varKeep.zone) 
+  y <- as.character(zone.boxplot[zone.boxplot$idZonage == idZonage,!colnames(zone.boxplot) %in% varKeep.zone])
+
+  # Affichage de la zone de comparaison
+  switch(compare,
+         Departement = {
+           varKeep <- c("dep")
+           reg.boxplot <- df_boxplot(df = dep.stat$tFilo.I.1,varKeep = varKeep)
+           z <-  as.character(reg.boxplot[reg.boxplot$dep == idZonage.dep,!colnames(reg.boxplot) %in% varKeep])
+           name.comp <- idZonage.dep
+         },
+         Commune = {
+           varKeep <- c("com")
+           reg.boxplot <- df_boxplot(df = com.stat$tFilo.I.1,varKeep = varKeep)
+           z <-  as.character(reg.boxplot[reg.boxplot$com == idZonage.com,!colnames(reg.boxplot) %in% varKeep])
+           name.comp <- idZonage.com
+         },
+         HorsZone = {
+           varKeep <- c("com","idZonage")
+           reg.boxplot <- df_boxplot(df = statHZone$tFilo.I.1,varKeep = varKeep)
+           z <-  as.character(reg.boxplot[reg.boxplot$com == idZonage.com & reg.boxplot$idZonage == "Hors zonage",!colnames(reg.boxplot) %in% varKeep])
+           name.comp <- "Hors zone"
+         }
+         ,
+         {
+           z <- as.character(zone.boxplot[zone.boxplot$idZonage == compare,!colnames(zone.boxplot) %in% varKeep.zone])
+           name.comp <- compare
+         }
+  )
+  
+  # Graphique de la zone
+  plot_ly() %>% 
+    add_trace(y=y, name=idZonage, type="box") %>% 
+    add_trace(y=z, name= name.comp, type="box") %>%
+    layout(autosize=TRUE, boxmode="group", hovermode="closest", 
+           showlegend=TRUE,
+           xaxis = list(
+             autorange = TRUE, 
+             showticklabels = FALSE, 
+             type = "category"),
+           yaxis = list(
+             autorange = TRUE, 
+             type = "linear")
+    )
 }
 
 
 # I.2 Aged pyramid
 #-----------------
-plotlyAgedPyramid <- function(input, output, session){
+plotlyAgedPyramid <- function(input, output, session,statZone,statHZone,zone_filtre,compare){
 
-  # Exemple de test
-    plot_ly(
-      x = c("giraffes", "orangutans", "monkeys"),
-      y = c(20, 14, 23),
-      name = "SF Zoo",
-      type = "bar"
-    )
-    
-    # # Pyramide des ages
-    # agePyramid <- statZona$t1d_pyramide[statZona$t1e_pyramide$idZonage %in% qpv_filtre()$idZonage,]
-    # 
-    # # Valeur des Hommes négatives
-    # agePyramid$pop[agePyramid$SEXE=="homme"] <- - agePyramid$pop[agePyramid$SEXE=="homme"]
-    # 
-    # # Label pour plotly
-    # agePyramid$abs_pop <- paste(abs(agePyramid$pop)," ",agePyramid$SEXE,"s de ",
-    #                             agePyramid$age," ans",sep="")
-    # 
-    # # Affichage de la pyramide
-    # plot_ly(data = agePyramid,x= ~pop, y=~age,color=~SEXE,colors = c('#fb9a99','#a6cee3')) %>%
-    #   add_bars(orientation = 'h', hoverinfo = 'text', text = ~abs_pop) %>%
-    #   layout(bargap = 0.1, barmode = 'overlay',
-    #          xaxis = list(title = "Population",tickmode = "array"),
-    #          yaxis = list(title = "Age"))
+  idZonage <- as.character(unique(zone_filtre$idZonage))
+  idZonage.com <- as.character(statHZone$tFilo.I.1$com[statHZone$tFilo.I.1$idZonage == idZonage][1])
+  idZonage.dep <- substr(idZonage.com,1,3)
+  
+  # Données sur zonage
+  pyramid.zone <- agePyramid_zone(df.zone = statZone$tRp.II.4,idZonage.p = idZonage)
+  
+  # Affichage de la pyramide
+  p <- plot_ly(data = pyramid.zone,x= ~ part_p, y=~age,color=~sexe,colors = c('#fb9a99','#a6cee3')) %>%
+    add_bars(orientation = 'h', hoverinfo = 'text', text = ~abs_pop,alpha = 0.8) %>%
+    layout(bargap = 0.1, barmode = 'overlay',
+           xaxis = list(title = "Population",tickmode = "array"),
+           yaxis = list(title = "Age")) 
+  
+  # Affichage de la zone de comparaison
+  switch(compare,
+         Departement = {
+           pyramid.dep <- agePyramid_dep(df.zone = dep.stat$tRp.II.4,dep.p = idZonage.dep)
+           p <- add_trace(p = p,data = pyramid.dep,x = ~part_p, y = ~age - 0.5, type = 'scatter', mode = 'lines', name = idZonage.dep,
+                          line = list(shape="vh",color = "#74c476"),
+                          hoverinfo = "text",text = ~abs_pop)
+         },
+         Commune = {
+           pyramid.com <- agePyramid_com(df.zone = com.stat$tRp.II.4,com.p = idZonage.com)
+           p <- add_trace(p = p,data = pyramid.com,x = ~part_p, y = ~age - 0.5, type = 'scatter', mode = 'lines', name = idZonage.com,
+                          line = list(shape="vh",color = "#74c476"),
+                          hoverinfo = "text",text = ~ abs_pop)
+         },
+         HorsZone = {
+           pyramid.hzone<- agePyramid_Hzone(df.zone = statHZone$tRp.II.4,com.p = idZonage.com,idZonage.p = "Hors zonage")
+           p <- add_trace(p = p,data = pyramid.hzone,x = ~part_p, y = ~age - 0.5, type = 'scatter', mode = 'lines', name = "Hors zone",
+                          line = list(shape="vh",color = "#74c476"),
+                          hoverinfo = "text",text = ~ abs_pop)
+         }
+         ,
+         {
+           pyramid.zone2 <- agePyramid_zone(df.zone = statZone$tRp.II.4,idZonage.p = compare)
+           p <- add_trace(p = p,data = pyramid.zone2,x = ~part_p, y = ~age - 0.5, type = 'scatter', mode = 'lines', name = compare,
+                          line = list(shape="vh",color = "#74c476"),
+                          hoverinfo = "text",text = ~ abs_pop)
+         }
+  )
+  p
+  
 }
 
 # I.3 Informations about household

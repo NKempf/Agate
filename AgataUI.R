@@ -112,6 +112,11 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                     infoBoxOutput(outputId = "IB_rev"),
                                     infoBoxOutput(outputId = "IB_chom")
                                   ),
+                                  fluidRow(
+                                    # I.2.2.2 Comparison field
+                                    #-------------------------
+                                           selectInput(inputId = "SI_comp", label = "Zone de comparaison", choices = c("Commune","Departement","HorsZone"),selected = c("Commune"))
+                                  ),
                                   
                                   fluidRow(
                                     # Distribution du niveau de vie
@@ -143,11 +148,11 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                     )
                                   ),
                                   
-                                  # I.2.2.2 Download Dashboard
-                                  #---------------------------
                                   
                                   fluidRow(
-                                    column(3, downloadButton("dl_dash", "Get Dashboard", class="btn-block"))
+                                    # I.2.2.3 Download Dashboard
+                                    #---------------------------
+                                    column(3,downloadButton("dl_dash", "Get Dashboard", class="btn-block"))
                                   )
                           )
                          
@@ -156,7 +161,40 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                  # II. Statistics
                  #-------------------------------------------------------------------------------------------------------------                 
                  tabPanel("Statistiques",value="vis",
-                          titlePanel("To do")
+                          
+                          # Sidebar layout with input and output definitions ----
+                          sidebarLayout(
+                            
+                            # Sidebar panel for inputs ----
+                            sidebarPanel(width = 3,
+                              
+                              # II.1. Zone selection
+                              #---------------------
+                              selectInput("SI_ZoneSelect", "Zone selection",
+                                          choices = c("Commune","Departement","HorsZone","Zone"),
+                                          selected = c("Zone")),
+                              
+                              # II.2. Tab selection
+                              #--------------------
+                              selectInput("SI_TabSelect", "Tab selection",
+                                          choices = c(""),
+                                          selected = c("")),
+                              
+                              # Button
+                              downloadButton(outputId = "DL_StatReport","Download report")
+                              
+                            ),
+                            
+                            # Main panel for displaying outputs ----
+                            mainPanel(width = 9,
+                              DT::dataTableOutput("table")
+                              #tableOutput("table")
+                            )
+                            
+                          )
+                          
+                          
+                          
                           ),
                  
                  # III. Qualité

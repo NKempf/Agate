@@ -9,7 +9,8 @@ server <- function(input, output,session) {
 # 0. Reactive Values
 #----------------------------------------------------------------------------------------------------------------------------
   rv <- reactiveValues(AgateMap=NULL,
-                       statZone=NULL)
+                       statZone=NULL,
+                       statHZone=NULL)
   
 # I. Interactive web map
 #----------------------------------------------------------------------------------------------------------------------------
@@ -29,7 +30,7 @@ server <- function(input, output,session) {
   # I.2. Update leaflet with user map
   #----------------------------------
   observeEvent(rv$AgateMap,{
-    if (!is.null(rv$AgateMap@data$idAgate) & !is.null(rv$AgateMap@data$idAgate.name)) {
+    if (!is.null(rv$AgateMap@data$idZonage) & !is.null(rv$AgateMap@data$idZonage.name)) {
       # Boundary box
       AgateMap.bbox <- as.data.frame(bbox(rv$AgateMap))
       # Update leaflet
@@ -37,7 +38,7 @@ server <- function(input, output,session) {
         fitBounds(lng1 = AgateMap.bbox$min[1],lat1 = AgateMap.bbox$max[2],lng2 = AgateMap.bbox$max[1],lat2 = AgateMap.bbox$min[2]) %>%
         addPolygons(data=rv$AgateMap,opacity = 3,
                     color = "green", stroke = TRUE, weight = 2,
-                    fill = TRUE, fillOpacity = 0.2,popup = ~paste(idAgate.name),layerId = ~paste(idAgate))
+                    fill = TRUE, fillOpacity = 0.2,popup = ~paste(idZonage.name),layerId = ~paste(idZonage))
     }
   })
   # observeEvent(input$file1,{
@@ -117,7 +118,7 @@ server <- function(input, output,session) {
     updateSelectInput(session = session,inputId = "SI_id",choices = lst_var,selected = lst_var[1])
     updateSelectInput(session = session,inputId = "SI_name",choices = lst_var,selected = lst_var[2])
     # open bsmodal
-    toggleModal(session, "bs_importShp", toggle = "toggle")
+    # toggleModal(session, "bs_importShp", toggle = "toggle")
 
   })
   
@@ -125,10 +126,16 @@ server <- function(input, output,session) {
   observeEvent(c(input$SI_id,input$SI_name), {
     if(input$SI_id != "Defaut"){
       rv$AgateMap <- userMap()
-      rv$AgateMap@data$idAgate <- rv$AgateMap@data[,input$SI_id]
-      rv$AgateMap@data$idAgate.name <- rv$AgateMap@data[,input$SI_name]
-      print(rv$AgateMap@data[,c("idAgate","idAgate.name")])
+      rv$AgateMap@data$idZonage <- rv$AgateMap@data[,input$SI_id]
+      rv$AgateMap@data$idZonage.name <- rv$AgateMap@data[,input$SI_name]
     }
+  })
+  
+  # II.4. Update selectInput Comparison field
+  observeEvent(rv$AgateMap, {
+    updateSelectInput(session, "SI_comp", 
+                    choices = c("Commune","Departement","HorsZone",unique(as.character(rv$AgateMap@data$idZonage))),
+                    selected = c("Commune"))
   })
   
 
@@ -141,10 +148,10 @@ server <- function(input, output,session) {
     withProgress(message = "Creation de l'identifiant",style = "notification", value = 0, {
     
     # Creation de la variable zonage
-    zonage <- isolate(rv$AgateMap)
+    zonage <- rv$AgateMap
   
     # Creation de l'identifiant idZonage
-    zonage@data$idZonage <- zonage@data$idAgate
+    zonage@data$idZonage <- zonage@data$idZonage
   
     # Determine pour chaque point dans quel zone il se situe
     incProgress(amount = 0.1,message = "Appariement entre la zone et les points")
@@ -168,13 +175,14 @@ server <- function(input, output,session) {
     
     # Cacul des statistiques
     incProgress(amount = 0.6,message = "Calcul des statistiques")
-    
-    rv$statZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("com","com.lib","idZonage"))
+    rv$statZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("idZonage"))
+    rv$statHZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("com","idZonage"))
 
     })
-    
-    # print(StatZona$tRp.II.2)
 
+    # Closing modal
+    toggleModal(session, modalId = "bs_optad", toggle = "close")    
+    
     # Pop-up indiquant la fin du calcul
     temps <- as.character(round(abs(difftime(t1,Sys.time(), units="secs")),2))
     
@@ -184,6 +192,7 @@ server <- function(input, output,session) {
         session = session, 
         title = "Terminé !", text = paste("Le calcul a été effectué en ",temps," secondes"), type = "success"
       )
+      
     }
   
     #   
@@ -227,12 +236,11 @@ server <- function(input, output,session) {
   
   # IV.0.1 Filtered userdata
   #-------------------------
-  qpv_filtre <- eventReactive(input$mymap_shape_click,{
+  zone_filtre <- eventReactive(input$mymap_shape_click,{
+    # print(input$mymap_shape_click)
 
-    print(input$mymap_shape_click)
-
-    if(is.null(input$mymap_shape_click)) return(NULL)
-    df <- rv$AgateMap@data[rv$AgateMap@data$idAgate == input$mymap_shape_click$id,]
+    if(is.null(rv$AgateMap)) return(NULL)
+    df <- rv$AgateMap@data[rv$AgateMap@data$idZonage == input$mymap_shape_click$id,]
     # df <- qpv_stat@data[qpv_stat@data$CODE_QP == input$mymap_shape_click$id,]
     return(df)
   })
@@ -240,25 +248,31 @@ server <- function(input, output,session) {
   # IV.0.2 Reactive modal title
   #----------------------------
   output$modalTitle <- renderText({ 
-    if(is.null(qpv_filtre())) {return("Informations sur la zone")}
-    paste("Zone : ",qpv_filtre()$idAgate," - ",qpv_filtre()$idAgate.name,sep="") 
+    if(is.null(zone_filtre())) {return("Informations sur la zone")}
+    
+    print(zone_filtre())
+    
+    paste("Zone : ",zone_filtre()$idZonage," - ",rv$AgateMap@data$idZonage.name[rv$AgateMap@data$idZonage == zone_filtre()$idZonage],sep="") 
+    # paste("Zone : ",zone_filtre()$idAgate," - ",zone_filtre()$idAgate.name,sep="") 
     })
 
   # IV.1. Total population infobox
   #-------------------------------
   output$IB_pop <- renderInfoBox({
     infoBox(title = "Population", value =
-              format(round(qpv_filtre()$pop_qpv_p,digits = 0),digits = 9,decimal.mark=",", big.mark=" "),
+              format(round(with(rv$statZone$tRp.I.2 ,popZonage_p[idZonage == zone_filtre()$idZonage]),
+                           digits = 0),digits = 9,decimal.mark=",", big.mark=" "),
             icon = icon("child"),color = "green", fill = TRUE
     )
   })
 
-  # IV.2. Mean income infobox
-  #--------------------------
+  # IV.2. Poverty infobox
+  #----------------------
   output$IB_rev <- renderInfoBox({
-    infoBox(title = "Niveau de vie moyen", value =
-              format(round(qpv_filtre()$nivvie.mean / 12,digits = 0),digits = 9,decimal.mark=",", big.mark=" "),
-            icon = icon("eur"),color = "aqua", fill = TRUE,subtitle = "mensuel"
+    infoBox(title = "Taux  de pauvrete", value =
+              paste(format(round(with(rv$statZone$tFilo.II.1, tx_pauv60.ind.metro[idZonage == zone_filtre()$idZonage]),
+                           digits = 2),digits = 9,decimal.mark=",", big.mark=" "), " %", sep = "" ),
+            icon = icon("hands-helping",lib = "font-awesome"),color = "aqua", fill = TRUE,subtitle = "seuil metro"
     )
   })
 
@@ -266,7 +280,8 @@ server <- function(input, output,session) {
   #------------------------------
   output$IB_chom <- renderInfoBox({
     infoBox(title = "Taux de chomeur", value =
-              paste(format(round(qpv_filtre()$t_chom_15_64,digits = 0),digits = 9,decimal.mark=",", big.mark=" ")," %",sep=""),
+              paste(format(round(with(rv$statZone$tRp.IV.1, part_p[TACT == "chomeur" & idZonage == zone_filtre()$idZonage]),
+                                 digits = 0),digits = 9,decimal.mark=",", big.mark=" ")," %",sep=""),
             icon = icon("industry"),color = "orange", fill = TRUE
     )
   })
@@ -275,13 +290,13 @@ server <- function(input, output,session) {
   #-------------------------------
   # renderPlotly() also understands ggplot2 objects!
   output$plotly1 <- renderPlotly({
-    callModule(plotlyBoxplotIncome,"plotly1")
+    callModule(plotlyBoxplotIncome,"plotly1",rv$statZone,rv$statHZone,zone_filtre(),input$SI_comp)
   })
    
   # IV.5. Pyramide des ages
   #------------------------
   output$plotly2 <- renderPlotly({
-    callModule(plotlyAgedPyramid,"plotly2")
+    callModule(plotlyAgedPyramid,"plotly2",rv$statZone,rv$statHZone,zone_filtre(),input$SI_comp)
   })
   # IV.6 Informations about household
   #----------------------------------
@@ -317,6 +332,110 @@ server <- function(input, output,session) {
   #   #   
   #   # }
   # )
+
+  
+# V. Statistics dataSet
+#--------------------------------------------------------------------------------------------------------------------------------------
+  
+  # V.1. Update Tab selection
+  #--------------------------
+  observeEvent(rv$statZone, {
+    if(!is.null(rv$statZone)){
+      updateSelectInput(session, "SI_TabSelect", 
+                        choices = names(rv$statZone),
+                        selected = names(rv$statZone)[2])
+    }
+  })
+  
+  # V.2 Reactive value for selected dataset
+  #----------------------------------------
+  datasetInput <- reactive({
+    
+    switch(input$SI_ZoneSelect,
+           Commune = {
+             df <- com.stat[[input$SI_TabSelect]]
+           },
+           Departement = {
+             df <- dep.stat[[input$SI_TabSelect]]
+           },
+           HorsZone = {
+             df <- rv$statHZone[[input$SI_TabSelect]]
+           },
+           {
+             df <- rv$statZone[[input$SI_TabSelect]]
+           }
+    )
+    return(df)
+  })
+  
+  # V.3. Display table
+  #-------------------
+  output$table = DT::renderDataTable(
+    datasetInput(),
+    extensions = 'Buttons',
+    options = list(
+      fixedColumns = TRUE,
+      autoWidth = TRUE,
+      ordering = FALSE,
+      dom = 'lBfrtip',
+      buttons = c('copy', I('colvis'))
+    ),
+    class = "display" #if you want to modify via .css
+  )
+  
+  # V.4 Reactive value for report input
+  #------------------------------------
+  reportInput <- reactive({
+    
+    switch(input$SI_ZoneSelect,
+           Commune = {
+             df <- com.stat
+           },
+           Departement = {
+             df <- dep.stat
+           },
+           HorsZone = {
+             df <- rv$statHZone
+           },
+           {
+             df <- rv$statZone
+           }
+    )
+    return(df)
+  })
+  
+  # V.5. Download report
+  #---------------------
+  output$DL_StatReport <- downloadHandler(
+    filename = function() { paste("Excelfile.xlsx")},
+    
+    content = function(file){
+      # example_plot=plot(1:10,1:10)
+      # Results_Workbook <- createWorkbook(type='xlsx')
+      # # A=as.data.frame(matrix(2,2,2))
+      # sheet.1 <- createSheet(Results_Workbook, sheetName = "Data frame")
+      # addDataFrame(mtcars, sheet=sheet.1, startRow=4, 
+      #              startColumn=2,row.names=FALSE)
+      # setColumnWidth(sheet.1,colIndex=c(1:100),colWidth=30)
+      # sheet.2 <- createSheet(Results_Workbook, sheetName = "Plot")
+      # addDataFrame(rock, sheet=sheet.2, startRow=4, 
+      #              startColumn=2,row.names=FALSE)
+      # 
+      # # ggsave("plot",example_plot, device="emf")
+      # # addImage(file = "plot.emf", sheet = sheet.2, scale = 55,
+      # #          startRow = 4, startColumn = 4)
+      # saveWorkbook(Results_Workbook,file)
+    } 
+  )
   
   
-}
+  
+  
+  
+  
+  
+  
+  
+  
+  
+} # End Server

@@ -23,6 +23,7 @@ library(rgdal) # Input shapefile
 library(rgeos) # Map tools
 library(tidyverse) # Tidy data
 library(plotly) # Interactive graphics
+library(xlsx) # Export data in Excel
 
 # II. Data
 #----------------------------------------------------------------------------------------------------------------------------------
@@ -32,6 +33,8 @@ library(plotly) # Interactive graphics
 source ("Other programs/Fake data/Agate - Fake data fct.R")
 source("Other programs/Zonage/Agate - Cartographie fct.R")
 source("Other programs/StatZonage/Agate - Statistics Zonage_v3.R")
+source("Other programs/Plotly/Agate - plotly graphes fonctions_v3.R")
+# source("Other programs/Export Report/Agate - excel report.R")
 
 # II.1. Fake data
 #----------------
@@ -57,4 +60,5 @@ source("AgataSERVER.R",encoding = "UTF-8")
 # V. Run the application 
 #----------------------------------------------------------------------------------------------------------------------------------
 shinyApp(ui = ui, server = server)
+
 
