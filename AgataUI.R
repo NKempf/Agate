@@ -100,6 +100,13 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                           # tags$head(tags$style("#boxPopUp1 .modal-dialog{ width:1000px}")),
                           # tags$head(tags$style("#boxPopUp1 .modal-body{ min-height:700px}")),
                           tags$head(tags$style("#boxPopUp1 .modal-footer{ display:none}")), # Remove BS modal footer
+                          tags$head(tags$style(HTML('
+
+                                                    .modal-lg {
+                                                    width: 80%;
+                                                    
+                                                    }
+                                                    '))), # Increase modal size
                           bsModal('boxPopUp1', textOutput("modalTitle"),'test',size = "large",
                                   # Add CSS files : use infobox from shinydashboard package into a shinyApp
                                   includeCSS(path = "www/AdminLTE.css"),
