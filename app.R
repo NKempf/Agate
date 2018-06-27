@@ -23,17 +23,18 @@ library(rgdal) # Input shapefile
 library(rgeos) # Map tools
 library(tidyverse) # Tidy data
 library(plotly) # Interactive graphics
-library(xlsx) # Export data in Excel
+library(openxlsx) # Export data in Excel
 
 # II. Data
 #----------------------------------------------------------------------------------------------------------------------------------
 
 # II. 1 Functions
 #----------------
-source ("Other programs/Fake data/Agate - Fake data fct.R")
-source("Other programs/Zonage/Agate - Cartographie fct.R")
-source("Other programs/StatZonage/Agate - Statistics Zonage_v3.R")
-source("Other programs/Plotly/Agate - plotly graphes fonctions_v3.R")
+source ("Other programs/Fake data/Agate - Fake data fct.R",encoding = "UTF-8")
+source("Other programs/Zonage/Agate - Cartographie fct.R",encoding = "UTF-8")
+source("Other programs/Export Report/Agate - Export Excel fct.R",encoding = "UTF-8")
+source("Other programs/StatZonage/Agate - Statistics Zonage_v4.R",encoding = "UTF-8")
+source("Other programs/Plotly/Agate - plotly graphes fonctions_v3.R",encoding = "UTF-8")
 # source("Other programs/Export Report/Agate - excel report.R")
 
 # II.1. Fake data

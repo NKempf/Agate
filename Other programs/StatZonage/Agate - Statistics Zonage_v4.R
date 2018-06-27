@@ -2,13 +2,14 @@
 #                 AppliShiny - Fonction calcul de statistiques selon un zonage                                                   #
 #--------------------------------------------------------------------------------------------------------------------------------#
 
-# MAJ : 30.05.2018
+# MAJ : 26.06.2018
 
 # Use Dplyr language into functions : https://dplyr.tidyverse.org/articles/programming.html#different-data-sets
 
 # Nicolas Kempf
 
 statistics_zone <- function(rpi,rpl,filo,group_var){
+  
   
 #----------------------------------------------------------------------------------------------------------------------------------------------#
 #                                             A. Recensement de la population                                                                  #
@@ -19,7 +20,7 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
   
   # I.1. Population communale, zonage et hors zonage par commune
   #-------------------------------------------------------------
-  tRp.I.1 <- NA
+  tRp.I.1 <- NULL
   
   if(!is.null(rpi$idZonage)){
     tmp <- rpi %>%
@@ -340,6 +341,68 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
 #                                             VI. Synthèse des statistiques                                                                    #
 #----------------------------------------------------------------------------------------------------------------------------------------------#
   
+  # VI.1 Synthèse des indicateurs au niveau zonage
+  #------------------------------------------------
+  
+  # VI.1. 
+  # tSynth.I.1 <- tRp.II.1 %>% 
+  #   select(-freq,-freq_p,-part_np) %>% 
+  #   spread(age,part_p)
+  # 
+  # tSynth.I.2 <- tRp.II.2 %>% 
+  #   select(-freq,-freq_p,-part_np) %>% 
+  #   spread(age,part_p)  
+  # 
+  # tSynth.I.3 <- tRp.II.3 %>% 
+  #   select(-freq,-freq_p,-part_np) %>% 
+  #   spread(SEXE,part_p) 
+  # 
+  # tSynth.I.4 <- tRp.II.4 %>% 
+  #   select(-freq,-freq_p,-part_np) %>% 
+  #   spread(SEXE,part_p)
+  
+  
+  # VI.2. Libellé des tableaux
+  #---------------------------
+  # Libellé des tableaux
+  tab_lib <- c(tRp.I.1 = "Population communale",
+               tRp.I.2 = "Population par zone",
+               tRp.II.1 = "Part des moins de 20 ans et des 20 à 64 ans",
+               tRp.II.2 = "Part des 60 ans et plus",
+               tRp.II.3 = "Part des femmes",
+               tRp.II.4 = "Pyramide des ages par sexe et par zonage",
+               tRp.II.5 = "Pyramide par sexe, zonage et tranche d'age",
+               tRp.III.1 = "Taux de scolarisation des 2 à 5 ans et des 18 à 25 ans",
+               tRp.III.2 = "Part de non scolarisation de plus de 15 ans sans diplome",
+               tRp.III.3 = "Taux de non scolarisation des 6 - 14 ans",
+               tRp.III.4 = "Taux de décrocheur : jeune non scolarisé de 16 - 25 ans sans diplome",
+               tRp.IV.1 = "Taux de chomage pour les 15 - 64 ans (parmi les actifs)",
+               tRp.IV.2 = "Taux d'actif  - d'inactif pour les 15 - 64 ans",
+               tRp.IV.3 = "Taux d'actif selon le sexe pour les 15 - 64 ans", 
+               tRp.IV.4 = "Part des actifs de 15-64 ans cadres et professions intermédiaire",
+               tRp.V.1 = "Part des etrangers",
+               tRp.V.2 = "Part des immigres",
+               tRp.VI.1 = "Part de logements selon la catégorie de logement",
+               tRp.VI.2 = "Part des appartements",
+               tRp.VI.3 = "Part des locataires",
+               tRp.VI.4 = "Part des locatairesHlm",
+               tRp.VII.1 = "Part des résidences principales de plus de 100m²",
+               tRp.VII.2 = "Part des résidences principales en HLM",
+               tRp.VII.3 = "Part des résidences principales sans eau chaude",
+               tRp.VII.4 = "Part des résidences principales sans bain ni douche",
+               tRp.VII.5 = "Part des résidences principales sans tout a l'egout",
+               tFilo.I.1 = "Distribution du niveau de vie selon le zonage",
+               tFilo.I.2 = "Distribution du niveau de vie selon le type de ménage et le zonage",
+               tFilo.I.3 = "Part des ménages selon le type de ménage et le zonage",
+               tFilo.I.4 = "Part des ménages selon le décile de niveau de vie métro et le zonage",
+               tFilo.II.1 = "Taux de pauvreté selon le seuil métropolitain et départemental",
+               tFilo.II.2 = "Courbe de lorenz"
+  )
+  
+  
+#----------------------------------------------------------------------------------------------------------------------------------------------#
+#                                             VII. Listes de tableaux finaux                                                                   #
+#----------------------------------------------------------------------------------------------------------------------------------------------#
   list_tab <- list(tRp.I.1 = tRp.I.1,
                    tRp.I.2 = tRp.I.2,
                    tRp.II.1 = tRp.II.1,
@@ -361,59 +424,19 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
                    tRp.VI.2 = tRp.VI.2,
                    tRp.VI.3 = tRp.VI.3,
                    tRp.VI.4 = tRp.VI.4,
+                   tRp.VII.1 = tRp.VII.1,
+                   tRp.VII.2 = tRp.VII.2,
+                   tRp.VII.3 = tRp.VII.3,
+                   tRp.VII.4 = tRp.VII.4,
+                   tRp.VII.5 = tRp.VII.5,
                    tFilo.I.1 = tFilo.I.1,
                    tFilo.I.2 = tFilo.I.2,
                    tFilo.I.3 = tFilo.I.3,
                    tFilo.I.4 = tFilo.I.4,
                    tFilo.II.1 = tFilo.II.1,
-                   tFilo.II.2 = tFilo.II.2
-  )
-  
-  
-  
-  # VI.1 Synthèse des indicateurs au niveau zonage
-  #------------------------------------------------
-  
-  # Synthèse des données
-  #---------------------
-  # stat_synthese <- function(df){
-  #   # var <- enquo(var)
-  #   # df %>% 
-  #   #   ungroup() %>% 
-  #   #   select(com,idZonage, !! var,part_p) %>% 
-  #   #   spread(key = !! var,value = part_p)
-  #   df <- df[,colnames(df)[c(1,3,4,8)]]
-  #   spread(df,key = colnames(df)[3],value = colnames(df)[4])
-  # }
-  # StatZona.reduit <- StatZona[c("tRp.II.1","tRp.II.3","tRp.III.2","tRp.III.3","tRp.III.4","tRp.IV.1","tRp.IV.2","tRp.IV.4","tRp.V.1","tRp.V.2")]
-  # StatZona.synthese <- lapply(StatZona.reduit, stat_synthese)
-  # StatZona.synthese <- Reduce(function(...) merge(..., by = c('com', 'idZonage')), StatZona.synthese) 
-  
-  
-  
-  # VI.1. 
-  # tSynth.I.1 <- tRp.II.1 %>% 
-  #   select(-freq,-freq_p,-part_np) %>% 
-  #   spread(age,part_p)
-  # 
-  # tSynth.I.2 <- tRp.II.2 %>% 
-  #   select(-freq,-freq_p,-part_np) %>% 
-  #   spread(age,part_p)  
-  # 
-  # tSynth.I.3 <- tRp.II.3 %>% 
-  #   select(-freq,-freq_p,-part_np) %>% 
-  #   spread(SEXE,part_p) 
-  # 
-  # tSynth.I.4 <- tRp.II.4 %>% 
-  #   select(-freq,-freq_p,-part_np) %>% 
-  #   spread(SEXE,part_p)
-  
-  
-  
-#----------------------------------------------------------------------------------------------------------------------------------------------#
-#                                             VII. Listes de tableaux finaux                                                                   #
-#----------------------------------------------------------------------------------------------------------------------------------------------#
- 
+                   tFilo.II.2 = tFilo.II.2,
+                   tab_lib = tab_lib
+                   )
   
 return(list_tab)  
   

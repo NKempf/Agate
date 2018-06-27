@@ -176,7 +176,7 @@ server <- function(input, output,session) {
     # Cacul des statistiques
     incProgress(amount = 0.6,message = "Calcul des statistiques")
     rv$statZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("idZonage"))
-    rv$statHZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("com","idZonage"))
+    rv$statHZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("com","com.lib","idZonage"))
 
     })
 
@@ -343,6 +343,7 @@ server <- function(input, output,session) {
     if(!is.null(rv$statZone)){
       updateSelectInput(session, "SI_TabSelect", 
                         choices = names(rv$statZone),
+                        label = rv$statZone$tab_lib[names(rv$statZone$tab_lib) %in% names(rv$statZone)],
                         selected = names(rv$statZone)[2])
     }
   })
@@ -407,7 +408,7 @@ server <- function(input, output,session) {
   # V.5. Download report
   #---------------------
   output$DL_StatReport <- downloadHandler(
-    filename = function() { paste("Excelfile.xlsx")},
+    filename = function() { paste(input$SI_ZoneSelect,"_Excelfile.xlsx",sep="")},
     
     content = function(file){
       # example_plot=plot(1:10,1:10)
@@ -425,6 +426,8 @@ server <- function(input, output,session) {
       # # addImage(file = "plot.emf", sheet = sheet.2, scale = 55,
       # #          startRow = 4, startColumn = 4)
       # saveWorkbook(Results_Workbook,file)
+      
+      report_stat_zone(tab_list = reportInput(),file = file)
     } 
   )
   
