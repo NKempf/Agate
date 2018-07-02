@@ -1,0 +1,101 @@
+---
+title: "Agate"
+author: Nicolas Kempf
+date: "4 juillet 2018"
+output:
+  revealjs::revealjs_presentation:
+    theme: sky
+    highlight: pygments
+    center: true
+    transition: slide
+    reveal_options:
+      slideNumber: true
+      previewLinks: true
+---
+
+## 
+
+Application en Guyane et aux Antilles de sTatistiques infracommunalEs
+
+## Objectifs
+
+- Eclairer le débat publique sur n'importe quelle zone aux Antilles et en Guyane. 
+- Simplifier l'utilisation des données géolocalisées
+- Démonstation des possibilités de R 
+
+## Un peu d'histoire
+
+Il y a deux ans le SED de la DIRAG a développé un ensemble d'outils visant à exploiter les données géolocalisées du recensement de la population aux Antilles-Guyane. Ces outils spécilisés sur la zone des quartiers prioritaires de la politique de la ville sont utilisables en ligne de commande R. La pratique de ce langage étant encore marginale au sein des agents ainsi que la difficulté de déploiement ont freiné leur adoption au sein du SED. 
+
+Agate est une réponse à ces difficultés. Elle généralise ces outils sur n'importe quelle zone. De plus, elle simplifie l'accès aux données géolocalisées via une interface conviviale et un accès facilité. 
+
+## Démonstration
+
+## A qui s'adresse cette application
+
+- les agents de l'UED pour du conseil et expertise au plus proche des APR
+- les agents du DET pour une aide à la réalisation d'études
+
+## Déploiement
+
+Actuellement,
+
+- Application sur poste en local
+- Nécessite une installation R (3.5.0) et Rstudio (1.2.679)
+
+Prochainement,
+
+- Application disponible via un navigateur web 
+- Déploiement sur le server Rshiny de l'Insee (demande en cours)
+
+## Fonctionnalitées actuelles
+
+- Import d'une carte au format shapeFile 
+- Indicateurs statistiques issus du RP (2013 et 2014) et de filosofi
+- Visualisation d'un tableau de bord spécifique à chaque zone
+- Comparaison avec un autre zonage
+- Exploration des données détaillées sur plusieurs zones (départements, communes, zones, hors zones)
+- Export des données détaillées au format xlsx
+
+## Fonctionnalitées envisagées
+
+- Qualité des données du R dans chaque zone (exploitation des programmes développés par Lionel Delta) (80 %)
+- Gestion du secret statistique primaire et secondaire (plusieurs packages R existent) (0 %)
+- Développer de nouveaux indicateurs statistiques à partir du RP et de Filosofi (Indice de gini ?) (10 %)
+- Intégrer d'autres sources géolocalisées (BPE, FIDELI, CAF) (10 % )
+- Developper de nouveaux graphiques intéractifs (par exempl : courbe de Lorenz ?) (50 %)
+- Carroyage dans la zone et ses alentours (utlisation du package btb du psar AU) (20 %)
+- Export du dashboard au format HTML (70 %)
+- Export des tables de passage (90 %)
+- Documentation en Rmarkdown (25 %)
+- Tutoriel interactif (0 %)
+
+## Besoins actuels
+
+- Tester l'application auprès des utilisateurs potentiels.
+
+- Aide pour finaliser la demande d'accès un espace sur le serveur Rshiny 
+
+## Autres projets potentiels
+
+Deux autres outils (en R) attendent d'être simplifiés pour une diffusion aux UED
+
+- Distancier DIRAG : calcul le temps de trajet pour chaque habitation du RIL et un équipement (utilisé pour le dossier sur l'accès à la médecine de ville et l'accès aux services)
+
+- Indicateurs démographiques (stage de Diane Delver-Custos) issus du RP et des fichiers d'état-civil.
+
+## Développements futurs
+
+Agate vise à montrer les possibilités offertes par R, notamment la visualisation, l'interactivité et la convivialité. Ce langage nous permet d'élargir l'offre auprès des partenaires. Nous pourrions proposer en plus des études et des tableaux que nous fournissons actuellement des outils dynamiques et intéractifs permettant de valoriser nos analyses et nos données. 
+
+
+
+Grâce à une communauté de développeurs dynamique, R dispose des dernières avancées technologiques (notamment la visualisation intéractive et l'applicatif web). Le maître mot de cette communauté est la convivialité et l'intéractivité. Dans ce contexte, nous pourrions réfléchir à élargir notre offre auprès des partenaires par le developpement/livraison de mini-application qu'ils pourraient utiliser eux-même.  
+
+
+
+## Merci de votre attention.
+
+Des questions ?
+
+
