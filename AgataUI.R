@@ -194,12 +194,18 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                             
                             # Main panel for displaying outputs ----
                             mainPanel(width = 9,
-                              DT::dataTableOutput("table")
-                              #tableOutput("table")
+                                      textOutput("TO_titleTab"),
+                                      tags$head(tags$style("#TO_titleTab{font-size: 30px;
+                                 font-style: bold;
+                                 }"
+                                      )
+                                      ), # Title text style
+                                      
+                                      DT::dataTableOutput("table")
+                                      #tableOutput("table")
                             )
                             
                           )
-                          
                           
                           
                           ),

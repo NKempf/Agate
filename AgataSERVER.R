@@ -342,9 +342,9 @@ server <- function(input, output,session) {
   observeEvent(rv$statZone, {
     if(!is.null(rv$statZone)){
       updateSelectInput(session, "SI_TabSelect", 
-                        choices = names(rv$statZone),
-                        label = rv$statZone$tab_lib[names(rv$statZone$tab_lib) %in% names(rv$statZone)],
-                        selected = names(rv$statZone)[2])
+                        choices = rv$statZone$tab_lib,
+                        # label = rv$statZone$tab_lib[names(rv$statZone$tab_lib) %in% names(rv$statZone)],
+                        selected = rv$statZone$tab_lib[2])
     }
   })
   
@@ -352,21 +352,30 @@ server <- function(input, output,session) {
   #----------------------------------------
   datasetInput <- reactive({
     
+    tab.select <- names(rv$statZone)[rv$statZone$tab_lib == input$SI_TabSelect]
+    
     switch(input$SI_ZoneSelect,
            Commune = {
-             df <- com.stat[[input$SI_TabSelect]]
+             df <- com.stat[[tab.select]]
            },
            Departement = {
-             df <- dep.stat[[input$SI_TabSelect]]
+             df <- dep.stat[[tab.select]]
            },
            HorsZone = {
-             df <- rv$statHZone[[input$SI_TabSelect]]
+             df <- rv$statHZone[[tab.select]]
            },
            {
-             df <- rv$statZone[[input$SI_TabSelect]]
+             df <- rv$statZone[[tab.select]]
            }
     )
     return(df)
+  })
+  
+  # V.3. Reactive title
+  #--------------------
+  output$TO_titleTab <- renderText({ 
+    # paste("Titre : ", input$SI_TabSelect)
+    input$SI_TabSelect
   })
   
   # V.3. Display table
@@ -402,6 +411,11 @@ server <- function(input, output,session) {
              df <- rv$statZone
            }
     )
+    
+    print(df[1])
+    print(names(df))
+    
+    
     return(df)
   })
   

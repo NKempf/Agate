@@ -2,7 +2,7 @@
 #                                             Agate - Regional statistics                                                   #
 #---------------------------------------------------------------------------------------------------------------------------#
 
-# 20.06.2018
+# 03.07.2018
 
 # Nicolas Kempf
 
@@ -14,9 +14,10 @@ library(tidyverse) # transform data
 
 # Fonctions utiles
 #-----------------
-source ("Other programs/Fake data/Agate - Fake data fct.R")
+source ("Other programs/Fake data/Agate - Fake data fct.R",encoding = "UTF-8")
 # source("Other programs/Zonage/Agate - Cartographie fct.R")
-source("Other programs/StatZonage/Agate - Statistics Zonage_v3.R")
+source("Other programs/StatZonage/Agate - Statistics Zonage_v4.R",encoding = "UTF-8")
+source("Other programs/Export Report/Agate - Export Excel fct.R",encoding = "UTF-8")
 
 # I. Import des bases
 #-------------------------------------------------------------------------------------------------
@@ -46,3 +47,10 @@ com.stat <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("com",
 
 # Enregistrement en RData
 save(dep.stat,com.stat,file="Data/Stats/Region and cities/region_stat.RData")
+
+
+# Export en Excel
+report_stat_zone(tab_list = dep.stat,file = "Output/depReport.xlsx")
+
+
+

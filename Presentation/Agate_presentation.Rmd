@@ -36,6 +36,14 @@ Agate est une réponse à ces difficultés. Elle généralise ces outils sur n'i
 - les agents de l'UED pour du conseil et expertise au plus proche des APR
 - les agents du DET pour une aide à la réalisation d'études
 
+## Ecosystème de développement
+
+- Maintenance des sources
+- Organisation du code
+- Bonnes pratiques
+- Travail collaboratif : git + github
+
+
 ## Déploiement
 
 Actuellement,
