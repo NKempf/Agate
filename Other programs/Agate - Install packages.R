@@ -54,7 +54,9 @@ install.packages("devtools")
 library(devtools)
 devtools::install_github("ropensci/plotly")
 
-
+# openxlsx : export report excel
+#-------------------------------
+install.packages("openxlsx")
 
 
 
