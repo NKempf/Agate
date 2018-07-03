@@ -58,6 +58,10 @@ devtools::install_github("ropensci/plotly")
 #-------------------------------
 install.packages("openxlsx")
 
+# DT : Shiny table
+#-----------------
+install.packages("DT")
+
 
 
 
