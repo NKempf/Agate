@@ -7,12 +7,13 @@
 # Nicolas Kempf
 
 # Répertoire d'installation des packages
-.libPaths("Packages")
+# .libPaths("../Server RShiny/Agate packages R3_3_3")
+
+# debug(utils:::unpackPkgZip)
 
 # Shiny : Graphic web interface
 #------------------------------
-install.packages("later")
-install.packages("shiny")
+install.packages("shiny",type="binary")
 
 # shinyBS : Pop-up windows
 #-------------------------
