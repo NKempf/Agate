@@ -10,6 +10,7 @@
 
 # https://github.com/daattali/timevis
 # https://www.w3schools.com/css/css_border.asp
+# https://clrs.cc/
 
 # Packages nécessaires
 #---------------------
