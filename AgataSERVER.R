@@ -155,16 +155,42 @@ server <- function(input, output,session) {
   
     # Determine pour chaque point dans quel zone il se situe
     incProgress(amount = 0.1,message = "Appariement entre la zone et les points")
+    pts.sp <- zonaPts(pts.sp = ril,zonage = zonage)
     
-    pts.sp <- zonaPts(pts.sp = pts.fake,zonage = zonage)
     
+    # I. Traitement cartographique avec les vraies données
+    #-----------------------------------------------------
+    incProgress(amount = 0.4,message = "Ajout des données du RP")
+    
+    rpl <- left_join(rpl,pts.sp@data[,c("idx","idZonage")],"idx") %>% 
+      mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
+    rpi <- left_join(rpi,pts.sp@data[,c("idx","idZonage")], "idx") %>% 
+      mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
+    
+  
+    incProgress(amount = 0.6,message = "Traitement des donnees fiscales")
+  
+    filo.sp <- SpatialPointsDataFrame(coords = filo[,c("x","y")],data = filo,proj4string = CRS("+init=epsg:3857"))
+    filo.sp <- zonaPts(pts.sp = filo.sp,zonage = zonage)
+    filo <- filo.sp@data
+    filo <- left_join(filo,data.frame(unique(rpl[,c("com","com.lib")])),"com") %>% 
+      mutate(dep = substr(com,1,3),
+             idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
+    rm(filo.sp)
+    
+    # II. Special Fake data
+    #----------------------
+
     # Faking data
-    incProgress(amount = 0.4,message = "Ajout des données fictives")
+    # incProgress(amount = 0.4,message = "Ajout des données fictives")
+    # 
+    # lst_var <- c("idx","idZonage","dep","com","com.lib")
+    # rpi <- cbind(pts.sp@data[,lst_var],faking_data(rpi,nrow(pts.sp)))
+    # rpl <- cbind(pts.sp@data[,lst_var],faking_data(rpl,nrow(pts.sp)))
+    # filo <- cbind(pts.sp@data[,lst_var],faking_data(filo,nrow(pts.sp)))
     
-    lst_var <- c("idx","idZonage","dep","com","com.lib")
-    rpi <- cbind(pts.sp@data[,lst_var],faking_data(rpi,nrow(pts.sp)))
-    rpl <- cbind(pts.sp@data[,lst_var],faking_data(rpl,nrow(pts.sp)))
-    filo <- cbind(pts.sp@data[,lst_var],faking_data(filo,nrow(pts.sp)))
+    # III. Calcul statistique
+    #------------------------
     
     # Attention placer ce bout de code ici (pas avant car sinon le temps de calcul explose)
     typmen.label <- c("famille monoparentale","couple sans enfant","couple avec enfant(s)","menage complexe",
@@ -174,7 +200,7 @@ server <- function(input, output,session) {
       mutate(typmenR.lib = factor(typmenR,labels = typmen.label))
     
     # Cacul des statistiques
-    incProgress(amount = 0.6,message = "Calcul des statistiques")
+    incProgress(amount = 0.8,message = "Calcul des statistiques")
     rv$statZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("idZonage"))
     rv$statHZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("com","com.lib","idZonage"))
 

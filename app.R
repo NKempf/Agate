@@ -13,6 +13,7 @@
 
 # I. Packages
 #-----------------------------------------------------------------------------------------------------------------------------------
+# .libPaths("../Server RShiny/Agate packages R3_3_3")
 library(shiny) # Graphic web interface
 library(shinyBS) # Pop-up windows
 library(shinyjs) # Mask buttons/elements on graphic interface
@@ -37,18 +38,31 @@ source("Other programs/StatZonage/Agate - Statistics Zonage_v4.R",encoding = "UT
 source("Other programs/Plotly/Agate - plotly graphes fonctions_v3.R",encoding = "UTF-8")
 # source("Other programs/Export Report/Agate - excel report.R")
 
-# II.1. Fake data
+# II.2. Fake data
 #----------------
-load("Data/fakePts.RData") # fake position
-load("Data/fakeData.Rdata") # fake data base
-load("Data/Stats/Region and cities/region_stat.RData") # Fake region and cities stat
+# load("Data/fakePts.RData") # fake position
+# load("Data/fakeData.Rdata") # fake data base
+# load("Data/Stats/Region and cities/region_stat.RData") # Fake region and cities stat
+# 
+# # Penser à modifier SERVER si on utilise les fakedata
+# ril <- pts.fake
 
-  # II.1. QPV (fake data)
-  #----------------------
-  # load("Data/QPV/qpvFake.RData")
-  # qpv_stat <- qpv_stat.fake
-  # qpv_stat@data$idZonage <- qpv_stat@data$CODE_QP
-  # rm(qpv_stat.fake)
+# II.3. Real Data
+#----------------
+load("Data/Ril/ril15.RData")
+load("Data/Rp/rp14.RData")
+load("Data/Filosofi/filo14.Rdata")
+load("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData")
+
+# Parameters
+ril <- rilhab15
+rpi <- rp14i
+rpl <- rp14l
+filo <- filo14.disp
+com.stat <- statCom_rp14_filo14
+dep.stat <- statReg_rp14_filo14
+
+rm(rilhab15,rp14i,rp14l,Rp14dico,filo14.disp,filo14.disp.dico,statCom_rp14_filo14,statReg_rp14_filo14)
 
 # III. Graphic web interface
 #----------------------------------------------------------------------------------------------------------------------------------

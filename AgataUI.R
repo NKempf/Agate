@@ -223,12 +223,18 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                              tabPanel("Ameliorarion",
                                       includeHTML("Html pages/AmeliorationAppli/Amelioration.html")
                              ),
-                             tabPanel("Maintenance Agate",
-                                      includeHTML("Html pages/Maintenance/MaintenanceAgate.html")
-                             ),
-                             tabPanel("Maintenance des reseaux routiers",
-                                      includeHTML("Html pages/Maintenance/MaintenanceResRoute.html")
-                             ),
+                             # tabPanel("Maintenance Agate",
+                             #          includeHTML("Html pages/Maintenance/MaintenanceAgate.html")
+                             # ),
+                             # tabPanel("Maintenance des reseaux routiers",
+                             #          includeHTML("Html pages/Maintenance/MaintenanceResRoute.html")
+                             # ),
+                             # tabPanel("Qualité de l'appariement RIL_RP",
+                             #          includeHTML("Html pages/Qualite appariement RIL RP/QualiteAppariement.html")
+                             # ),
+                             # tabPanel("Qualité du RP",
+                             #          includeHTML("Html pages/Qualite du RP/QualiteRp.html")
+                             # ),
                              tabPanel("Remerciements",
                                       includeHTML("Html pages/Remerciements/Remerciements.html")
                              )

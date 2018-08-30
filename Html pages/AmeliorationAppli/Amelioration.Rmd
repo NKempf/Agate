@@ -22,55 +22,35 @@ Liste des améliorations à apporter à l'application
 
 ## Carte
 
-Brancher l'import de la carte
-
-Brancher le calcul de statistiques
-
-Faire des tests avec différentes bases
 
 Faire des cartes en geojson <http://geojson.io>
 
 ## Tableau de bord
-Boxplot avec le niveau de quartier, le niveau de vie de la commune et le niveau de vie du département (Fait le 17.02.2018)
 
 Faire un diagramme en bar avec les comparaisons avec la commune et les zones hors zonage
 
-Faire une pyramide des ages
-
 Penser à des autres courbes
 
-Export des données en Excel et en flexdashboard (Fait le 23.02.2018)
+Export en flexdashboard
 
 Ajouter la source à chaque graphique
 
-Camembert : parametrer une seule couleur pour chaque catégorie
 
 ## Flexdashboard
 
 Afficher le nom et l'identifiant du zonage en titre automatique
 
 
-
-
-
 ## Indicateurs statistiques
-
-Ajouter les noms du zonage
 
 Utiliser les travaux de Lionel pour l'estimation de la qualité
 
-Calculer les indicateurs de la commune (Fait le 17.02.2018)
-
-Calculer les indicateurs de la commune hors qpv (Fait le 17.02.2018) Revoir le mode de calcul
 
 Calculer des indicateurs statistiques issus du RP non calculé pour l'instant
 Indicateurs niveau individus : niveau de diplome
 Indicateurs niveau logement : Nombre d'occupant du logement, Presence d'une climatisation, presence d'electricite,
 Sanitaire, presence d'une voiture, presence d'un deux roues, presence d'un chaufeau, case traditionnelle, habitation de fortune, presence d'une douche
 
-Possibilité de comparer avec un autre qpv
-
-Ajouter un autre onglet au rapport. Afficher un tableau contenant les statistiques par thématique pour chaque zonage
 
 Faire un tutoriel en rmarkdown pour montrer l'utilisation des fonctions developpées.
 
@@ -79,8 +59,6 @@ Faire un tutoriel en rmarkdown pour montrer l'utilisation des fonctions developp
 
 Penser à faire un tutoriel d'utilisation du distancier en rmarkdown
 
-
-# III. SOMAIR
 
 
 
