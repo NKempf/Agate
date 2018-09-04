@@ -22,6 +22,12 @@ library(shinyWidgets) # Widgets supplementaires
 # Data
 load("Data/Gantt/gantt.RData")
 
+groups <- data.frame(
+  id = c("prot","app","miniApp"),
+  content = c("Prototype","Agate","Mini Agate")
+)
+
+
 templateNK <- function(tache, equipe, pourcent) {
   sprintf(    
     '<table><tbody>
@@ -38,7 +44,7 @@ templateNK <- function(tache, equipe, pourcent) {
 # I. Interface graphique
 #---------------------------------------------------------------------------------------------------------------------------------------
 ui <- fluidPage(
-  title = "Fully interactive",
+  title = "Agate gantt",
   
   fluidRow(
     column(

@@ -32,8 +32,8 @@ templateNK <- function(tache, equipe, pourcent) {
 # I.2. Grandes familles de tâches
 #--------------------------------
 groups <- data.frame(
-  id = c("prot","app"),
-  content = c("Prototype","Agate")
+  id = c("prot","app","miniApp"),
+  content = c("Prototype","Agate","Mini Agate")
 )
 
 # I.3. Liste des tâches
