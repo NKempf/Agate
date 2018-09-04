@@ -1,0 +1,226 @@
+---
+title: "Agate - Note de cadrage"
+author: "Nicolas Kempf"
+date: "03/09/2018"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(timevis,quietly = T,warn.conflicts = F,verbose = F)
+library(DT,quietly = T,warn.conflicts = F,verbose = F)
+load("../../Data/Gantt/gantt.RData")
+
+```
+
+AGATE : Application en Guyane et aux Antilles de sTatistiques infracommunalEs
+
+# Contexte et objectif
+
+## Contexte
+
+Les communes des départements des Antilles-Guyanes sont très étendues comparativement aux standards metropolitains. Elles sont caractérisées par une population plus importante près des bourgs (ou lieu-dit) et moins dense entre deux. Dans ces conditions, l'analyse statistique communes par communes est peu pertinente notamment en Guyane où au sein d'une même commune, deux bourgs peuvent être très éloignés. Les autorités publiques locales manisfestent donc régulièrement le besoin de statistiques à l'intérieur des communes. 
+
+Depuis peu, l'Insee dispose de données géolocalisées caractérisant les logements et leurs occupants, le niveau de vie et la pauvreté, les équipements (santé, commerces, école, etc.). Afin de les exploiter, le SED de la DIRAG a développé deux outils permettant de caractériser :
+
+* des zones infracommunales via une série d'indicateurs statistique sur les logements et leurs occupants. Une premiere exploitation a été réalisée pour caractériser les quartiers prioritaires de la politique de la ville. 
+* l'accès à des équipements au sein des communes. Un dossier sur l'accès à la médecine de ville a été publié en novembre 2017. 
+
+Ces outils, développés en R, restent difficiles à utiliser en raison de la pratique encore marginale de R au sein de l'Institut. Une simplication à destination des agents du SED est donc nécessaire. 
+
+
+## Problématique
+
+Comment mieux éclairer le débat public grâce à l'utilisation de données géolocalisées ? 
+Comment susciter de nouveaux partenariats d'action régionale ?
+
+## Principaux enjeux et objectifs du projet
+
+* Accroître les capacités de la DIRAG en matière de conseil et expertise
+* Généralisation des outils
+* Simplification de l'utilisation à des utilisateurs non initié à R
+* Estimation de la qualité des données dans la zone
+* Définition des principaux indicateurs statistiques
+* Synthèse des résultats sous forme de tableaux de bord exportable en HTML
+* Comparaison des données entre les zones
+* Exploration des données détails
+* Sortie de tableaux dans des classeurs Calc
+
+# Le projet Agate
+
+## Description
+
+Agate est une application développée en Rshiny à destination des agents du SED et des UED aux Antilles-Guyane. Elle offre une interface graphique conviviale permettant de calculer et de visualiser sur une zone (à dessiner au préalable) un ensemble d'indicateurs statistiques. Un prototype est en cours de développement. 
+
+## Fonctionnalités du prototype
+
+### Actuelles
+
+* Import d'une carte au format ShapeFile
+* Série d'indicateurs statistiques issus du RP (2013 et 2014) et des fichiers fiscaux (2014)
+* Visualisation d'un tableau de bord spécifique à chaque zone
+* Comparaison des résultats avec une autre zone (région, commune, commune hors zone)
+* Exploration des données détaillées
+* Export des données détaillées au format **xlsx** lisible par calc
+
+### A venir
+
+* Qualité des données dans chaque zone (Intervalles de confiance et coefficient de variation) issue des travaux de L. Delta
+* Gestion du secret statistique primaire et secondaire
+* Développement d'autres indicateurs statistiques
+* Ajout de nouvelles sources de données (BPE, FIDELI et CAF)
+* Ajout d'autres graphiques intéractifs au tableau de bord
+* Export du tableau de bord au format HTML
+* Amélioration des temps de calcul
+* Tutoriel interactif
+
+### Envisageables
+
+* Carte de chaleur
+* Carroyage dans les zones et les alentours
+
+
+## Les sources de données
+
+### Recensement de la population
+
+L'Insee effectue chaque année une enquête cartographique terrain. Les logements des Antilles-Guyane sont ainsi géolocalisés avec précision. Le recensement de la population associé aux données de l'enquête cartographique, donne des informations détaillées et donc **géolocalisées** sur les logements et leurs occupants.
+
+### Fichiers Fiscaux
+
+Les fichiers fiscaux géolocalisés éclairent sur les revenus et la pauvreté
+
+### Banque publique des équipements
+
+La BPE est géolocalisée ce qui donne des informations sur les commerces, les praticiens de santé, les écoles, les équipements sportifs, etc. 
+
+### Sources futures 
+
+* FiDELI : caractérise les logements et les individus. Provient d'une exploitation des fichiers fiscaux.
+* CAF : données sociales geolocalisées
+
+# Organisation du projet
+
+## Comité de pilotage
+
+Le comité de pilotage est charge de décider des grandes orientations, de valider les étapes clés et de recentrer le projet ci-nécessaire. Etant un projet interne, le comité de pilotage est également le commanditaire du projet. 
+
+Le comité de pilotage envisagé serait composé : 
+
+* Chef de Sed
+* Chefs de ST
+* Chef du DET
+* Chef d'UED
+* Chefs de projet
+* Equipe projet
+
+## Equipe projet
+
+L'équipe de projet est en charge de la réalisation de toutes les étapes du projet. Elle serait composée : 
+
+* Chef de projet
+* Un ou deux chargé d'études
+
+## Groupe de travail
+
+Le groupe de travail est en charge à échéances régulières de tester l'application et ses fonctionnalités, de donner son avis sur le travail réalisé, de faire remonter les besoins utilisateurs.
+
+Le groupe de travail devrait être composé de : 
+
+* Chef de projet
+* Equipe projet
+* Un représentant du DET
+* Un représentant de chaque UED
+
+# Livrable
+
+## Description
+
+Le but est d'offrir une interface graphique conviviale aux outils précités. Elle sera développée en R grâce au package `RShiny`. 
+
+Les fonctionnalités envisagées sont : 
+
+* Chargement de cartes au format shapeFile
+* Tableaux de bords synthétiques zone par zone
+* Comparaison des données régionales, communales et communales hors zone d'intérêt
+* Exploration des données détails
+* Estimation de la qualité des données dans la zone (Intervalles de confiance et coefficient de variation)
+* Export des données détails dans un tableur calc
+* Export des tableaux de bord en HTML
+
+De plus, une documentation complète décrivant l'application sera livrée au format HTML (package `bookdown`).
+
+L'application sera déployée sur serveur RShiny de l'Insee. L'accès se fera via un navigateur internet (firefox vraisemblablement).
+Seul les agents du DET et des UED seront habilités à y accéder.
+
+## Livrables
+
+Deux types de livrables sont envisagés : 
+
+* Application à destination des agents des DET et des UED
+* Mini-application avec données anonymisées permettant une manipulation simple des données à destination des APR. Le but étant démontrer nos capacités et générer une demande de service du type conseil et expertise ou publication. On pourrait envisager une application servant uniquement à la visualisation des données niveau IRIS sur le département. 
+
+# Gestion de la documentation
+
+## Intranet
+
+Une page sur l'intranet du DET contiendra : 
+
+* bref descriptif du projet
+* Lien vers le Trello du projet
+* Lien vers le serveur de test
+* Lien vers le gitHub du projet
+* Adresse vers le serveur DIRAG de l'emplacement des documents du projet
+
+## Espace serveur DIRAG
+
+L'espace sur le serveur DIRAG contiendra l'ensemble des documents inhérents au projet c'est-à-dire : 
+
+* La note de cadrage
+* Le planning (gantt)
+* Documentation de l'application : note méthodologique
+* Les dictionnaires des variables
+* Les documents de travails
+* Les ressources bibliographiques
+
+## Code de l'application
+
+Le code de l'application en développement est stocké sur **github**. Il y a un double avantage à procéder ainsi :
+
+* profiter du versionning (capacité à revenir à des versions précédente du code) lié à l'utilisation de **git** ;
+* travailler de manière collaborative sur le code.
+
+Cette façon de procéder est classique dans le développement d'application informatique. 
+
+La version stable du code est ensuite déposée sur un serveur test RShiny. Après les tests du groupe de travail, le code final peut être déposé sur le serveur de production RShiny. 
+
+
+# Planning prévisionnel du projet
+
+Le planning actuel est une estimation grossière des temps de développement. Le projet s'articule autour de deux grandes étapes : 
+
+* la finalisation du prototype actuel. L'idéal serait de disposer d'une version stable **mi-novembre 2018**.
+* la version 1 d'Agate. Si les fonctionnalités envisagée par le comité de pilotage restent proche de celle du prototype, on peut envisager une livraison de l'application **fin janvier 2018**.
+
+## Détail des taches
+
+```{r,echo=FALSE}
+datatable(df[,c("group","tache","team","pct","start","end")],rownames = FALSE)
+```
+
+
+## Calendrier
+
+```{r,echo=FALSE,warning=FALSE}
+timevis(data = df, groups = groups, options = list(editable = FALSE))
+```
+
+
+
+
+
+
+

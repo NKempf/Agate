@@ -16,17 +16,30 @@
 #---------------------
 library(timevis) # Interactive Gantt chart
 library(tidyverse) # transformation des données et calcul de statistiques descriptives simples.
-library(shiny)
+library(shiny) # Interface graphique
+library(shinyWidgets) # Widgets supplementaires
 
 # Data
 load("Data/Gantt/gantt.RData")
+
+templateNK <- function(tache, equipe, pourcent) {
+  sprintf(    
+    '<table><tbody>
+    <tr><td colspan="3"><b>%s</b></td></tr>
+    <tr><td><i>%s</i></td></tr>
+    <tr><td>%s</td></tr>
+    </tbody></table>',
+    tache, equipe,pourcent 
+  )
+}
+
 
 
 # I. Interface graphique
 #---------------------------------------------------------------------------------------------------------------------------------------
 ui <- fluidPage(
   title = "Fully interactive",
-
+  
   fluidRow(
     column(
       8,
@@ -53,27 +66,27 @@ ui <- fluidPage(
         column(
           4,
           div(class = "optionsSection",
-              uiOutput("selectIdsOutput", inline = TRUE),
-              actionButton("selectItems", "Select"),
-              checkboxInput("selectFocus", "Focus on selection", FALSE)
+              selectInput("AddGroup",label = "Selectionner le groupe",choices = groups$content),
+              textInput("addTache", tags$h4("Ajouter une tache"), "Nouvelle tache"),
+              textInput("addEquipe", tags$h4("Ajouter participant"), "Hypolite")
+              
+              # dateInput("startDate", label = "Date de début", Sys.Date()),
+              # dateInput("endDate", label = "Date de fin", Sys.Date()),
+              # actionButton("addBtn", "Ajouter")
           )
         ),
         column(
           4,
           div(class = "optionsSection",
-              textInput("addTache", tags$h4("Ajouter une tache"), "Nouvelle tache"),
-              textInput("addEquipe", tags$h4("Ajouter participant"), "Hypolite"),
               textInput("addPourcent", tags$h4("Pourcentage"), "%"),
               dateInput("startDate", label = "Date de début", Sys.Date()),
               dateInput("endDate", label = "Date de fin", Sys.Date()),
-              actionButton("addBtn", "Ajouter")
-          )
-        ),
-        column(
-          4,
-          div(class = "optionsSection",
-              uiOutput("removeIdsOutput", inline = TRUE),
-              actionButton("removeItem", "Remove")
+              fluidRow(
+                actionButton("addBtn", "Ajouter"),
+                actionButton("addSave", "Sauvegarder")
+                
+              )
+              
           )
         )
       )
@@ -90,7 +103,9 @@ ui <- fluidPage(
              div(tags$strong("Selected items:"),
                  textOutput("selected", inline = TRUE))
            )
-    )
+    ),
+    
+    useSweetAlert()
   )
 )
 
@@ -98,7 +113,8 @@ ui <- fluidPage(
 # II. Server
 #--------------------------------------------------------------------------------------------------------------------------------------------------
 server <- function(input, output, session) {
-
+  
+  # Affichage de la timeline
   output$timelineInteractive <- renderTimevis({
     config <- list(
       editable = TRUE,
@@ -107,16 +123,49 @@ server <- function(input, output, session) {
     timevis(df,
             groups = groups,
             options = config
-            )
+    )
   })
   
+  # Affichage du tableau
   output$table <- renderTable({
     data <- input$timelineInteractive_data
     data$start <- prettyDate(data$start)
     if(!is.null(data$end)) {
       data$end <- prettyDate(data$end)
     }
-    data
+    data[,c("id","tache","start","end","group")]
+  })
+  
+  # Ajout d'une tache
+  observeEvent(input$addBtn, {
+    addItem("timelineInteractive",
+            data = list(id = randomID(),
+                        tache = input$addTache,
+                        team = input$addEquipe,
+                        pct = input$addPourcent,
+                        content = templateNK(input$addTache,input$addEquipe,paste0(input$addPourcent," %")),
+                        start = input$startDate,
+                        end = input$endDate,
+                        group = groups$id[groups$content == input$AddGroup],
+                        style = case_when(input$addPourcent >=75 ~ "color:#001f3f;border-style:solid;background-color:#2ECC40;",
+                                          input$addPourcent < 25 ~ "color:#001f3f;border-style:solid;background-color:#FF4136;",
+                                          TRUE ~ "color:#001f3f;border-style:solid;background-color:#FFDC00;")))
+  })
+  
+  # Sauvegarde de la table
+  observeEvent(input$addSave, {
+    
+    
+    df <- input$timelineInteractive_data
+    save(df,groups,file="Data/Gantt/gantt.RData")
+    
+    
+    shinyWidgets::sendSweetAlert(
+      session = session, 
+      title = "Succes", text = "Table sauvegardée !", type = "success"
+    )
+    
+    
   })
   
 }
