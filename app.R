@@ -25,6 +25,8 @@ library(rgeos) # Map tools
 library(tidyverse) # Tidy data
 library(plotly) # Interactive graphics
 library(openxlsx) # Export data in Excel
+library(fst) # Read partial data
+library(fstplyr) # dplyr for fst object
 
 # II. Data
 #----------------------------------------------------------------------------------------------------------------------------------
@@ -49,20 +51,21 @@ source("Other programs/Plotly/Agate - plotly graphes fonctions_v3.R",encoding = 
 
 # II.3. Real Data
 #----------------
-load("Data/Ril/ril15.RData")
-load("Data/Rp/rp14.RData")
-load("Data/Filosofi/filo14.Rdata")
-load("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData")
+# load("Data/Ril/ril15.RData")
+# load("Data/Rp/rp14.RData")
+# load("Data/Filosofi/filo14.Rdata")
+load("Data/Maps/Cities/cities.RData") # Cities map
+load("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData") # Statistical data (cities and regions)
 
 # Parameters
-ril <- rilhab15
-rpi <- rp14i
-rpl <- rp14l
-filo <- filo14.disp
-com.stat <- statCom_rp14_filo14
-dep.stat <- statReg_rp14_filo14
-
-rm(rilhab15,rp14i,rp14l,Rp14dico,filo14.disp,filo14.disp.dico,statCom_rp14_filo14,statReg_rp14_filo14)
+# ril <- rilhab15
+# rpi <- rp14i
+# rpl <- rp14l
+# filo <- filo14.disp
+# com.stat <- statCom_rp14_filo14
+# dep.stat <- statReg_rp14_filo14
+# 
+# rm(rilhab15,rp14i,rp14l,Rp14dico,filo14.disp,filo14.disp.dico,statCom_rp14_filo14,statReg_rp14_filo14)
 
 # III. Graphic web interface
 #----------------------------------------------------------------------------------------------------------------------------------

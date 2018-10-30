@@ -142,41 +142,121 @@ server <- function(input, output,session) {
 # III. InfraCity statistical computation 
 #-----------------------------------------------------------------------------------------------------------------------------------
   observeEvent(input$b_calcul, {
-  
     t1 <- Sys.time()
+  
     
     withProgress(message = "Creation de l'identifiant",style = "notification", value = 0, {
     
-    # Creation de la variable zonage
-    zonage <- rv$AgateMap
-  
-    # Creation de l'identifiant idZonage
-    zonage@data$idZonage <- zonage@data$idZonage
-  
-    # Determine pour chaque point dans quel zone il se situe
-    incProgress(amount = 0.1,message = "Appariement entre la zone et les points")
+    
+    # I. Preparation du zonage
+    #-------------------------
+      # Creation de la variable zonage
+      zonage <- rv$AgateMap
+      
+      # Creation de l'identifiant idZonage
+      zonage@data$idZonage <- zonage@data$idZonage
+      
+      
+    # II. Logements géolocalisés du RIL 
+    #----------------------------------
+    
+    # II.1 Communes dans lesquelles se trouvent une ou plusieurs zones
+    zoneInter <- gIntersects(zonage,com.dom,byid = TRUE)
+      test <- apply(zoneInter, 1, function(x){
+        test <- sum(x)
+        return(ifelse(test>0,TRUE,FALSE))}) 
+    com.dom.select <- com.dom@data$Codgeo[test]
+    
+    # II.2. Chargement des logements du RIL dans les communes d'interets
+    ril <- read_fst("Data/Ril/ril15.fst") %>% 
+      select(idx,x,y) %>% 
+      mutate(com = substr(idx,1,5)) %>%
+      filter(com %in% com.dom.select)
+    
+    # II.3. Transformation du ril en objet spatial
+    coordinates(ril) <- ~x+y
+    ril@proj4string <- CRS("+init=epsg:3857")
+      
+    
+    # III. Ajout de la zone aux données du recensement
+    #-------------------------------------------------
+    
+    # III.1. Zone dans laquelle chaque logement se situe
+    incProgress(amount = 0.1,message = "Zone dans laquelle chaque logement se situe")
     pts.sp <- zonaPts(pts.sp = ril,zonage = zonage)
+      
+    # III.2. Ajout de la zone aux données du rp individu
+    # Note : pour des raisons de performances, les données du RP sont préalablement filtrées selon les communes étudiées
+    incProgress(amount = 0.4,message = "Ajout de la zone aux données du RP")
     
-    
-    # I. Traitement cartographique avec les vraies données
-    #-----------------------------------------------------
-    incProgress(amount = 0.4,message = "Ajout des données du RP")
-    
-    rpl <- left_join(rpl,pts.sp@data[,c("idx","idZonage")],"idx") %>% 
+    rpi <- read_fst("Data/Rp/rp14i.fst") %>% 
+      filter(idx %in% ril@data$idx) %>% 
+      left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
       mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
-    rpi <- left_join(rpi,pts.sp@data[,c("idx","idZonage")], "idx") %>% 
+    
+    # III.3. Ajout de la zone aux données du rp logement
+    rpl <- read_fst("Data/Rp/rp14l.fst") %>% 
+      filter(idx %in% ril@data$idx) %>% 
+      left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
       mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
     
-  
-    incProgress(amount = 0.6,message = "Traitement des donnees fiscales")
-  
+    # IV. Ajout de la zone aux données fiscales
+    #------------------------------------------
+    
+    # IV.1. Chargement des données fiscales filtrées selon les communes d'intérêts
+    incProgress(amount = 0.6,message = "Ajout des données fiscales")
+    filo <- read_fst("Data/Filosofi/filo14.fst") %>% 
+      filter(com %in% com.dom.select)
+    
+    # IV.2. Transformation des données en objet spatial
     filo.sp <- SpatialPointsDataFrame(coords = filo[,c("x","y")],data = filo,proj4string = CRS("+init=epsg:3857"))
+    
+    # IV.3. Zone dans laquelle chaque foyer fiscal se situe
     filo.sp <- zonaPts(pts.sp = filo.sp,zonage = zonage)
-    filo <- filo.sp@data
-    filo <- left_join(filo,data.frame(unique(rpl[,c("com","com.lib")])),"com") %>% 
+    
+    # IV.4. Ajout de la zone aux données fiscales
+    filo <- filo.sp@data %>% 
+      left_join(data.frame(unique(rpl[,c("com","com.lib")])),"com") %>% 
       mutate(dep = substr(com,1,3),
              idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
     rm(filo.sp)
+    
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+  
+    # # Determine pour chaque point dans quel zone il se situe
+    # incProgress(amount = 0.1,message = "Appariement entre la zone et les points")
+    # pts.sp <- zonaPts(pts.sp = ril,zonage = zonage)
+    # 
+    # 
+    # # I. Traitement cartographique avec les vraies données
+    # #-----------------------------------------------------
+    # incProgress(amount = 0.4,message = "Ajout des données du RP")
+    # 
+    # rpl <- left_join(rpl,pts.sp@data[,c("idx","idZonage")],"idx") %>% 
+    #   mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
+    # rpi <- left_join(rpi,pts.sp@data[,c("idx","idZonage")], "idx") %>% 
+    #   mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
+    # 
+    # 
+    # incProgress(amount = 0.6,message = "Traitement des donnees fiscales")
+    # 
+    # filo.sp <- SpatialPointsDataFrame(coords = filo[,c("x","y")],data = filo,proj4string = CRS("+init=epsg:3857"))
+    # filo.sp <- zonaPts(pts.sp = filo.sp,zonage = zonage)
+    # filo <- filo.sp@data
+    # filo <- left_join(filo,data.frame(unique(rpl[,c("com","com.lib")])),"com") %>% 
+    #   mutate(dep = substr(com,1,3),
+    #          idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
+    # rm(filo.sp)
     
     # II. Special Fake data
     #----------------------
@@ -221,39 +301,6 @@ server <- function(input, output,session) {
       
     }
   
-    #   
-    # # Test de bar de progression
-    # 
-    # # Create 0-row data frame which will be used to store data
-    # dat <- data.frame(x = numeric(0), y = numeric(0))
-    # 
-    # # withProgress calls can be nested, in which case the nested text appears
-    # # below, and a second bar is shown.
-    # withProgress(message = 'Generating data',style = "notification", detail = "part 0", value = 0, {
-    #   for (i in 1:10) {
-    #     # Each time through the loop, add another row of data. This a stand-in
-    #     # for a long-running computation.
-    #     dat <- rbind(dat, data.frame(x = rnorm(1), y = rnorm(1)))
-    #     
-    #     # Increment the progress bar, and update the detail text.
-    #     incProgress(0.1, detail = paste("part", i))
-    #     
-    #     # Pause for 0.1 seconds to simulate a long computation.
-    #     Sys.sleep(0.1)
-    #   }
-    # })
-    # 
-    # Sys.sleep(0.1)
-    
-    # # Pop-up indiquant la fin du calcul
-    # temps <- as.character(round(abs(difftime(t1,Sys.time(), units="secs")),2))
-    # 
-    # shinyWidgets::sendSweetAlert(
-    #   session = session, 
-    #   title = "Terminé !", text = paste("Le calcul a été effectué en ",temps," secondes"), type = "success"
-    # )
-    # 
-    # # Ferme automatiquement le bsmodal options avancées
     
   })
   
