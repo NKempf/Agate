@@ -62,8 +62,8 @@ load("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData") # Statistical data
 # rpi <- rp14i
 # rpl <- rp14l
 # filo <- filo14.disp
-# com.stat <- statCom_rp14_filo14
-# dep.stat <- statReg_rp14_filo14
+com.stat <- statCom_rp14_filo14
+dep.stat <- statReg_rp14_filo14
 # 
 # rm(rilhab15,rp14i,rp14l,Rp14dico,filo14.disp,filo14.disp.dico,statCom_rp14_filo14,statReg_rp14_filo14)
 

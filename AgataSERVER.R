@@ -112,13 +112,14 @@ server <- function(input, output,session) {
   })
   
   # II.2. Open Modal
-  observeEvent(input$file1, {
+  observeEvent(userMap(), {
+    
     lst_var <- colnames(userMap()@data)
     # Update selectinput with usermap colnames
     updateSelectInput(session = session,inputId = "SI_id",choices = lst_var,selected = lst_var[1])
     updateSelectInput(session = session,inputId = "SI_name",choices = lst_var,selected = lst_var[2])
     # open bsmodal
-    # toggleModal(session, "bs_importShp", toggle = "toggle")
+    toggleModal(session, "bs_importShp", toggle = "toggle")
 
   })
   
@@ -138,22 +139,27 @@ server <- function(input, output,session) {
                     selected = c("Commune"))
   })
   
+  # II.5. Edit map parameter
+  observeEvent(input$b_paramCarte, {
+    # open bsmodal
+    toggleModal(session, "bs_importShp", toggle = "toggle")
+  })
+  
 
 # III. InfraCity statistical computation 
 #-----------------------------------------------------------------------------------------------------------------------------------
   observeEvent(input$b_calcul, {
     t1 <- Sys.time()
-  
     
     withProgress(message = "Creation de l'identifiant",style = "notification", value = 0, {
     
-    
     # I. Preparation du zonage
     #-------------------------
-      # Creation de la variable zonage
+      # I.1. Creation de la variable zonage
       zonage <- rv$AgateMap
+      zonage <- spTransform(zonage, "+init=epsg:3857")
       
-      # Creation de l'identifiant idZonage
+      # I.2. Creation de l'identifiant idZonage
       zonage@data$idZonage <- zonage@data$idZonage
       
       
@@ -177,7 +183,6 @@ server <- function(input, output,session) {
     coordinates(ril) <- ~x+y
     ril@proj4string <- CRS("+init=epsg:3857")
       
-    
     # III. Ajout de la zone aux données du recensement
     #-------------------------------------------------
     
@@ -215,94 +220,44 @@ server <- function(input, output,session) {
     filo.sp <- zonaPts(pts.sp = filo.sp,zonage = zonage)
     
     # IV.4. Ajout de la zone aux données fiscales
+    typmen.label <- c("famille monoparentale","couple sans enfant","couple avec enfant(s)","menage complexe",
+                      "femme seule","homme seul")
+    
     filo <- filo.sp@data %>% 
       left_join(data.frame(unique(rpl[,c("com","com.lib")])),"com") %>% 
       mutate(dep = substr(com,1,3),
-             idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
+             idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage),
+             typmenR.lib = factor(typmenR,labels = typmen.label))
     rm(filo.sp)
     
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-
-  
-    # # Determine pour chaque point dans quel zone il se situe
-    # incProgress(amount = 0.1,message = "Appariement entre la zone et les points")
-    # pts.sp <- zonaPts(pts.sp = ril,zonage = zonage)
-    # 
-    # 
-    # # I. Traitement cartographique avec les vraies données
-    # #-----------------------------------------------------
-    # incProgress(amount = 0.4,message = "Ajout des données du RP")
-    # 
-    # rpl <- left_join(rpl,pts.sp@data[,c("idx","idZonage")],"idx") %>% 
-    #   mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
-    # rpi <- left_join(rpi,pts.sp@data[,c("idx","idZonage")], "idx") %>% 
-    #   mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
-    # 
-    # 
-    # incProgress(amount = 0.6,message = "Traitement des donnees fiscales")
-    # 
-    # filo.sp <- SpatialPointsDataFrame(coords = filo[,c("x","y")],data = filo,proj4string = CRS("+init=epsg:3857"))
-    # filo.sp <- zonaPts(pts.sp = filo.sp,zonage = zonage)
-    # filo <- filo.sp@data
-    # filo <- left_join(filo,data.frame(unique(rpl[,c("com","com.lib")])),"com") %>% 
-    #   mutate(dep = substr(com,1,3),
-    #          idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
-    # rm(filo.sp)
-    
-    # II. Special Fake data
-    #----------------------
-
-    # Faking data
-    # incProgress(amount = 0.4,message = "Ajout des données fictives")
-    # 
-    # lst_var <- c("idx","idZonage","dep","com","com.lib")
-    # rpi <- cbind(pts.sp@data[,lst_var],faking_data(rpi,nrow(pts.sp)))
-    # rpl <- cbind(pts.sp@data[,lst_var],faking_data(rpl,nrow(pts.sp)))
-    # filo <- cbind(pts.sp@data[,lst_var],faking_data(filo,nrow(pts.sp)))
-    
-    # III. Calcul statistique
-    #------------------------
-    
-    # Attention placer ce bout de code ici (pas avant car sinon le temps de calcul explose)
-    typmen.label <- c("famille monoparentale","couple sans enfant","couple avec enfant(s)","menage complexe",
-                      "femme seule","homme seul")
-    filo <- as_tibble(filo) %>%
-      # filter(com %in% lstCom) %>%
-      mutate(typmenR.lib = factor(typmenR,labels = typmen.label))
-    
-    # Cacul des statistiques
+    # V. Calcul des indicateurs statistiques
+    #---------------------------------------
     incProgress(amount = 0.8,message = "Calcul des statistiques")
+    
+    # V.1. Statistiques dans la zone
     rv$statZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("idZonage"))
+    
+    # V.2. Statistiques communales hors zone
     rv$statHZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("com","com.lib","idZonage"))
+      
+    }) # Fermeture du withprogress
 
-    })
-
-    # Closing modal
+    # VI. Nettoyage
+    #--------------
+    
+    # VI.1. Closing modal
     toggleModal(session, modalId = "bs_optad", toggle = "close")    
     
-    # Pop-up indiquant la fin du calcul
+    # VI.2. Pop-up indiquant la fin du calcul
     temps <- as.character(round(abs(difftime(t1,Sys.time(), units="secs")),2))
     
     if(!is.null(rv$statZone)){
-
       shinyWidgets::sendSweetAlert(
         session = session, 
         title = "Terminé !", text = paste("Le calcul a été effectué en ",temps," secondes"), type = "success"
       )
-      
     }
-  
-    
-  })
+  }) # Close observeEvent
   
 # IV. Reactive Dashboard
 #---------------------------------------------------------------------------------------------------------------------------------

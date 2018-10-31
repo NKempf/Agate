@@ -34,35 +34,38 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                               #---------------------------------
                                               actionButton("b_statInfra", "Calculer !"),
                                               
-                                              # I.1.2.3. Sweet pop-up
+                                              # I.1.2.3. Map parameters
+                                              #------------------------
+                                              actionButton("b_paramCarte", "Paramètres carte"),
+                                              
+                                              # I.1.2.4. Sweet pop-up
                                               #----------------------
                                               useSweetAlert()
                                             ),
                                             style = "opacity: 0.75; z-index: 1000;" # IMPORTANT : Absolute panel not hidden by tiles
-                              ),
-                              # Import modal
-                              tags$head(tags$style("#bs_importShp .modal-footer{ display:none}")), # Remove BS modal footer
-                              bsModal(id = "bs_importShp",title =  "Parametres de la couche cartographique", trigger = "b_statInfra", size="large",
-                                      fluidRow(
-                                        column(6,
-                                               selectInput(inputId = "SI_id", label = "Identifiant", choices = c("Defaut"),selected = c("Defaut"))
-                                        ),
-                                        column(6,
-                                               selectInput(inputId = "SI_name", label = "Libelle", choices = c("Defaut"),selected = c("Defaut"))
-                                        )
-                                      )
                               )
-                              
-                              
-                              
                           ), # end div
                           
                           #-------------------#
                           # I.2. Modal object #
                           #-------------------#
                           
-                          # I.2.1 Advanced options
-                          #-----------------------
+                          # I.2.1. Import modal (select id et name)
+                          #----------------------------------------
+                          tags$head(tags$style("#bs_importShp .modal-footer{ display:none}")), # Remove BS modal footer
+                          bsModal(id = "bs_importShp",title =  "Parametres de la couche cartographique", trigger = "b_statInfra", size="large",
+                                  fluidRow(
+                                    column(6,
+                                           selectInput(inputId = "SI_id", label = "Identifiant", choices = c("Defaut"),selected = c("Defaut"))
+                                    ),
+                                    column(6,
+                                           selectInput(inputId = "SI_name", label = "Libelle", choices = c("Defaut"),selected = c("Defaut"))
+                                    )
+                                  )
+                          ),
+                          
+                          # I.2.2. Advanced options
+                          #------------------------
                           tags$head(tags$style("#bs_optad .modal-footer{ display:none}")), # Remove BS modal footer
                           bsModal(id = "bs_optad",title =  "Options avancées", trigger = "b_statInfra", size="large",
                                   
@@ -95,8 +98,8 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                   )
                           ),
                           
-                          # I.2.2 Dashboard
-                          #----------------
+                          # I.2.3. Dashboard
+                          #-----------------
                           # tags$head(tags$style("#boxPopUp1 .modal-dialog{ width:1000px}")),
                           # tags$head(tags$style("#boxPopUp1 .modal-body{ min-height:700px}")),
                           tags$head(tags$style("#boxPopUp1 .modal-footer{ display:none}")), # Remove BS modal footer

@@ -50,7 +50,7 @@ rm(list = ls())
 #----------------------------------------------------------------------------------------------------------------------------------
 library(fst)
 library(fstplyr)
-write_fst(rp13i,"Data/fst/rp13i.fst",compress = 100) %>% 
+write_fst(rp13i,"Data/fst/rp13i.fst",compress = 100)
   
 write_fst(rp13l,"Data/fst/rp13l.fst",compress = 100)
 

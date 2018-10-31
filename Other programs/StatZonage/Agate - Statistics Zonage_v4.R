@@ -51,7 +51,7 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
 # II. Description de la population
 #-----------------------------------------------------------------------------------------------------------------------------------------------
   
-  # II.1. Part des moins de 20 ans et des 20 à 64 ans
+  # II.1. Part des moins de 20 ans et des 20 a 64 ans
   #--------------------------------------------------
   tRp.II.1 <- rpi %>%
     mutate(age = cut(as.numeric(AGEREV),
@@ -96,7 +96,7 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
 # III. Scolarisation
 #-----------------------------------------------------------------------------------------------------------------------------------------------
   
-  # III.1. Taux de scolarisation des 2 à 5 ans et des 18 à 25 ans
+  # III.1. Taux de scolarisation des 2 a 5 ans et des 18 a 25 ans
   #--------------------------------------------------------------
   tRp.III.1 <- rpi %>%
     mutate(age = cut(as.numeric(rpi$AGEREV),
@@ -122,7 +122,7 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
     group_by(!!! syms(group_var),ETUD) %>% 
     weighted_frequency(IPONDI)
   
-  # III.4. Taux de décrocheur : jeune non scolarisé de 16 - 25 ans sans diplome
+  # III.4. Taux de decrocheur : jeune non scolarise de 16 - 25 ans sans diplome
   #----------------------------------------------------------------------------
   tRp.III.4 <- rpi %>%
     filter(as.numeric(AGEREV) %in% c(16:25)) %>%  
@@ -154,7 +154,7 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
     group_by(!!! syms(group_var),SEXE,inactif) %>% 
     weighted_frequency(IPONDI)
   
-  # IV.4. Part des actifs de 15-64 ans cadres et professions intermédiaire
+  # IV.4. Part des actifs de 15-64 ans cadres et professions intermediaire
   #-----------------------------------------------------------------------
   tRp.IV.4 <- rpi %>%
     filter(as.numeric(AGEREV) %in% c(16:64) & TACT %in% c("actifocc","chomeur")) %>%
@@ -180,7 +180,7 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
 # VI. Logements
 #-----------------------------------------------------------------------------------------------------------------------------------------------
   
-  # VI.1. Part de logements selon la catégorie de logement
+  # VI.1. Part de logements selon la categorie de logement
   #-------------------------------------------------------
   tRp.VI.1 <- rpl %>%
     group_by(!!! syms(group_var),catLog) %>% 
@@ -205,24 +205,24 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
     group_by(!!! syms(group_var),locataireHlm) %>% 
     weighted_frequency(IPONDL)
   
-# VII. Résidences principales
+# VII. Residences principales
 #-----------------------------------------------------------------------------------------------------------------------------------------------
   
-  # VII.1. Part des résidences principales de plus de 100m²
+  # VII.1. Part des residences principales de plus de 100m²
   #--------------------------------------------------------
   tRp.VII.1 <- rpl %>%
     filter(CATL == "1") %>% 
     group_by(!!! syms(group_var),surf100) %>% 
     weighted_frequency(IPONDL)
   
-  # VII.2. Part des résidences principales en HLM
+  # VII.2. Part des residences principales en HLM
   #----------------------------------------------
   tRp.VII.2 <- rpl %>%
     filter(CATL == "1") %>% 
     group_by(!!! syms(group_var),hlm) %>% 
     weighted_frequency(IPONDL)
   
-  # VII.3. Part des résidences principales sans eau chaude
+  # VII.3. Part des residences principales sans eau chaude
   #-------------------------------------------------------  
   tRp.VII.3 <- rpl %>%
     filter(CATL == "1" & EAU %in% c("1","2","3")) %>% 
@@ -230,7 +230,7 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
     group_by(!!! syms(group_var),eauchaude) %>% 
     weighted_frequency(IPONDL)
   
-  # VII.4. Part des résidences principales sans bain ni douche 
+  # VII.4. Part des residences principales sans bain ni douche 
   #-----------------------------------------------------------
   tRp.VII.4 <- rpl %>%
     filter(CATL == "1" & BAIN %in% c("1","2")) %>% 
@@ -238,7 +238,7 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
     group_by(!!! syms(group_var),douche) %>% 
     weighted_frequency(IPONDL)
   
-  # VII.5. Part des résidences principales sans tout a l'egout
+  # VII.5. Part des residences principales sans tout a l'egout
   #-----------------------------------------------------------
   tRp.VII.5 <- rpl %>%
     filter(CATL == "1" & EGOUL %in% c("1","2","3","4")) %>% 
@@ -261,13 +261,13 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
     group_by(!!! syms(group_var)) %>% 
     income_distrib("nivviem",proba)
   
-  # I.2. Distribution du niveau de vie selon le type de ménage et le zonage
+  # I.2. Distribution du niveau de vie selon le type de menage et le zonage
   #------------------------------------------------------------------------
   tFilo.I.2 <- filo %>% 
     group_by(!!! syms(group_var),typmenR.lib) %>% 
     income_distrib("nivviem",proba)
   
-  # I.3. Part des ménages selon le type de ménage et le zonage
+  # I.3. Part des menages selon le type de menage et le zonage
   #-----------------------------------------------------------
   tFilo.I.3 <- filo %>%
     group_by(!!! syms(group_var),typmenR.lib) %>% 
@@ -277,7 +277,7 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
            part.men = part_np,
            part.ind = part_p)
   
-  # I.4. Part des ménages selon le décile de niveau de vie métro et le zonage
+  # I.4. Part des menages selon le decile de niveau de vie metro et le zonage
   #--------------------------------------------------------------------------
   tFilo.I.4 <- filo %>%
     group_by(!!! syms(group_var),decile_nivvie) %>% 
@@ -287,13 +287,13 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
            part.men = part_np,
            part.ind = part_p)
   
-# II. Pauvreté
+# II. Pauvrete
 #-----------------------------------------------------------------------------------------------------------------------------------------------
   seuil_pauv.dfa <- filo %>%
     group_by(dep) %>% 
     summarise(seuil_pauv.dfa = median(nivviem))
   
-  # II.1 Taux de pauvreté selon le seuil métropolitain et départemental
+  # II.1 Taux de pauvrete selon le seuil metropolitain et departemental
   #--------------------------------------------------------------------
   tFilo.II.1 <- filo %>%
     left_join(seuil_pauv.dfa,by = "dep") %>% 
@@ -338,10 +338,10 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
   
   
 #----------------------------------------------------------------------------------------------------------------------------------------------#
-#                                             VI. Synthèse des statistiques                                                                    #
+#                                             VI. Synthese des statistiques                                                                    #
 #----------------------------------------------------------------------------------------------------------------------------------------------#
   
-  # VI.1 Synthèse des indicateurs au niveau zonage
+  # VI.1 Synthese des indicateurs au niveau zonage
   #------------------------------------------------
   
   # VI.1. 
@@ -362,40 +362,40 @@ statistics_zone <- function(rpi,rpl,filo,group_var){
   #   spread(SEXE,part_p)
   
   
-  # VI.2. Libellé des tableaux
+  # VI.2. Libelle des tableaux
   #---------------------------
-  # Libellé des tableaux
+  # Libelle des tableaux
   tab_lib <- c(tRp.I.1 = "Population communale",
                tRp.I.2 = "Population par zone",
-               tRp.II.1 = "Part des moins de 20 ans et des 20 à 64 ans",
+               tRp.II.1 = "Part des moins de 20 ans et des 20 a 64 ans",
                tRp.II.2 = "Part des 60 ans et plus",
                tRp.II.3 = "Part des femmes",
                tRp.II.4 = "Pyramide des ages par sexe et par zonage",
                tRp.II.5 = "Pyramide par sexe, zonage et tranche d'age",
-               tRp.III.1 = "Taux de scolarisation des 2 à 5 ans et des 18 à 25 ans",
+               tRp.III.1 = "Taux de scolarisation des 2 a 5 ans et des 18 a 25 ans",
                tRp.III.2 = "Part de non scolarisation de plus de 15 ans sans diplome",
                tRp.III.3 = "Taux de non scolarisation des 6 - 14 ans",
-               tRp.III.4 = "Taux de décrocheur : jeune non scolarisé de 16 - 25 ans sans diplome",
+               tRp.III.4 = "Taux de decrocheur : jeune non scolarise de 16 - 25 ans sans diplome",
                tRp.IV.1 = "Taux de chomage pour les 15 - 64 ans (parmi les actifs)",
                tRp.IV.2 = "Taux d'actif  - d'inactif pour les 15 - 64 ans",
                tRp.IV.3 = "Taux d'actif selon le sexe pour les 15 - 64 ans", 
-               tRp.IV.4 = "Part des actifs de 15-64 ans cadres et professions intermédiaire",
+               tRp.IV.4 = "Part des actifs de 15-64 ans cadres et professions intermediaire",
                tRp.V.1 = "Part des etrangers",
                tRp.V.2 = "Part des immigres",
-               tRp.VI.1 = "Part de logements selon la catégorie de logement",
+               tRp.VI.1 = "Part de logements selon la categorie de logement",
                tRp.VI.2 = "Part des appartements",
                tRp.VI.3 = "Part des locataires",
                tRp.VI.4 = "Part des locatairesHlm",
-               tRp.VII.1 = "Part des résidences principales de plus de 100m²",
-               tRp.VII.2 = "Part des résidences principales en HLM",
-               tRp.VII.3 = "Part des résidences principales sans eau chaude",
-               tRp.VII.4 = "Part des résidences principales sans bain ni douche",
-               tRp.VII.5 = "Part des résidences principales sans tout a l'egout",
+               tRp.VII.1 = "Part des residences principales de plus de 100m²",
+               tRp.VII.2 = "Part des residences principales en HLM",
+               tRp.VII.3 = "Part des residences principales sans eau chaude",
+               tRp.VII.4 = "Part des residences principales sans bain ni douche",
+               tRp.VII.5 = "Part des residences principales sans tout a l'egout",
                tFilo.I.1 = "Distribution du niveau de vie selon le zonage",
-               tFilo.I.2 = "Distribution du niveau de vie selon le type de ménage et le zonage",
-               tFilo.I.3 = "Part des ménages selon le type de ménage et le zonage",
-               tFilo.I.4 = "Part des ménages selon le décile de niveau de vie métro et le zonage",
-               tFilo.II.1 = "Taux de pauvreté selon le seuil métropolitain et départemental",
+               tFilo.I.2 = "Distribution du niveau de vie selon le type de menage et le zonage",
+               tFilo.I.3 = "Part des menages selon le type de menage et le zonage",
+               tFilo.I.4 = "Part des menages selon le decile de niveau de vie metro et le zonage",
+               tFilo.II.1 = "Taux de pauvrete selon le seuil metropolitain et departemental",
                tFilo.II.2 = "Courbe de lorenz"
   )
   
@@ -443,7 +443,7 @@ return(list_tab)
 } 
 
 
-# Calcul les fréquences et la part pondérée
+# Calcul les frequences et la part ponderee
 weighted_frequency <- function(df,weight){
   poids <- enquo(weight)
   
