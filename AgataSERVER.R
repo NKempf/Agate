@@ -412,12 +412,15 @@ server <- function(input, output,session) {
     datasetInput(),
     extensions = 'Buttons',
     options = list(
-      fixedColumns = TRUE,
-      autoWidth = TRUE,
+      scrollX = TRUE,
+      # fixedColumns = TRUE,
+      # autoWidth = TRUE,
       ordering = FALSE,
       dom = 'lBfrtip',
       buttons = c('copy', I('colvis'))
+      
     ),
+    rownames= FALSE,
     class = "display" #if you want to modify via .css
   )
   

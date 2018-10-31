@@ -172,43 +172,74 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                  #-------------------------------------------------------------------------------------------------------------                 
                  tabPanel("Statistiques",value="vis",
                           
-                          # Sidebar layout with input and output definitions ----
-                          sidebarLayout(
-                            
-                            # Sidebar panel for inputs ----
-                            sidebarPanel(width = 3,
-                              
-                              # II.1. Zone selection
-                              #---------------------
-                              selectInput("SI_ZoneSelect", "Zone selection",
-                                          choices = c("Commune","Departement","HorsZone","Zone"),
-                                          selected = c("Zone")),
-                              
-                              # II.2. Tab selection
-                              #--------------------
-                              selectInput("SI_TabSelect", "Tab selection",
-                                          choices = c(""),
-                                          selected = c("")),
-                              
-                              # Button
-                              downloadButton(outputId = "DL_StatReport","Download report")
-                              
+                          textOutput("TO_titleTab"),
+                          tags$head(tags$style("#TO_titleTab{font-size: 30px;font-style: bold;}")),
+                          DT::dataTableOutput("table"),
+                          
+                          fluidRow(
+                            column(3,
+                                   
+                                   # II.1. Zone selection
+                                   #---------------------
+                                   selectInput("SI_ZoneSelect", "Zone selection",
+                                               choices = c("Commune","Departement","HorsZone","Zone"),
+                                               selected = c("Zone"))
+                                   
                             ),
-                            
-                            # Main panel for displaying outputs ----
-                            mainPanel(width = 9,
-                                      textOutput("TO_titleTab"),
-                                      tags$head(tags$style("#TO_titleTab{font-size: 30px;
-                                 font-style: bold;
-                                 }"
-                                      )
-                                      ), # Title text style
-                                      
-                                      DT::dataTableOutput("table")
-                                      #tableOutput("table")
+                            column(3,
+                                   
+                                   # II.2. Tab selection
+                                   #--------------------
+                                   selectInput("SI_TabSelect", "Tab selection",
+                                               choices = c(""),
+                                               selected = c("")),
+                                   
+                                   # II.3. Save statistics into Excel report
+                                   downloadButton(outputId = "DL_StatReport","Download report")
+                                   
                             )
                             
                           )
+                          
+                          
+                          
+                          # # Sidebar layout with input and output definitions ----
+                          # sidebarLayout(
+                          #   
+                          #   # Sidebar panel for inputs ----
+                          #   sidebarPanel(width = 3,
+                          #     
+                          #     # II.1. Zone selection
+                          #     #---------------------
+                          #     selectInput("SI_ZoneSelect", "Zone selection",
+                          #                 choices = c("Commune","Departement","HorsZone","Zone"),
+                          #                 selected = c("Zone")),
+                          #     
+                          #     # II.2. Tab selection
+                          #     #--------------------
+                          #     selectInput("SI_TabSelect", "Tab selection",
+                          #                 choices = c(""),
+                          #                 selected = c("")),
+                          #     
+                          #     # Button
+                          #     downloadButton(outputId = "DL_StatReport","Download report")
+                          #     
+                          #   ),
+                          #   
+                          #   # Main panel for displaying outputs ----
+                          #   mainPanel(width = 9,
+                          #             textOutput("TO_titleTab"),
+                          #             tags$head(tags$style("#TO_titleTab{font-size: 30px;
+                          #        font-style: bold;
+                          #        }"
+                          #             )
+                          #             ), # Title text style
+                          #             
+                          #             DT::dataTableOutput("table")
+                          #             #tableOutput("table")
+                          #   )
+                          #   
+                          # )
                           
                           
                           ),
