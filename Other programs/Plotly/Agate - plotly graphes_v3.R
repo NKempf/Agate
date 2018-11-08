@@ -2,7 +2,7 @@
 #                      Agate - Plotly Graphes                                                                                    #
 #--------------------------------------------------------------------------------------------------------------------------------#
 
-# MAJ : 15.06.2018
+# MAJ : 31.10.2018
 
 # Nicolas Kempf
 
@@ -13,15 +13,15 @@
 ### Working directory 
 # Paramètre automatiquement le dossier dans lequel se trouve le programme comme espace de travail
 # Ne fonction que pour une version de R supérieure à 3.3
-setwd(dir=dirname(rstudioapi::getActiveDocumentContext()$path))
-getwd()
+# setwd(dir=dirname(rstudioapi::getActiveDocumentContext()$path))
+# getwd()
 
 # Packages nécessaires
 #---------------------
 library(tidyverse) # transform data
 library(plotly) # interactive graphs
 
-source("Agate - plotly graphes fonctions_v2.R",encoding = "UTF-8")
+source("Other programs/Plotly/Agate - plotly graphes fonctions_v3.R",encoding = "UTF-8")
 
 # Statistiques issues d'Agate
 #----------------------------
@@ -29,13 +29,13 @@ load("../../Bdd/RData/Temp/StatZonav2.RData")
 
 # Statistiques régionales
 #------------------------
-load("../../Bdd/RData/Statistiques Zonage/StatRegCom_rp14_filo14.RData")
+load("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData")
 
 
 # Paramètres généraux
 #--------------------
 idZonage <- "QP973010"
-typeVar.switch <- "dep"
+typeVar.switch <- "com"
 
 unique(StatZona$tFilo.I.1$idZonage)
 

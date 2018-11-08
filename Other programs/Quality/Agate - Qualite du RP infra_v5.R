@@ -4,7 +4,7 @@
 
 # Nicolas Kempf
 
-# Derniere MAJ : 31.10.2018
+# Derniere MAJ : 06.11.2018
 
 # Ce programme utilise les travaux de Lionel Delta pour calculer la qualite des donnees du recensement à l'infracommunal.   
 
@@ -43,7 +43,7 @@ rpl_rpa <- rp13l %>%
   ungroup()
 
 # Ajout des nouvelles variables à la table adresse
-rpa <- rpa13 %>% 
+rpa13 <- rpa13 %>% 
   left_join(rpl_rpa,c("idx"="idrp")) %>% 
   mutate(INPCM = ifelse(is.na(INPCM),0,INPCM))
 
@@ -68,7 +68,7 @@ qpv_stat.fake@data <- qpv_stat.fake@data %>%
 zonage <- qpv_stat.fake
 zonage@data$idZonage <- zonage@data$CODE_QP
 ril <- rilhab15
-rpa <- rpa
+rpa <- rpa13
 Y <- "INPCM"
 idZonage <- "idZonage"
 
@@ -76,14 +76,14 @@ idZonage <- "idZonage"
 zonage <- superficieZon(zonage = zonage,idZonage = idZonage)
 
 # Jointure spatiale
-ril <- zonaRil(ril = ril,zonage = zonage)
+ril <- zonaPts(pts.sp = ril,zonage = zonage)
 
 # Ajout de la variable CODE_QP a la base rpa
 rpa <- merge(rpa,ril@data[,c("idx","idZonage")],by="idx",all.x=T)
 
 ### Toute adresse non affectée à un zonage QPV donné est considérée hors du périmètre des
 ### quartiers Politique de la Ville.
-rpa[,idZonage][is.na(rpa[,idZonage])] <- "horsZon"
+rpa[,idZonage][is.na(rpa[,idZonage]) | rpa$idZonage == "Hors zonage"] <- "horsZon"
 
 # Renommage de l'identifiant du zonage
 # rpa$idZonage <- as.character(rpa[,idZonage])
@@ -92,11 +92,11 @@ rpa[,idZonage][is.na(rpa[,idZonage])] <- "horsZon"
 sondage <- sondageZon(rpa = rpa)
 
 # Calcul de la precision analytique sans calage
-RPStats <- precision_analytique_nc(rpa = rpa,Y = INPER,zonage = zonage,idZonage = "idZonage")
-RPStats2 <- precision_analytique_nc(rpa = rpa,Y = INPCM,zonage = zonage,idZonage = "idZonage")
+RPStats <- precision_analytique_nc(rpa = rpa,Y = INPER,zonage = zonage,idZonage = "idZonage",sondage = sondage) # Nombre de personne
+RPStats2 <- precision_analytique_nc(rpa = rpa,Y = INPCM,zonage = zonage,idZonage = "idZonage") # Nombre de chômeur
 
 # Enregistrement en RData
 save(RPstats,file="../../Bdd/RData/Temp/RPStats.RData")
 
-
+str(rpa13)
 

@@ -22,6 +22,7 @@ library(shinydashboard) # Tools like infoBox
 library(leaflet) # Interactive web map
 library(rgdal) # Input shapefile
 library(rgeos) # Map tools
+library(sampling) # Sampling tools
 library(tidyverse) # Tidy data
 library(plotly) # Interactive graphics
 library(openxlsx) # Export data in Excel
@@ -35,6 +36,7 @@ library(fstplyr) # dplyr for fst object
 #----------------
 source ("Other programs/Fake data/Agate - Fake data fct.R",encoding = "UTF-8")
 source("Other programs/Zonage/Agate - Cartographie fct.R",encoding = "UTF-8")
+source("Other programs/Quality/Agate - Census infra quality.R",encoding = "UTF-8")
 source("Other programs/Export Report/Agate - Export Excel fct.R",encoding = "UTF-8")
 source("Other programs/StatZonage/Agate - Statistics Zonage_v4.R",encoding = "UTF-8")
 source("Other programs/Plotly/Agate - plotly graphes fonctions_v3.R",encoding = "UTF-8")

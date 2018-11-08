@@ -29,7 +29,7 @@ sondageZon <- function(rpa){
 
 
 
-precision_analytique_nc <- function(rpa,Y,zonage,idZonage){
+precision_analytique_nc <- function(rpa,Y,zonage,idZonage, sondage){
   
 # I. Statistiques et des variances analytiques associées, par QPV
 #---------------------------------------------------------------------------------------------------------------------------------------------------
@@ -144,10 +144,10 @@ precision_analytique_nc <- function(rpa,Y,zonage,idZonage){
   #----------------------------------------------------------------------------------------------------------------------------------------------------- 
   
   # Pour simplifier les opérations par la suite : restriction aux communes qui ont au moins un zonage.
-  # commune_acZonage <- unique(rpa$com[rpa$idZonage != "horsZon"])
-  commune_acZonage <- c("97101", "97104", "97105", "97107", "97117", "97120", "97129",
-                         "97209", "97213", "97222", "97228", "97302", "97304", "97305", 
-                         "97307", "97309", "97311")
+  commune_acZonage <- unique(rpa$com[rpa$idZonage != "horsZon"])
+  # commune_acZonage <- c("97101", "97104", "97105", "97107", "97117", "97120", "97129",
+  #                        "97209", "97213", "97222", "97228", "97302", "97304", "97305", 
+  #                        "97307", "97309", "97311")
   
   # III.1. Statistiques à la commune
   #---------------------------------

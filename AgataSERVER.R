@@ -10,7 +10,8 @@ server <- function(input, output,session) {
 #----------------------------------------------------------------------------------------------------------------------------
   rv <- reactiveValues(AgateMap=NULL,
                        statZone=NULL,
-                       statHZone=NULL)
+                       statHZone=NULL,
+                       qualityZone=NULL)
   
 # I. Interactive web map
 #----------------------------------------------------------------------------------------------------------------------------
@@ -192,15 +193,15 @@ server <- function(input, output,session) {
       
     # III.2. Ajout de la zone aux données du rp individu
     # Note : pour des raisons de performances, les données du RP sont préalablement filtrées selon les communes étudiées
-    incProgress(amount = 0.4,message = "Ajout de la zone aux données du RP")
+    incProgress(amount = 0.2,message = "Ajout de la zone aux données du RP")
     
-    rpi <- read_fst("Data/Rp/rp14i.fst") %>% 
+    rpi <- read_fst("Data/Rp/rp13i.fst") %>% 
       filter(idx %in% ril@data$idx) %>% 
       left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
       mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
     
     # III.3. Ajout de la zone aux données du rp logement
-    rpl <- read_fst("Data/Rp/rp14l.fst") %>% 
+    rpl <- read_fst("Data/Rp/rp13l.fst") %>% 
       filter(idx %in% ril@data$idx) %>% 
       left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
       mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
@@ -209,7 +210,7 @@ server <- function(input, output,session) {
     #------------------------------------------
     
     # IV.1. Chargement des données fiscales filtrées selon les communes d'intérêts
-    incProgress(amount = 0.6,message = "Ajout des données fiscales")
+    incProgress(amount = 0.3,message = "Ajout des données fiscales")
     filo <- read_fst("Data/Filosofi/filo14.fst") %>% 
       filter(com %in% com.dom.select)
     
@@ -232,23 +233,41 @@ server <- function(input, output,session) {
     
     # V. Calcul des indicateurs statistiques
     #---------------------------------------
-    incProgress(amount = 0.8,message = "Calcul des statistiques")
+    incProgress(amount = 0.4,message = "Calcul des statistiques")
     
     # V.1. Statistiques dans la zone
     rv$statZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("idZonage"))
     
     # V.2. Statistiques communales hors zone
     rv$statHZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("com","com.lib","idZonage"))
+    
+    # VI. Qualité des données du RP
+    #------------------------------
+    incProgress(amount = 0.5,message = "Qualité des données du rp")
+    
+    # VI.1. Chargement de la base adresses
+    rpa <- read_fst("Data/Rp/rpa13.fst") %>% 
+      filter(idx %in% ril@data$idx) %>% 
+      left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
+      mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage","horsZon", idZonage))
+    
+    # VI.2. Base sondage (special calage)
+    sondage <- sondageZon(rpa = rpa)
+    print(sondage)
+    
+    # VI.3. Calcul de la precision analytique sans calage
+    rv$qualityZone <- precision_analytique_nc(rpa = rpa,Y = INPER,zonage = zonage,idZonage = "idZonage",sondage = sondage) # Nombre de personne
+    print(rv$qualityZone)
       
     }) # Fermeture du withprogress
 
-    # VI. Nettoyage
+    # VII. Nettoyage
     #--------------
     
-    # VI.1. Closing modal
+    # VII.1. Closing modal
     toggleModal(session, modalId = "bs_optad", toggle = "close")    
     
-    # VI.2. Pop-up indiquant la fin du calcul
+    # VII.2. Pop-up indiquant la fin du calcul
     temps <- as.character(round(abs(difftime(t1,Sys.time(), units="secs")),2))
     
     if(!is.null(rv$statZone)){
@@ -417,7 +436,7 @@ server <- function(input, output,session) {
       # autoWidth = TRUE,
       ordering = FALSE,
       dom = 'lBfrtip',
-      buttons = c('copy', I('colvis'))
+      buttons = c(I('colvis'),'excel', 'pdf')
       
     ),
     rownames= FALSE,
@@ -445,7 +464,6 @@ server <- function(input, output,session) {
     
     print(df[1])
     print(names(df))
-    
     
     return(df)
   })
@@ -477,8 +495,32 @@ server <- function(input, output,session) {
   )
   
   
+# VI. Census quality
+#--------------------------------------------------------------------------------------------------------------------------------------  
   
+  # VI.1. Display data
+  #-------------------
   
+  output$qualityTable = DT::renderDataTable(
+    datatable(rv$qualityZone,
+              extensions = 'Buttons',
+              options = list(
+                scrollX = TRUE,
+                # fixedColumns = TRUE,
+                # autoWidth = TRUE,
+                ordering = FALSE,
+                dom = 'lBfrtip',
+                buttons = c(I('colvis'),'excel', 'pdf')),
+              rownames= FALSE,
+              class = "display" #if you want to modify via .css
+              ) %>% formatStyle(
+      'CV_Y',
+      target = 'row',
+      # backgroundColor = styleEqual(c(0,28.8), c('blank', 'yellow'))
+      backgroundColor = styleInterval(c(15,30,100), c("blank","#fee8c8","#fdbb84","#e34a33"))
+    ) %>% 
+      formatCurrency(columns = 2:4, currency = "", interval = 3, mark = " ",digits = 0) 
+  )
   
   
   

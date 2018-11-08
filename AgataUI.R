@@ -172,36 +172,38 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                  #-------------------------------------------------------------------------------------------------------------                 
                  tabPanel("Statistiques",value="vis",
                           
-                          textOutput("TO_titleTab"),
-                          tags$head(tags$style("#TO_titleTab{font-size: 30px;font-style: bold;}")),
-                          DT::dataTableOutput("table"),
-                          
                           fluidRow(
-                            column(3,
-                                   
+                            column(4,
+
                                    # II.1. Zone selection
                                    #---------------------
                                    selectInput("SI_ZoneSelect", "Zone selection",
                                                choices = c("Commune","Departement","HorsZone","Zone"),
                                                selected = c("Zone"))
-                                   
+
                             ),
-                            column(3,
-                                   
+                            column(4,
+
                                    # II.2. Tab selection
                                    #--------------------
                                    selectInput("SI_TabSelect", "Tab selection",
                                                choices = c(""),
-                                               selected = c("")),
-                                   
+                                               selected = c(""))
+                            ),
+                            column(4,
                                    # II.3. Save statistics into Excel report
+                                   #----------------------------------------
                                    downloadButton(outputId = "DL_StatReport","Download report")
-                                   
-                            )
-                            
-                          )
-                          
-                          
+                                   )
+                          ),
+
+                          hr(), # Line between buttons and plot
+
+                          # II.4. Table visualisation
+                          #--------------------------
+                          textOutput("TO_titleTab"),
+                          tags$head(tags$style("#TO_titleTab{font-size: 30px;font-style: bold;}")),
+                          DT::dataTableOutput("table")
                           
                           # # Sidebar layout with input and output definitions ----
                           # sidebarLayout(
@@ -247,14 +249,15 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                  # III. Qualité
                  #-------------------------------------------------------------------------------------------------------------                 
                  tabPanel("Qualité",value="vis",
-                          titlePanel("To do")
+                          titlePanel("Qualité de la population estimée par le recensement de la population dans la zone"),
+                          DT::dataTableOutput("qualityTable")
                  ),                       
                           
                   # III. Documentation
                   #-------------------------------------------------------------------------------------------------------------
                   navbarMenu("Documentation",
 
-                             tabPanel("Ameliorarion",
+                             tabPanel("Amelioration",
                                       includeHTML("Html pages/AmeliorationAppli/Amelioration.html")
                              ),
                              # tabPanel("Maintenance Agate",
