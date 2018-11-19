@@ -39,7 +39,7 @@ featureToSpatialPolygonDF <- function(featureList){
   poly_drawn <- SpatialPolygons(p1, proj4string = CRS("+init=epsg:4326")) 
   
   # 5) Attribut data with default value
-  table_attribut <- data.frame(id = paste0("pol",seq(1:length(names(ldf)))),name = NA)
+  table_attribut <- data.frame(idZonage = paste0("pol",seq(1:length(names(ldf)))),name = NA,stringsAsFactors = FALSE)
   rownames(table_attribut) <- table_attribut$id # Important to create SpatialPolygonDataFrame
   
   # 6) Convert into spatialPolygonDataFrame object

@@ -12,8 +12,8 @@ library(shiny)
 library(DT)
 
 # 1) Table d'entrainement
-df <- data.frame(id=seq(1:10),val = round(rnorm(10,0,1),2))
-d3 <- df
+# df <- data.frame(id=seq(1:10),val = round(rnorm(10,0,1),2))
+# d3 <- df
 
 # 2) UI
 ui <-  DT::dataTableOutput('x3')
@@ -21,12 +21,13 @@ ui <-  DT::dataTableOutput('x3')
 # 3) Server 
 
 server <- function(input, output, session) {
-  
+  # Reactive data.frame
+  rv <- reactiveValues(df=data.frame(id=seq(1:10),val = round(rnorm(10,0,1),2)))
   
   
   # Affichage de la table attributaire dans un DT
   # output$x1 = renderDT(df, selection = 'none', server = F, editable = T,rownames = FALSE)
-  output$x3 = renderDT(d3, selection = 'single', rownames = FALSE, editable = TRUE)
+  output$x3 = renderDT(rv$df, selection = 'single', rownames = FALSE, editable = TRUE)
   
   proxy3 = dataTableProxy('x3')
   
@@ -36,12 +37,10 @@ server <- function(input, output, session) {
     i = info$row
     j = info$col + 1  # column index offset by 1
     v = info$value
-    d3[i, j] <<- DT::coerceValue(v, d3[i, j])
-    replaceData(proxy3, d3, resetPaging = FALSE, rownames = FALSE)
+    rv$df[i, j] <- DT::coerceValue(v, rv$df[i, j])
+    replaceData(proxy3, rv$df, resetPaging = FALSE, rownames = FALSE)
     
-    print(d3)
-    
-    
+    print(rv$df)
   })
   
   # Ligne selectionnée

@@ -39,11 +39,30 @@ library(leaflet.extras)
 library(shiny)
 library(tidyverse)
 library(DT)
+library(sp)
 
 source("Other programs/Drawings/Agate - Drawings.R",encoding = "utf-8")
 
 # I. UI
 #----------------------------------------------------------------------------------------------------------------------------------
+
+# Fonction permettant de supprimer l'ensemble des objets dessinés
+scr <- tags$script(HTML(
+  "
+  Shiny.addCustomMessageHandler(
+  'removeleaflet',
+  function(x){
+  console.log('deleting',x)
+  // get leaflet map
+  var map = HTMLWidgets.find('#' + x.elid).getMap();
+  // remove
+  map.removeLayer(map._layers[x.layerid])
+  })
+  "
+))
+
+
+
 ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
            
            # I. Interactive web map
@@ -58,6 +77,7 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                         tags$head(includeCSS("www/agate.css")),
                         # I.1.1. Leaflet map
                         #-----------------
+                        scr,# Remove drawn shape
                         leafletOutput("leafmap", width = "100%", height = "100%"),
                         
                         # I.1.2. Statistical controls
@@ -67,7 +87,9 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                       #img(src = "Logo_Insee.png", height = 72, width = 72,align="right"),
                                       
                                       wellPanel(
-                                        DTOutput('x1')
+                                        DTOutput('x1'),
+                                        actionButton(inputId = "ab_finish",label = "Finaliser figures"),
+                                        actionButton(inputId = "ab_finish2",label = "Terminer")
                                       ),
                                       style = "opacity: 0.75; z-index: 1000;" # IMPORTANT : Absolute panel not hidden by tiles
                         )
@@ -77,11 +99,29 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
 # II. SERVER
 #----------------------------------------------------------------------------------------------------------------------------------
 server <- function(input, output, session) {
+  
+  # II.0. Valeur réactive
+  #-------------------------------------------------------------------
+  rv <- reactiveValues(AgateMap=NULL,
+                       statZone=NULL,
+                       statHZone=NULL,
+                       qualityZone=NULL,
+                       drawnshapes=NULL)
+  
+  # II.1. Carte de base
+  #--------------------------------------------------------------------
   output$leafmap <- renderLeaflet({
+    
+    # load("Data/Tmp/polyTmp.RData")
+    # rv$AgateMap <- zone
+    
+    # Boundary box
+    # AgateMap.bbox <- as.data.frame(bbox(rv$AgateMap))
     leaflet() %>%
       addTiles() %>% 
       fitBounds(lng1 = -65,lat1 = 18,lng2 = -45,lat2 = 3) %>% 
-      addPolygons(data=zone,popup = ~name,group = 'draw') %>% 
+      # fitBounds(lng1 = AgateMap.bbox$min[1],lat1 = AgateMap.bbox$max[2],lng2 = AgateMap.bbox$max[1],lat2 = AgateMap.bbox$min[2]) %>%
+      # addPolygons(data=rv$AgateMap,popup = ~name,group = 'draw',layerId = ~id) %>% 
       addDrawToolbar(
         targetGroup='draw',
         polylineOptions = FALSE,
@@ -126,41 +166,121 @@ server <- function(input, output, session) {
   # We also listen for draw_all_features which is called anytime
   # features are created/edited/deleted from the map
   observeEvent(input$leafmap_draw_all_features, {
-    print("All Features")
-    # print(input$leafmap_draw_all_features)
-
-    # 1) Enregistrement de la liste des features
-    liste <- input$leafmap_draw_all_features
-    save(liste,file="Data/Tmp/leafLetDraw.RData")
-    print("Figure sauvegardée !")
-
-    # 2) Conversion features to spatialpolygones
-    zone <- featureToSpatialPolygonDF(featureList = liste)
-    save(zone,file = "Data/Tmp/polyTmp.RData")
-    print("Polygones sauvegardés !!")
-
-    print(str(zone))
+    # print("All Features")
+    print(input$leafmap_draw_all_features)
+    
+    
+    # 2.1. Liste des identifiants (leaflet.extras) des figures dessinées
+    rv$drawnshapes <- lapply(
+      input$leafmap_draw_all_features$features,
+      function(ftr) {
+        ftr$properties$`_leaflet_id`
+      }
+    )
+    
+    print(rv$drawnshapes)
 
   })
   
-  # II.. Table attributaire
+  # Finalisation des polygones dessinés
+  observeEvent(input$ab_finish,{
+    
+    # 1) Enregistrement de la liste des features
+    liste <- input$leafmap_draw_all_features
+    save(liste,file="Data/Tmp/leafLetDraw2.RData")
+    print("Figure sauvegardée !")
+    
+    # 2) Conversion features to spatialpolygones
+    rv$AgateMap <- featureToSpatialPolygonDF(featureList = liste)
+    
+    # 1) Enregistrement de carte en RData
+    #------------------------------------
+    zone <- rv$AgateMap
+    save(zone,file = "Data/Tmp/polyTmp.RData")
+    print("Polygones sauvegardés !!")
+    
+    print(str(rv$AgateMap))
+    
+    
+    # 3) Mise à jour de la carte leaflet
+    #-----------------------------------
+    if (!is.null(rv$AgateMap)) {
+      # Boundary box
+      AgateMap.bbox <- as.data.frame(bbox(rv$AgateMap))
+      # Update leaflet
+      leafletProxy("leafmap") %>%
+        fitBounds(lng1 = AgateMap.bbox$min[1],lat1 = AgateMap.bbox$max[2],lng2 = AgateMap.bbox$max[1],lat2 = AgateMap.bbox$min[2]) 
+      # %>%
+      #   addPolygons(data=rv$AgateMap,opacity = 3,
+      #               color = "green", stroke = TRUE, weight = 2,
+      #               fill = TRUE, fillOpacity = 0.2,popup = ~paste(name),layerId = ~paste(id),group = "draw")
+      
+      output$x1 = renderDT({
+        datatable(rv$AgateMap@data,rownames = FALSE, editable = TRUE)
+      })
+    }
+  })
+  
+  # Finalisation des polygones dessinés (Fonctionne !)
+  observeEvent(input$ab_finish2,{
+    
+    # 2) Suppresssion des figures dessinées
+    #--------------------------------------
+    # 2.2. Suppression des figures
+    lapply(
+      rv$drawnshapes,
+      function(todelete) {
+        session$sendCustomMessage(
+          "removeleaflet",
+          list(elid="leafmap", layerid=todelete)
+        )
+      }
+    )
+    
+    # Boundary box
+    AgateMap.bbox <- as.data.frame(bbox(rv$AgateMap))
+    # Update leaflet
+    leafletProxy("leafmap") %>%
+      fitBounds(lng1 = AgateMap.bbox$min[1],lat1 = AgateMap.bbox$max[2],lng2 = AgateMap.bbox$max[1],lat2 = AgateMap.bbox$min[2]) %>%
+      addPolygons(data=rv$AgateMap,opacity = 3,
+                  color = "green", stroke = TRUE, weight = 2,
+                  fill = TRUE, fillOpacity = 0.2,popup = ~paste(name),layerId = ~paste(idZonage))
+    
+    
+    print(class(rv$AgateMap))
+  })
+  
+  
+  
+  # II.. Table attributaire édition
   #-----------------------------------------------------------------------------------------------------------
   
   # https://stackoverflow.com/questions/28274584/get-selected-row-from-datatable-in-shiny-app
   
   # Affichage de la table attributaire dans un DT
-  output$x1 = renderDT(zone@data, selection = 'single', server = F, editable = T,rownames = FALSE)
+  # output$x1 = renderDT({
+  #   
+  #   datatable(data.frame(id=NA,name=NA),rownames = FALSE, editable = TRUE)
+  #   print(!is.null(rv$AgateMap))
+  #   
+  #   # if(!is.null(rv$AgateMap)){
+  #   #   datatable(rv$AgateMap@data, selection = 'single', rownames = FALSE, editable = TRUE)
+  #   # }else{
+  #   #   
+  #   # }
+  #   
+  # })
   
-  # Mise à jour de la DT
+  # Mise à jour de la DT (Fonctionne !)
   proxy = dataTableProxy('x1')
   observeEvent(input$x1_cell_edit, {
     info = input$x1_cell_edit
     str(info)
     i = info$row
-    j = info$col
+    j = info$col + 1
     v = info$value
-    zone@data[i, j] <<- DT::coerceValue(v, zone@data[i, j])
-    replaceData(proxy, zone@data, resetPaging = FALSE)  # important
+    rv$AgateMap@data[i, j] <- DT::coerceValue(v, rv$AgateMap@data[i, j])
+    replaceData(proxy, rv$AgateMap@data, resetPaging = FALSE)  # important
   })
 
   # Ligne selectionnée
@@ -172,6 +292,23 @@ server <- function(input, output, session) {
 # III. Launch App
 #----------------------------------------------------------------------------------------------------------------------------------
 shinyApp(ui, server)
+
+
+
+
+# Gestion de l'edition des cartes : plusieurs solutions : 
+# 1) Trouver l'identifiant du polygon correspondant dans la feature pour réassocier correctement la couche cartographique modifiée 
+# C'est la solution idéale car la solution la plus souple.
+# 2) Faire la création de nouveau élément et l"édition de manière séparée avec deux boutons. Solution moins sympa mais je pense plus
+# facile à coder.
+
+# L'objet feature ne contient pas d'identifiant de polygone... Du coup, il n'est pas possible d'identifier facilement les polygones
+# préalablement chargés et éventuellement modifiés dans l'application. Pour le moment, on va développer l'option deux.
+#  Il faut proposer à l'utilisateur d'ajouter de nouvelles zones mais il ne pourra pas modifier les zones existantes.
+
+
+# Idée : ajouter heatmap pour indiquer ou se trouve la plus grande concentration de points
+
 
 
 
