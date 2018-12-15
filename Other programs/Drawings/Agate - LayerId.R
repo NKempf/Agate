@@ -2,13 +2,13 @@
 #                 Agate - Tests du package leaflet.extras                                                                        #
 #--------------------------------------------------------------------------------------------------------------------------------#
 
-# MAJ : 13.11.2018
+# MAJ : 19.11.2018
 
 # Nicolas Kempf
 
 # Problématique : Dessiner des zones doit être fait sur un site indépendant de l'application
 
-# Objectif : ajouter la fonctionnalité de dessin d'un ou plusieurs polygones à l'application
+# Objectif : Permettre l'ajout ou la modification de polygones à une couche cartographique existante
 
 # Solutions : 
 #   1) Explorer le package leaflet.extras
@@ -64,37 +64,39 @@ scr <- tags$script(HTML(
 
 
 ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
-           
-           # I. Interactive web map
-           #-------------------------------------------------------------------------------------------------------------
-           tabPanel("Carte",value="vis",
-                    
-                    #-----------------#
-                    # I.1. Map object #
-                    #-----------------#
-                    div(class="outer",
-                        # NB : Leaflet map need agate.css to fit windows
-                        tags$head(includeCSS("www/agate.css")),
-                        # I.1.1. Leaflet map
-                        #-----------------
-                        scr,# Remove drawn shape
-                        leafletOutput("leafmap", width = "100%", height = "100%"),
-                        
-                        # I.1.2. Statistical controls
-                        #----------------------------
-                        absolutePanel(top = 30, right = 20,height=200, width=400,
-                                      # Affichage du logo Insee
-                                      #img(src = "Logo_Insee.png", height = 72, width = 72,align="right"),
-                                      
-                                      wellPanel(
-                                        DTOutput('x1'),
-                                        actionButton(inputId = "ab_finish",label = "Finaliser figures"),
-                                        actionButton(inputId = "ab_finish2",label = "Terminer")
-                                      ),
-                                      style = "opacity: 0.75; z-index: 1000;" # IMPORTANT : Absolute panel not hidden by tiles
-                        )
-                    ) # end div
-))
+                 
+                 # I. Interactive web map
+                 #-------------------------------------------------------------------------------------------------------------
+                 tabPanel("Carte",value="vis",
+                          
+                          #-----------------#
+                          # I.1. Map object #
+                          #-----------------#
+                          div(class="outer",
+                              # NB : Leaflet map need agate.css to fit windows
+                              tags$head(includeCSS("www/agate.css")),
+                              # I.1.1. Leaflet map
+                              #-----------------
+                              scr,# Remove drawn shape
+                              leafletOutput("leafmap", width = "100%", height = "100%"),
+                              
+                              # I.1.2. Statistical controls
+                              #----------------------------
+                              absolutePanel(top = 30, right = 20,height=200, width=400,
+                                            # Affichage du logo Insee
+                                            #img(src = "Logo_Insee.png", height = 72, width = 72,align="right"),
+                                            
+                                            wellPanel(
+                                              actionButton(inputId = "ab_edit",label = "Editer"),
+                                              actionButton(inputId = "ab_test",label = "Test"),
+                                              DTOutput('x1'),
+                                              actionButton(inputId = "ab_finish",label = "Finaliser figures"),
+                                              actionButton(inputId = "ab_finish2",label = "Terminer")
+                                            ),
+                                            style = "opacity: 0.75; z-index: 1000;" # IMPORTANT : Absolute panel not hidden by tiles
+                              )
+                          ) # end div
+                 ))
 
 # II. SERVER
 #----------------------------------------------------------------------------------------------------------------------------------
@@ -103,6 +105,7 @@ server <- function(input, output, session) {
   # II.0. Valeur réactive
   #-------------------------------------------------------------------
   rv <- reactiveValues(AgateMap=NULL,
+                       AgateMapEdit=NULL,
                        statZone=NULL,
                        statHZone=NULL,
                        qualityZone=NULL,
@@ -112,26 +115,32 @@ server <- function(input, output, session) {
   #--------------------------------------------------------------------
   output$leafmap <- renderLeaflet({
     
-    # load("Data/Tmp/polyTmp.RData")
-    # rv$AgateMap <- zone
+    load("Data/Tmp/polyTmp.RData")
+    rv$AgateMap <- zone
     
     # Boundary box
-    # AgateMap.bbox <- as.data.frame(bbox(rv$AgateMap))
+    AgateMap.bbox <- as.data.frame(bbox(rv$AgateMap))
     leaflet() %>%
       addTiles() %>% 
-      fitBounds(lng1 = -65,lat1 = 18,lng2 = -45,lat2 = 3) %>% 
-      # fitBounds(lng1 = AgateMap.bbox$min[1],lat1 = AgateMap.bbox$max[2],lng2 = AgateMap.bbox$max[1],lat2 = AgateMap.bbox$min[2]) %>%
-      # addPolygons(data=rv$AgateMap,popup = ~name,group = 'draw',layerId = ~id) %>% 
-      addDrawToolbar(
-        targetGroup='draw',
-        polylineOptions = FALSE,
-        circleOptions = FALSE,
-        markerOptions = FALSE,
-        circleMarkerOptions = FALSE,
-        editOptions = editToolbarOptions(selectedPathOptions = selectedPathOptions())) 
+      # fitBounds(lng1 = -65,lat1 = 18,lng2 = -45,lat2 = 3) %>% 
+      fitBounds(lng1 = AgateMap.bbox$min[1],lat1 = AgateMap.bbox$max[2],lng2 = AgateMap.bbox$max[1],lat2 = AgateMap.bbox$min[2]) %>%
+      addPolygons(data=rv$AgateMap,popup = ~name,layerId = ~idZonage,opacity = 3,
+                  color = "green", stroke = TRUE, weight = 2,
+                  fill = TRUE, fillOpacity = 0.2) 
+    # s%>%
+      # addDrawToolbar(
+      #   targetGroup='draw',
+      #   polylineOptions = FALSE,
+      #   circleOptions = FALSE,
+      #   markerOptions = FALSE,
+      #   circleMarkerOptions = FALSE,
+      #   editOptions = editToolbarOptions(selectedPathOptions = selectedPathOptions())) 
     # %>%
     #   addStyleEditor()
   })
+  
+  # III. Evenements Drawings
+  #----------------------------------------------------------------------------------------------------------------------------
   
   # Start of Drawing
   observeEvent(input$leafmap_draw_start, {
@@ -179,8 +188,60 @@ server <- function(input, output, session) {
     )
     
     print(rv$drawnshapes)
-
+    
   })
+  
+  # IV. Action buttons évenemets
+  #---------------------------------------------------------------------------------------------------------------------------
+  observeEvent(input$ab_edit,{
+    
+    # I. Add drawing buttons + MAJ leaflet map
+    #-----------------------------------------
+    rv$AgateMapEdit <- rv$AgateMap
+    
+    # Boundary box
+    AgateMap.bbox <- as.data.frame(bbox(rv$AgateMapEdit))
+    
+    print(rv$AgateMapEdit)
+    
+    # Add drawings buttons
+    if(!is.null(rv$AgateMapEdit)){
+      leafletProxy("leafmap") %>%
+        fitBounds(lng1 = AgateMap.bbox$min[1],lat1 = AgateMap.bbox$max[2],lng2 = AgateMap.bbox$max[1],lat2 = AgateMap.bbox$min[2]) %>%
+        clearShapes() %>% # Suppression des polygones précédents
+        addPolygons(data=rv$AgateMapEdit,popup = ~paste(name),layerId = ~paste(idZonage),group = 'draw') %>%
+        addDrawToolbar(
+          targetGroup='draw',
+          polylineOptions = FALSE,
+          circleOptions = FALSE,
+          markerOptions = FALSE,
+          circleMarkerOptions = FALSE,
+          rectangleOptions = FALSE,
+          editOptions = editToolbarOptions(selectedPathOptions = selectedPathOptions()))
+    } # End if
+    
+    
+    
+    
+    
+    
+  })
+  
+  
+  observeEvent(input$ab_test,{
+    
+    print(rv$AgateMapEdit)
+    
+    
+    
+  })
+  
+  
+  
+  
+  
+  
+  
   
   # Finalisation des polygones dessinés
   observeEvent(input$ab_finish,{
@@ -282,7 +343,7 @@ server <- function(input, output, session) {
     rv$AgateMap@data[i, j] <- DT::coerceValue(v, rv$AgateMap@data[i, j])
     replaceData(proxy, rv$AgateMap@data, resetPaging = FALSE)  # important
   })
-
+  
   # Ligne selectionnée
   observeEvent(input$x1_rows_selected,{
     print(input$x1_rows_selected)
@@ -307,14 +368,6 @@ shinyApp(ui, server)
 #  Soit 4 actions ce qui semble trop. La fonctionnalité de suppression des objets leaflet.extras a permis d'accéder à l'identifiant
 #  des polygones attribués par leaflet.extras.
 # Il faut désormais trouver comment associer cette identifiant avec celui des couches cartographiques.
-
-# L'édition de polygones préalablement chargés ne créer par l'identifiant dans la feature associée. Il faut donc trouver un 
-# moyen de mettre à jour l'identifiant de la feature.
-
-
-# Derniere fonctionnalité à développer : Ajout des polygones dessinés à une éventuelle couche carto chargée par l'utilisateur
-
-
 
 
 # Idée : ajouter heatmap pour indiquer ou se trouve la plus grande concentration de points

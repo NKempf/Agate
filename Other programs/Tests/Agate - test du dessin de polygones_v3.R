@@ -2,7 +2,7 @@
 #                 Agate - Tests du package leaflet.extras                                                                        #
 #--------------------------------------------------------------------------------------------------------------------------------#
 
-# MAJ : 13.11.2018
+# MAJ : 02.12.2018
 
 # Nicolas Kempf
 
@@ -60,8 +60,6 @@ scr <- tags$script(HTML(
   })
   "
 ))
-
-
 
 ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
            
@@ -216,7 +214,7 @@ server <- function(input, output, session) {
       #               fill = TRUE, fillOpacity = 0.2,popup = ~paste(name),layerId = ~paste(id),group = "draw")
       
       output$x1 = renderDT({
-        datatable(rv$AgateMap@data,rownames = FALSE, editable = TRUE)
+        datatable(rv$AgateMap@data,rownames = FALSE, editable = TRUE,selection = "single")
       })
     }
   })
@@ -245,7 +243,6 @@ server <- function(input, output, session) {
       addPolygons(data=rv$AgateMap,opacity = 3,
                   color = "green", stroke = TRUE, weight = 2,
                   fill = TRUE, fillOpacity = 0.2,popup = ~paste(name),layerId = ~paste(idZonage))
-    
     
     print(class(rv$AgateMap))
   })
@@ -285,6 +282,18 @@ server <- function(input, output, session) {
 
   # Ligne selectionnée
   observeEvent(input$x1_rows_selected,{
+    
+    # 1) Selection du polygone
+    mapSelect <- rv$AgateMap[input$x1_rows_selected,]
+    
+    # 2) Boundary Box du polygone
+    mapSelect.bbox <- as.data.frame(bbox(mapSelect))
+    
+    # 3) Mise à jour de la carte
+    leafletProxy("leafmap") %>%
+      fitBounds(lng1 = mapSelect.bbox$min[1],lat1 = mapSelect.bbox$max[2],lng2 = mapSelect.bbox$max[1],lat2 = mapSelect.bbox$min[2])
+    
+    # 4) Affichage de la ligne
     print(input$x1_rows_selected)
   })
 }
