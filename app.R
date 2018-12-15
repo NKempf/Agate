@@ -20,6 +20,7 @@ library(shinyjs) # Mask buttons/elements on graphic interface
 library(shinyWidgets) # Widgets supplementaires
 library(shinydashboard) # Tools like infoBox
 library(leaflet) # Interactive web map
+library(leaflet.extras) # Extras functions for leaflet
 library(rgdal) # Input shapefile
 library(rgeos) # Map tools
 library(sampling) # Sampling tools
@@ -28,6 +29,7 @@ library(plotly) # Interactive graphics
 library(openxlsx) # Export data in Excel
 library(fst) # Read partial data
 library(fstplyr) # dplyr for fst object
+library(DT) # Interactive datatable
 
 # II. Data
 #----------------------------------------------------------------------------------------------------------------------------------
@@ -44,30 +46,24 @@ source("Other programs/Plotly/Agate - plotly graphes fonctions_v3.R",encoding = 
 
 # II.2. Fake data
 #----------------
-# load("Data/fakePts.RData") # fake position
-# load("Data/fakeData.Rdata") # fake data base
-# load("Data/Stats/Region and cities/region_stat.RData") # Fake region and cities stat
-# 
-# # Penser à modifier SERVER si on utilise les fakedata
-# ril <- pts.fake
+load("Data/Fake/fakeHeatPts.RData") # Fake spatialpoints for heatmap
+FakeHeatpoint <-  spTransform(FakeHeatpoint,"+init=epsg:4326")
+FakeHeatpoint@data %>% 
+  mutate(x = FakeHeatpoint@coords[,1],
+         y = FakeHeatpoint@coords[,2]) -> FakeHeatpoint
 
-# II.3. Real Data
+# Statistical summary about cities and territory
+if(file.exists("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData")){
+  load("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData")  # Real data
+  com.stat <- statCom_rp14_filo14
+  dep.stat <- statReg_rp14_filo14
+}else{
+  load("Data/Stats/Region and cities/region_stat.RData") # Fake region and cities stat
+}
+
+# II.3. Maps
 #----------------
-# load("Data/Ril/ril15.RData")
-# load("Data/Rp/rp14.RData")
-# load("Data/Filosofi/filo14.Rdata")
 load("Data/Maps/Cities/cities.RData") # Cities map
-load("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData") # Statistical data (cities and regions)
-
-# Parameters
-# ril <- rilhab15
-# rpi <- rp14i
-# rpl <- rp14l
-# filo <- filo14.disp
-com.stat <- statCom_rp14_filo14
-dep.stat <- statReg_rp14_filo14
-# 
-# rm(rilhab15,rp14i,rp14l,Rp14dico,filo14.disp,filo14.disp.dico,statCom_rp14_filo14,statReg_rp14_filo14)
 
 # III. Graphic web interface
 #----------------------------------------------------------------------------------------------------------------------------------

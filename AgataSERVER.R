@@ -19,8 +19,11 @@ server <- function(input, output,session) {
   # I.1. Initiate interactive web map
   #----------------------------------
   output$mymap <- renderLeaflet({
-    leaflet("map") %>% addTiles()%>% 
-      fitBounds(lng1 = -65,lat1 = 18,lng2 = -45,lat2 = 3) 
+    leaflet("map",data = FakeHeatpoint) %>% addTiles()%>% 
+      fitBounds(lng1 = -65,lat1 = 18,lng2 = -45,lat2 = 3) %>% 
+      addHeatmap(lng = ~x, lat = ~y,
+                 # intensity = ~nivviem,
+                 blur = 40, radius = 20)
     # %>%
     #   addPolygons(data=qpv_stat,opacity = 3,
     #               color = "green", stroke = TRUE, weight = 2,
@@ -66,24 +69,16 @@ server <- function(input, output,session) {
   # I.4. Update view on map clicks
   #-------------------------------
   observeEvent(input$mymap_shape_click, { 
-    
-    # # Polygon selection
-    # mapTmp <- userMap()[userMap()@data$id == input$mymap_shape_click$id,] 
-    # centroidCoord <- as.data.frame(coordinates(rgeos::gCentroid(mapTmp)))
-    # 
-    # # Update view
-    # leafletProxy("mymap") %>%
-    #   setView(lng=centroidCoord$x, lat=centroidCoord$y, input$Map_zoom) 
-    # %>% acm_defaults(p$lng, p$lat)
-    
-    
-    # p <- input$Map_marker_click
-    # proxy <- leafletProxy("Map")
-    # if(p$id=="Selected"){
-    #   proxy %>% removeMarker(layerId="Selected")
-    # } else {
-    #   proxy %>% setView(lng=p$lng, lat=p$lat, input$Map_zoom) %>% acm_defaults(p$lng, p$lat)
-    # }
+    print(input$mymap_shape_click)
+    # 1) Selection du polygone
+    mapSelect <- rv$AgateMap[rv$AgateMap@data$idZonage == input$mymap_shape_click$id,]
+
+    # 2) Boundary Box du polygone
+    mapSelect.bbox <- as.data.frame(bbox(mapSelect))
+
+    # 3) Mise à jour de la carte
+    leafletProxy("mymap") %>%
+      fitBounds(lng1 = mapSelect.bbox$min[1],lat1 = mapSelect.bbox$max[2],lng2 = mapSelect.bbox$max[1],lat2 = mapSelect.bbox$min[2])
   })
    
   
@@ -153,6 +148,16 @@ server <- function(input, output,session) {
     t1 <- Sys.time()
     
     withProgress(message = "Creation de l'identifiant",style = "notification", value = 0, {
+      
+    # O. Selection des bases de travail (donnees reelles ou fausses)
+    #---------------------------------------------------------------
+      # Ril
+      rilPath <- ifelse(file.exists("Data/Ril/ril15.fst"),"Data/Ril/ril15.fst","Data/Ril/FakeRil.fst")
+      # RP
+      rpiPath <- ifelse(file.exists("Data/Rp/rp13i.fst"),"Data/Rp/rp13i.fst","Data/Rp/FakeRpi.fst")
+      rplPath <- ifelse(file.exists("Data/Rp/rp13l.fst"),"Data/Rp/rp13l.fst","Data/Rp/FakeRpl.fst")
+      # Filosofi
+      filoPath <- ifelse(file.exists("Data/Filosofi/filo14.fst"),"Data/Filosofi/filo14.fst","Data/Filosofi/FakeFilo.fst")
     
     # I. Preparation du zonage
     #-------------------------
@@ -175,7 +180,7 @@ server <- function(input, output,session) {
     com.dom.select <- com.dom@data$Codgeo[test]
     
     # II.2. Chargement des logements du RIL dans les communes d'interets
-    ril <- read_fst("Data/Ril/ril15.fst") %>% 
+    ril <- read_fst(rilPath) %>% 
       select(idx,x,y) %>% 
       mutate(com = substr(idx,1,5)) %>%
       filter(com %in% com.dom.select)
@@ -195,13 +200,13 @@ server <- function(input, output,session) {
     # Note : pour des raisons de performances, les données du RP sont préalablement filtrées selon les communes étudiées
     incProgress(amount = 0.2,message = "Ajout de la zone aux données du RP")
     
-    rpi <- read_fst("Data/Rp/rp13i.fst") %>% 
+    rpi <- read_fst(rpiPath) %>% 
       filter(idx %in% ril@data$idx) %>% 
       left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
       mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
     
     # III.3. Ajout de la zone aux données du rp logement
-    rpl <- read_fst("Data/Rp/rp13l.fst") %>% 
+    rpl <- read_fst(rplPath) %>% 
       filter(idx %in% ril@data$idx) %>% 
       left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
       mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
@@ -211,7 +216,7 @@ server <- function(input, output,session) {
     
     # IV.1. Chargement des données fiscales filtrées selon les communes d'intérêts
     incProgress(amount = 0.3,message = "Ajout des données fiscales")
-    filo <- read_fst("Data/Filosofi/filo14.fst") %>% 
+    filo <- read_fst(filoPath) %>% 
       filter(com %in% com.dom.select)
     
     # IV.2. Transformation des données en objet spatial
