@@ -75,10 +75,15 @@ server <- function(input, output,session) {
 
     # 2) Boundary Box du polygone
     mapSelect.bbox <- as.data.frame(bbox(mapSelect))
+    zoom_lng <- (mapSelect.bbox$max[1] - mapSelect.bbox$min[1])/2
+    zoom_lat <- (mapSelect.bbox$max[2] - mapSelect.bbox$min[2])/2
 
     # 3) Mise à jour de la carte
     leafletProxy("mymap") %>%
-      fitBounds(lng1 = mapSelect.bbox$min[1],lat1 = mapSelect.bbox$max[2],lng2 = mapSelect.bbox$max[1],lat2 = mapSelect.bbox$min[2])
+      fitBounds(lng1 = mapSelect.bbox$min[1] - zoom_lng,
+                lat1 = mapSelect.bbox$max[2] + zoom_lat,
+                lng2 = mapSelect.bbox$max[1] + zoom_lng,
+                lat2 = mapSelect.bbox$min[2] - zoom_lat)
   })
    
   

@@ -76,5 +76,5 @@ leaflet(map) %>% addTiles() %>%
   fitBounds(lng1 = -65,lat1 = 18,lng2 = -45,lat2 = 3) %>% 
   addHeatmap(lng = ~x, lat = ~y,
              # intensity = ~nivviem,
-             blur = 40, radius = 20)
+             blur = 40, radius = 15)
 
