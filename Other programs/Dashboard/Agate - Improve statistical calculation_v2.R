@@ -35,10 +35,22 @@ addIndicateurDiscret <- function(df_discret,df_indicateur,group_var,unite){
   return(df_indicateur)
 }
 
+majDiscret <- function(df_discret,var,domaine,source,categorie){
+  df_discret  %>% 
+    rename(indicateur = eval(var)) %>% 
+    mutate(domaine = domaine,source = source,categorie = categorie) %>% 
+    ungroup() %>% 
+    bind_rows(stat_discrete_detail)
+}
+
 #----------------------------------------------------------------------------------------------------------------------------------------------#
 #                                             A. Recensement de la population                                                                  #
 #----------------------------------------------------------------------------------------------------------------------------------------------#
 
+# Paramètre
+sourceRpi <- "rpi14"
+sourceRpl <- "rpl14"
+sourceFilo <- "filo14"
 
 # I. Territoire
 #-----------------------------------------------------------------------------------------------------------------------------------------------
@@ -57,7 +69,7 @@ indicateur_stat <- rpi %>%
   summarise(freq = n(),
             value_p = round(sum(IPONDI,na.rm = TRUE),0)) %>% 
   mutate(indicateur = "population",
-         source = "rp14",
+         source = sourceRpi,
          unite = "nb",
          domaine = "territoire",
          categorie = "population")
@@ -65,39 +77,34 @@ indicateur_stat <- rpi %>%
 # II.1. Part des moins de 20 ans et des 20 a 64 ans
 #--------------------------------------------------
 stat_discrete_detail <- rpi %>%
-  mutate(indicateur = cut(as.numeric(AGEREV),
+  mutate(age = cut(as.numeric(AGEREV),
                    breaks = c(0,20,65,120),
                    include.lowest = TRUE,
                    right = FALSE)) %>%
-  group_by(!!! syms(group_var),indicateur) %>%
+  group_by(!!! syms(group_var),age) %>%
   weighted_frequency(IPONDI) %>% 
-  mutate(domaine = "territoire",source = "rp14",categorie = "age")
-
-# Ajout aux données finales
-# indicateur_stat <- addIndicateurDiscret(df_discret = stat_discrete_detail,
-#                                         df_indicateur = indicateur_stat,group_var = group_var,unite = "%")
+  rename(indicateur = age) %>% 
+  mutate(domaine = "territoire",source = sourceRpi,categorie = "age") %>% 
+  ungroup() 
 
   # II.2. Part des 60 ans et plus
   #------------------------------
 stat_discrete_detail <- rpi %>%
-  mutate(indicateur = cut(as.numeric(rpi$AGEREV),
+  mutate(age = cut(as.numeric(rpi$AGEREV),
                           breaks = c(0,20,60,120),
                           include.lowest = TRUE,
                           right = FALSE)) %>%
-  group_by(!!! syms(group_var),indicateur) %>%
+  group_by(!!! syms(group_var),age) %>%
   weighted_frequency(IPONDI) %>% 
-  filter(indicateur != "[0,20)") %>% 
-  mutate(domaine = "territoire",source = "rp14",categorie = "age") %>% 
-  bind_rows(stat_discrete_detail)
+  filter(age != "[0,20)") %>% 
+  majDiscret(var = "age",domaine = "territoire",source = sourceRpi,categorie = "age")
   
   # II.3. Part des femmes
   #----------------------
 stat_discrete_detail <- rpi %>%
   group_by(!!! syms(group_var),SEXE) %>%
-  rename(indicateur = SEXE) %>% 
   weighted_frequency(IPONDI) %>% 
-  mutate(domaine = "territoire",source = "rp14",categorie = "sexe") %>% 
-  bind_rows(stat_discrete_detail)
+  majDiscret(var = "SEXE",domaine = "territoire",source = sourceRpi,categorie = "sexe")
   
   # III. Scolarisation
   #-----------------------------------------------------------------------------------------------------------------------------------------------
@@ -126,9 +133,8 @@ stat_discrete_detail <- rpi %>%
   mutate(indicateur = ifelse(ETUD == "n_etudi","nScola_15plus","autre")) %>%
   group_by(!!! syms(group_var),indicateur) %>% 
   weighted_frequency(IPONDI) %>% 
-  mutate(domaine = "scolarisation",source = "rp14",categorie = "scolarisation") %>% 
-  ungroup() %>% 
-  bind_rows(stat_discrete_detail)
+  majDiscret(var= "indicateur",domaine = "scolarisation", source = sourceRpi, 
+             categorie = "non scolarise sans diplome")
   
   # III.3. Taux de non scolarisation des 6 - 14 ans
   #-----------------------------------------------
@@ -136,11 +142,8 @@ stat_discrete_detail <- rpi %>%
     filter(as.numeric(AGEREV) %in% c(6:14)) %>%  
     group_by(!!! syms(group_var),ETUD) %>% 
     weighted_frequency(IPONDI) %>% 
-  rename(indicateur = ETUD) %>% 
-  mutate(domaine = "scolarisation",source = "rp14",categorie = "scolarisation") %>% 
-  ungroup() %>% 
-  bind_rows(stat_discrete_detail)
-  
+  majDiscret(var= "ETUD",domaine = "scolarisation", source = sourceRpi, categorie = "non scolarise [6,14]")
+
   # III.4. Taux de decrocheur : jeune non scolarise de 16 - 25 ans sans diplome
   #----------------------------------------------------------------------------
 stat_discrete_detail <- rpi %>%
@@ -148,9 +151,7 @@ stat_discrete_detail <- rpi %>%
     mutate(indicateur = ifelse(DIPL == "A" & ETUD == "n_etudi","decrocheur","n_decrocheur")) %>% 
     group_by(!!! syms(group_var),indicateur) %>% 
     weighted_frequency(IPONDI) %>% 
-  mutate(domaine = "scolarisation",source = "rp14",categorie = "decrocheur") %>% 
-  ungroup() %>% 
-  bind_rows(stat_discrete_detail)
+  majDiscret(var= "indicateur",domaine = "scolarisation", source = sourceRpi, categorie = "decrocheur")
   
   # IV. Emploi
   #-----------------------------------------------------------------------------------------------------------------------------------------------
@@ -161,11 +162,7 @@ stat_discrete_detail <- rpi %>%
     filter(as.numeric(AGEREV) %in% c(16:64) & TACT %in% c("actifocc","chomeur")) %>%
     group_by(!!! syms(group_var),TACT) %>% 
     weighted_frequency(IPONDI) %>% 
-  rename(indicateur = TACT) %>% 
-  mutate(domaine = "emploi",source = "rp14",categorie = "chomage") %>% 
-  ungroup() %>% 
-  bind_rows(stat_discrete_detail)
-  
+  majDiscret(var= "TACT",domaine = "emploi", source = sourceRpi, categorie = "chomage")
   
   # IV.2. Taux d'actif  - d'inactif pour les 15 - 64 ans
   #-----------------------------------------------------
@@ -173,10 +170,7 @@ stat_discrete_detail <- rpi %>%
     filter(as.numeric(AGEREV) %in% c(16:64)) %>%
     group_by(!!! syms(group_var),inactif) %>% 
     weighted_frequency(IPONDI) %>% 
-  rename(indicateur = inactif) %>% 
-  mutate(domaine = "emploi",source = "rp14",categorie = "actif") %>% 
-  ungroup() %>% 
-  bind_rows(stat_discrete_detail)
+  majDiscret(var= "inactif",domaine = "emploi", source = sourceRpi, categorie = "chomage")
   
   # IV.3. Taux d'actif selon le sexe pour les 15 - 64 ans
   #------------------------------------------------------
@@ -192,96 +186,114 @@ stat_discrete_detail <- rpi %>%
   
   # IV.4. Part des actifs de 15-64 ans cadres et professions intermediaire
   #-----------------------------------------------------------------------
-  tRp.IV.4 <- rpi %>%
+stat_discrete_detail <- rpi %>%
     filter(as.numeric(AGEREV) %in% c(16:64) & TACT %in% c("actifocc","chomeur")) %>%
-    mutate(profInter = ifelse(POSP %in% c("1J","1I","1H","1G","1F"),"cadre_prof_inter","autre")) %>%
-    group_by(!!! syms(group_var),profInter) %>% 
-    weighted_frequency(IPONDI)
+    mutate(indicateur = ifelse(POSP %in% c("1J","1I","1H","1G","1F"),"cadre_prof_inter","autre")) %>%
+    group_by(!!! syms(group_var),indicateur) %>% 
+    weighted_frequency(IPONDI)  %>% 
+  majDiscret(var= "indicateur",domaine = "emploi", source = sourceRpi, categorie = "cadre et profession inter")
   
   # V. Immigration
   #-----------------------------------------------------------------------------------------------------------------------------------------------
   
   # V.1. Part des etrangers
   #------------------------
-  tRp.V.1 <- rpi %>%
+stat_discrete_detail <- rpi %>%
     group_by(!!! syms(group_var),etranger) %>% 
-    weighted_frequency(IPONDI)
+    weighted_frequency(IPONDI) %>% 
+  majDiscret(var= "etranger",domaine = "immigration", source = sourceRpi, categorie = "etranger")
   
-  # V.1. Part des immigres
+  # V.2. Part des immigres
   #-----------------------
-  tRp.V.2 <- rpi %>%
-    group_by(!!! syms(group_var),immigre) %>% 
-    weighted_frequency(IPONDI)
+stat_discrete_detail <- rpi %>%
+  group_by(!!! syms(group_var),immigre) %>% 
+  weighted_frequency(IPONDI) %>% 
+  majDiscret(var= "immigre",domaine = "immigration", source = sourceRpi, categorie = "immigre")
   
   # VI. Logements
   #-----------------------------------------------------------------------------------------------------------------------------------------------
   
-  # VI.1. Part de logements selon la categorie de logement
+  # VI.1. Part de logements selon la categorie de logement ( A faire modifier libelle CATL)
   #-------------------------------------------------------
-  tRp.VI.1 <- rpl %>%
-    group_by(!!! syms(group_var),catLog) %>% 
-    weighted_frequency(IPONDL)
+stat_discrete_detail <- rpl %>%
+  group_by(!!! syms(group_var),catLog) %>% 
+  weighted_frequency(IPONDL) %>% 
+  majDiscret(var= "catLog",domaine = "logement", source = sourceRpl, categorie = "categorie logement")
   
   # VI.2. Part des appartements
   #----------------------------
-  tRp.VI.2 <- rpl %>%
+stat_discrete_detail <- rpl %>%
     group_by(!!! syms(group_var),appartement) %>% 
-    weighted_frequency(IPONDL)
+    weighted_frequency(IPONDL) %>% 
+  majDiscret(var= "appartement",domaine = "logement", source = sourceRpl, categorie = "appartement")
   
   # VI.3. Part des locataires
   #--------------------------
-  tRp.VI.3 <- rpl %>%
-    group_by(!!! syms(group_var),locataire) %>% 
-    weighted_frequency(IPONDL)
-  
+stat_discrete_detail <- rpl %>%
+  group_by(!!! syms(group_var),locataire) %>% 
+  weighted_frequency(IPONDL) %>% 
+  majDiscret(var= "locataire",domaine = "logement", source = sourceRpl, categorie = "locataire")
   
   # VI.4. Part des locatairesHlm
   #-----------------------------
-  tRp.VI.4 <- rpl %>%
+stat_discrete_detail <- rpl %>%
     group_by(!!! syms(group_var),locataireHlm) %>% 
-    weighted_frequency(IPONDL)
+    weighted_frequency(IPONDL)  %>% 
+  majDiscret(var= "locataireHlm",domaine = "logement", source = sourceRpl, categorie = "locataire Hlm")
   
   # VII. Residences principales
   #-----------------------------------------------------------------------------------------------------------------------------------------------
   
   # VII.1. Part des residences principales de plus de 100m²
   #--------------------------------------------------------
-  tRp.VII.1 <- rpl %>%
+stat_discrete_detail <- rpl %>%
     filter(CATL == "1") %>% 
     group_by(!!! syms(group_var),surf100) %>% 
-    weighted_frequency(IPONDL)
+    weighted_frequency(IPONDL) %>% 
+  majDiscret(var= "surf100",domaine = "residencePrinc", source = sourceRpl, categorie = "surface logement")
   
   # VII.2. Part des residences principales en HLM
   #----------------------------------------------
-  tRp.VII.2 <- rpl %>%
+stat_discrete_detail <- rpl %>%
     filter(CATL == "1") %>% 
     group_by(!!! syms(group_var),hlm) %>% 
-    weighted_frequency(IPONDL)
+    weighted_frequency(IPONDL) %>% 
+  majDiscret(var= "hlm",domaine = "residencePrinc", source = sourceRpl, categorie = "residence principale hlm")
   
   # VII.3. Part des residences principales sans eau chaude
   #-------------------------------------------------------  
-  tRp.VII.3 <- rpl %>%
+stat_discrete_detail <- rpl %>%
     filter(CATL == "1" & EAU %in% c("1","2","3")) %>% 
     mutate(eauchaude = ifelse(EAU =="2","Eau_chaude","N_eau_chaude")) %>% 
     group_by(!!! syms(group_var),eauchaude) %>% 
-    weighted_frequency(IPONDL)
+    weighted_frequency(IPONDL) %>% 
+  majDiscret(var= "eauchaude",domaine = "residencePrinc", source = sourceRpl, categorie = "presence eau chaude")
   
   # VII.4. Part des residences principales sans bain ni douche 
   #-----------------------------------------------------------
-  tRp.VII.4 <- rpl %>%
+stat_discrete_detail <- rpl %>%
     filter(CATL == "1" & BAIN %in% c("1","2")) %>% 
     mutate(douche = ifelse(BAIN == "1","bain_douche","N_bain_douche")) %>% 
     group_by(!!! syms(group_var),douche) %>% 
-    weighted_frequency(IPONDL)
+    weighted_frequency(IPONDL) %>% 
+  majDiscret(var= "douche",domaine = "residencePrinc", source = sourceRpl, categorie = "presence douche")
   
   # VII.5. Part des residences principales sans tout a l'egout
   #-----------------------------------------------------------
-  tRp.VII.5 <- rpl %>%
+stat_discrete_detail <- rpl %>%
     filter(CATL == "1" & EGOUL %in% c("1","2","3","4")) %>% 
     mutate(egout = ifelse(EGOUL == "1","tout_egout","N_tout_egout")) %>% 
     group_by(!!! syms(group_var),egout) %>% 
-    weighted_frequency(IPONDL)
+    weighted_frequency(IPONDL) %>% 
+  majDiscret(var= "egout",domaine = "residencePrinc", source = sourceRpl, categorie = "presence egout")
   
+
+# Ajout au données synthethiques
+#-------------------------------
+indicateur_stat <- addIndicateurDiscret(df_discret = stat_discrete_detail,
+                                        df_indicateur = indicateur_stat,group_var = group_var,unite = "%")
+
+
   #----------------------------------------------------------------------------------------------------------------------------------------------#
   #                                             II. Statistiques issues de Filosofi                                                              #
   #----------------------------------------------------------------------------------------------------------------------------------------------#
