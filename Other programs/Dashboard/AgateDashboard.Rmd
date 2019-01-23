@@ -184,7 +184,7 @@ ggplot(airquality, aes(x = Month, y = Ozone)) +
 
 ```{r}
 df <- read_excel("Dashboard table example.xls",sheet = "Pauvrete")
-datatable(df,rownames = FALSE)
+datatable(df,rownames = FALSE, options = list(dom = 't'))
 ```
 
 Row 
@@ -214,7 +214,7 @@ ggplot(lorenz,aes(x=f))+
 
 ```{r}
 df <- read_excel("Dashboard table example.xls",sheet = "Pauvrete2")
-datatable(df,rownames = FALSE)
+datatable(df,rownames = FALSE, options = list(dom = 't'))
 ```
 
 Row 
@@ -271,7 +271,7 @@ ggplot(df, aes(x=var, y=nums)) + geom_bar(stat = "identity") + coord_flip()
 ### Statistiques de l'emploi
 ```{r}
 df <- read_excel("Dashboard table example.xls",sheet = "Emploi")
-datatable(df,rownames = FALSE)
+datatable(df,rownames = FALSE, options = list(dom = 't'))
 ```
 
 Scolarisation {data-orientation=rows}
