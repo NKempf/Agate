@@ -23,16 +23,35 @@ statistics_zone <- function(group_var,zone,rpi,rpl,filo,sourceRpi,sourceRpl,sour
   
   # I.1. Population et densité de population par zonage
   #----------------------------------------------------
+  
+  # Superficie en km²
+  zone@data$superficie <- gArea(zone,byid = T)/1000000
+  zone <- zone@data
+  
   indicateur_stat <- rpi %>%
     group_by(!!! syms(group_var)) %>% 
     summarise(freq = n(),
-              freq_p = round(sum(!!! syms(rpi.weight),na.rm = TRUE),0)) %>%
+              freq_p = round(sum(!!! syms(rpi.weight),na.rm = TRUE),0)) %>% 
+    left_join(zone %>% select(idZonage,superficie),"idZonage") %>% 
+    mutate(densitepop = round(freq_p / superficie,0)) %>%
     gather("type.indicateur","value",-group_var) %>% 
     mutate(indicateur = "population",
            source = sourceRpi,
            # unite = "nb",
-           domaine = "territoire",
-           categorie = "population") 
+           domaine = domaine,
+           categorie = "population")
+  
+  
+  # indicateur_stat <- rpi %>%
+  #   group_by(!!! syms(group_var)) %>% 
+  #   summarise(freq = n(),
+  #             freq_p = round(sum(!!! syms(rpi.weight),na.rm = TRUE),0)) %>%
+  #   gather("type.indicateur","value",-group_var) %>% 
+  #   mutate(indicateur = "population",
+  #          source = sourceRpi,
+  #          # unite = "nb",
+  #          domaine = "territoire",
+  #          categorie = "population") 
   
   # II.1. Part des moins de 20 ans et des 20 a 64 ans
   #--------------------------------------------------
