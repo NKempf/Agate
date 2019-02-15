@@ -1,0 +1,53 @@
+---
+title: "Agate"
+author: "Nicolas Kempf"
+date: "27 février 2018"
+output: 
+  prettydoc::html_pretty:
+    toc: no
+    theme: cayman
+    highlight: github
+
+---
+
+```{r,echo=FALSE}
+library(prettydoc)
+```
+
+
+# Application Guyane-Antilles d'informaTions gEolocalisées
+
+## Indicateurs
+
+### Recensement de la population
+
+#### Niveau individu
+
+#### Niveau logement
+
+### Fichiers fiscaux
+
+
+#### type de ménage (typmenR)
+
+famille monoparentale (modalité=1)
+couple sans enfant (modalité=2)
+couple avec enfant(s) (modalité=3)
+ménage complexe (modalité=4)
+femme seule (modalité=5)
+homme seul (modalité=6)
+
+
+## Qualité des données
+
+Récuperer le programme de Lionel
+
+# Maintenance
+
+## RIL
+
+## Recensement de la population
+
+## Filosofi
+
+

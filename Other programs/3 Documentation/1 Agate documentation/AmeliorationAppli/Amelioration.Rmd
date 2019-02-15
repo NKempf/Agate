@@ -1,0 +1,64 @@
+---
+title: "Amelioration"
+author: "Nicolas Kempf"
+date: "16 février 2018"
+output: 
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+library(prettydoc)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+Liste des améliorations à apporter à l'application
+
+# I. Statistiques infracommunales
+
+## Carte
+
+
+Faire des cartes en geojson <http://geojson.io>
+
+## Tableau de bord
+
+Faire un diagramme en bar avec les comparaisons avec la commune et les zones hors zonage
+
+Penser à des autres courbes
+
+Export en flexdashboard
+
+Ajouter la source à chaque graphique
+
+
+## Flexdashboard
+
+Afficher le nom et l'identifiant du zonage en titre automatique
+
+
+## Indicateurs statistiques
+
+Utiliser les travaux de Lionel pour l'estimation de la qualité
+
+
+Calculer des indicateurs statistiques issus du RP non calculé pour l'instant
+Indicateurs niveau individus : niveau de diplome
+Indicateurs niveau logement : Nombre d'occupant du logement, Presence d'une climatisation, presence d'electricite,
+Sanitaire, presence d'une voiture, presence d'un deux roues, presence d'un chaufeau, case traditionnelle, habitation de fortune, presence d'une douche
+
+
+Faire un tutoriel en rmarkdown pour montrer l'utilisation des fonctions developpées.
+
+
+# II. Distancier DIRAG
+
+Penser à faire un tutoriel d'utilisation du distancier en rmarkdown
+
+
+
+

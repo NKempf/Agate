@@ -1,0 +1,106 @@
+---
+title: "Agate"
+author: Nicolas Kempf
+date: "4 juillet 2018"
+output:
+  revealjs::revealjs_presentation:
+    theme: sky
+    highlight: pygments
+    center: true
+    transition: slide
+    reveal_options:
+      slideNumber: true
+      previewLinks: true
+---
+
+## 
+
+Application en Guyane et aux Antilles de sTatistiques infracommunalEs
+
+## Un peu d'histoire
+
+Depuis 2 ans et demi, plusieurs outils en R ont été développés pour exploiter les données géolocalisées (caractérisation des QPV, calcul de distances domicile - équipement).
+
+Utilisable uniquement en ligne de commande, ces outils sont difficiles à utiliser en raison d'une pratique de R encore marginale parmi les agents de la Dirag et un déploiement délicat sur poste. 
+
+## Objectifs
+
+- Éclairer le débat public sur n'importe quelle zone aux Antilles et en Guyane. 
+- Simplifier l'utilisation des données géolocalisées via une interface conviviale et un accès facilité
+
+## Démonstration
+
+## A qui s'adresse cette application
+
+- les agents de l'UED pour du conseil et expertise au plus proche des APR
+- les agents du DET pour une aide à la réalisation d'études
+
+
+## Ecosystème de développement
+
+Objectif : accentuer la durée de vie de l'application
+
+- Organisation du code
+- Bonnes pratiques
+- Travail collaboratif : git + github
+- Maintenance des sources
+
+## Fonctionnalitées actuelles
+
+- Import d'une carte au format shapeFile 
+- Indicateurs statistiques issus du RP (2013 et 2014) et de filosofi
+- Visualisation d'un tableau de bord spécifique à chaque zone
+- Comparaison avec un autre zonage
+- Exploration des données détaillées sur plusieurs zones (départements, communes, zones, hors zones)
+- Export des données détaillées au format xlsx
+
+## Fonctionnalitées envisagées
+
+- Qualité des données dans chaque zone (exploitation des programmes développés par Lionel Delta) (80 %)
+- Gestion du secret statistique primaire et secondaire (plusieurs packages R existent) (0 %)
+- Développer de nouveaux indicateurs statistiques à partir du RP et de Filosofi (Indice de gini ?) (10 %)
+- Intégrer d'autres sources géolocalisées (BPE, FIDELI, CAF) (10 % )
+- Développer de nouveaux graphiques intéractifs (par exemple : courbe de Lorenz ?) (50 %)
+- Carroyage dans la zone et ses alentours (utlisation du package btb du psar AU) (20 %)
+- Export du dashboard au format HTML (70 %)
+- Export des tables de passage (90 %)
+- Documentation en Rmarkdown (25 %)
+- Tutoriel interactif (0 %)
+
+## Déploiement
+
+Actuellement,
+
+- Application sur poste en local
+- Nécessite une installation R (3.5.0) et Rstudio (1.2.679)
+
+Prochainement,
+
+- Application disponible via un navigateur web 
+- Déploiement sur le server Rshiny de l'Insee (demande en cours)
+
+## Besoins actuels
+
+- Tester l'application auprès des utilisateurs potentiels.
+
+- Aide pour finaliser la demande d'accès un espace sur le serveur Rshiny 
+
+## Autres projets potentiels
+
+Deux autres outils (en R) attendent d'être simplifiés pour une diffusion aux UED
+
+- Distancier DIRAG : calcul le temps de trajet pour chaque habitation du RIL et un équipement (utilisé pour le dossier sur l'accès à la médecine de ville et l'accès aux services)
+
+- Indicateurs démographiques (stage de Diane Delver-Custos) issus du RP et des fichiers d'état-civil.
+
+## Développements futurs
+
+Les dernières avancées technologiques notamment dans la visualisation, l'interactivité et la convivialité autour des données sont disponibles en R. 
+
+Il est désormais possible d'élargir l'offre auprès des partenaires de l'Insee en région en proposant de nouveaux types de partenariats autour de livrables toujours  plus près de leur besoins.
+
+## Merci de votre attention.
+
+Des questions ?
+
+

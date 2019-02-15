@@ -1,0 +1,148 @@
+---
+title: "Qualité du RP dans des zones infracommunales"
+author: "Nicolas Kempf"
+date: "20 juillet 2018"
+output: 
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r,echo=FALSE,include=FALSE}
+library(prettydoc)
+```
+
+Agate dispose d'un outil d'estimation de la qualité des données du RP au sein de chaque zone à l'infracommunale. Il provient des travaux d'estimation de la qualité du RP dans les QPV aux Antilles-Guyane (*Delta, 2017*). Pour plus de détails, consulter :
+
+> **Delta**, Lionel. (2017) "Significativité statistique du recensement de la population à l'échelle des Quartiers Prioritaires de la Politique de la Ville", *stage d'application ENSAE 2ème année*. 
+
+# Introduction
+
+** TO DO**
+
+## Résumé
+
+** TO DO**
+
+
+
+# I. Recensement de la population
+
+## I.1. Les communes de 10 000 habitants et plus
+
+Contrairement à la métropole, on ne dispose pas pour les DOM d’une base exhaustive d’adresses pouvant servir de base de sondage. En effet, les sources d’information disponibles
+sur les adresses (fichier des permis de construire, fichiers d’adresses de La Poste etc) et le rythme soutenu d’évolution du bâti ne permettent pas d’en constituer une telle base, en particulier à cause de difficultés de localisation des adresses sur le terrain. Il est donc nécessaire, préalablement au recensement de la population d’une zone, de mener l’année précédente une enquête cartographique pour répertorier l’ensemble des constructions et des adresses de la zone. Cette enquête fournit en outre pour chaque adresse sa nature (logements, communauté ou divers) et le nombre de logements constatés.
+
+En pratique, les communes de 10 000 habitants ou plus des DOM ont été découpées en 2003 sur la base du recensement de 1999 en portions élémentaires du territoire communal appelées
+îlots : en moyenne, le nombre moyen de logements par îlots était alors de 58 en Guadeloupe, 43 en Martinique, 30 en Guyane. Les îlots ont été ensuite répartis aléatoirement en cinq groupes de rotations par un tirage équilibré sur des variables du recensement 1999, de manière similaire à la répartition des adresses dans les groupes de rotation en métropole (nombre de logements, nombre de logements collectifs, sexe, tranches d’âges (moins de 20 ans, 20-39 ans, 40-59 ans, 60-74 ans, 75 ans et plus)).
+
+Ce découpage est régulièrement réactualisé en tenant compte des évolutions démographiques et urbaines de la commune pour conserver un nombre homogène de logements par îlots : ainsi, un toilettage de ces îlots a eu lieu dans les enquêtes cartographiques 2004 et 2005 pour éclater en plusieurs îlots certains îlots dans lesquels le nombre de logements avait atteint une taille trop importante. Pendant la période de montée en charge jusqu’en 2008, les nouveaux îlots ainsi créés sont répartis uniquement dans des groupes non encore enquêtés, afin d’obtenir en 2008 une cartographie complète des communes de 10 000 habitants ou plus des DOM.
+
+Une fois le groupe de rotation sélectionné et l’enquête cartographique réalisée, on tire un échantillon d’adresses complètes à probabilités égales représentant 40% des adresses du groupe. Ce tirage est uniquement équilibré sur le nombre de logements observé lors de l’enquête cartographique, alors qu’en métropole le tirage est aussi équilibré sur des variables infra-communales comme le nombre de logements des IRIS de la commune.
+
+Ainsi, la probabilité d’inclusion d’une adresse A dans l’échantillon de l’année N correspond au produit de la probabilité d’inclusion de premier degré (probabilité de tirer le groupe auquel l’adresse appartient, soit 1/5) par la probabilité d’inclusion de deuxième degré (probabilité de tirer l’adresse sachant que le groupe auquel elle appartient a été sélectionné lors de la première phase, soit $\frac{40}{100}$). Au final, la probabilité d’inclusion de l’adresse A dans l’échantillon de l’année N est : $\frac{1}{5} * \frac{40}{100} = 0,08$ si on ne tient pas compte des problèmes liés au redécoupage des îlots dont le nombre de logements devient trop important et à la répartition entre les groupes de rotation des nouveaux îlots ainsi obtenus.
+
+## I.2. Les communes de moins de 10 000 habitants
+
+Comme en métropole, les petites communes sont réparties en cinq groupes de rotation (une petite commune a donc une probabilité de 1/5 d’être recensée une année donnée) et une commune dont le groupe de répartition a été sélectionné est recensée de manière exhaustive. Vu le faible nombre de petites communes dans les DOM (19 en Guadeloupe, 22 en Martinique et 17 en Guyane), elles sont réparties de manière déterministe dans les cinq groupes de rotation de manière à équilibrer au mieux le nombre de logements entre les différents groupes.
+
+## I.3. Estimation de la population
+
+On estime chaque groupe de rotation à partir des résultats de l’année d’enquête et on les additionne. En utilisant la complémentarité de ces cinq groupes de rotation donnée par le plan de sondage, le poids naturel pour l’estimation cumulée est donné par l’inverse du taux de sondage soit :
+
+$\frac{1}{taux~de~sondage~de~seconde~phase} = \frac{1}{0.4} = 2.5$
+
+Par construction on obtient une moyenne sur 5 ans : on ne rapporte pas à l’année médiane comme pour une grande commune de métropole. On est donc plus représentatif de la dynamique
+moyenne des 5 ans. L’estimation est améliorée avec l’enquête cartographique.
+
+On dispose en effet via cette enquête d’une information corrélée à la population sur un échantillon plus grand. En effet, le nombre de logements à l’enquête cartographique est une information récente mais disponible à la date du recensement uniquement sur les îlots du groupe de rotation.
+
+Cette variable mesure avec une erreur, de l’ordre de 3% en moyenne le nombre de logements réels (tel qu’on les mesure dans la collecte du recensement). Cette information est exhaustive sur le groupe de rotation concerné. On peut donc améliorer la précision des estimations en s’aidant de cette information. Le poids modifié assure par construction une parfaite estimation du nombre de logements de l’enquête cartographique à partir de l’échantillon.
+
+Le poids devient pour un groupe de rotation i collecté l’année correspondante :
+
+$\frac{Nombre~de~logements~enquete~cartographique~du~groupe~de~rotation~i}{Nombre~de~logements~enquete~cartographique~du~groupe~de~rotation~i~recenses}$
+
+L’enquête cartographique n’est pas utilisée comme mesure du stock de logement de référence : le niveau de l’enquête cartographique n’intervient pas directement dans l’estimation, mais uniquement pour améliorer la précision.
+
+En effet, jusqu’à présent, lorsque l’on compare l’estimation du nombre de logements issue de l’enquête de recensement au nombre de logements calculé par l’enquête cartographique pour chaque commune et chaque groupe de rotation, on obtient des écarts importants. Ceci confirme que l’enquête cartographique ne peut être considérée comme une mesure des logements sur laquelle on peut fonder une estimation.
+
+Cependant, on verra dans la dernière partie de ce rapport que l’information exhaustive donnée par l’enquête cartographique peut être utilisée pour améliorer l’estimation au niveau infracommunal. Pour les autres populations, la méthode est la celle utilisée en Métropole.
+
+## I.4. Mise à jour annuelle du RIL
+
+Chaque année, la base de sondage est mise à jour pour tenir compte des évolutions du RIL. Les mises à jour du RIL l’année N correspondent notamment à :
+
+* l’ajout dans le RIL des adresses nouvelles déclarées créées entre N-1 et N et la suppression des adresses déclarées disparues ;
+* la suppression des adresses hors champ tirées dans le RIL de l’année N-1 et enquêtées en janvier N.
+* la mise à jour du nombre de logements sur les adresses tirées dans le RIL de l’année N-1 et enquêtées en janvier N.
+
+Les adresses nouvelles de l’année N-1 qui ont été enquêtées en janvier N deviennent des adresses connues, tandis que les adresses nouvelles de l’année N sont réparties entre les cinq groupes de rotation.
+
+Cette répartition se fait de la manière suivante :
+
+* les grandes adresses neuves sont affectées à un groupe de rotation de manière déterministe afin de répartir les grandes adresses le plus équitablement possible entre les cinq groupes (en terme de nombre de logements).
+* S’il y en a plus de 50, les «petites» adresses neuves sont réparties aléatoirement en cinq paquets de manière équilibrée sur le nombre de logements, chaque paquet étant ensuite
+affecté à un groupe de rotation. S’il y a moins de 50 «petites» adresses neuves, elles sont réparties de manière déterministe pour équilibrer le nombre de logements entre les cinq groupes de rotation.
+
+
+# II. Qualité des données du RP 
+
+
+## II.1. Variance analytique
+
+** A revoir **
+
+Estimer un total ou une moyenne sur un domaine $D$ revient à travailler sur la variable $Y_{j.} . 1_{j \in D} = Z_{j}$ où $1_{j \in D}$  est la variable indicatrice qui vaut `1` si l’adresse $j$ est dans le domaine et `0` sinon. Les variables de calage comme le nombre de logements $X_{j}$ ayant été choisies en fonction des estimateurs à produire sur un ensemble plus large que le domaine $D$ (l’ensemble de la population communale), c’est donc selon cette perspective plus large que l’on se place. La conséquence est que la qualité de l’estimateur sur un QPV s’en trouve affectée puisqu’elle est liée à la valeur des résidus modifiés $\tilde{U}_{j}$ issus de la régression multiple des $Z_{j}$ sur les variables de calage comme $X_{j}$ ; autrement dit $\tilde{U}_{j} = Z_{j} - \hat{R}.X_{j}$.
+
+On identifie alors une importante contributions à l’accroissement de la variance par rapport à l’estimation niveau communale. En effet, il n’y a pas de raison pour que les résidus soient petits dans l’ensemble : en particulier pour toute addresse $j$ hors du domaine QPV, on a $Z_{j} = 0$ et donc $\tilde{U}_{j} = - \hat{R}.X_{j}$ qui peut être numérique grand en particulier pour les adresses de grandes tailles.
+
+Au niveau d'une zone infracommunale, on utilise la formule de la variance suivante :
+
+$V(\hat{T}_{Y}^{R}) \approx \sum_{g} (N_{g})^{2}. V(\hat{\bar{y}}_{g}  - \frac{\bar{Y}_{g}}{\bar{X}_{g}} \hat{\bar{x}}_{g})$
+
+$V(\hat{T}_{Y}^{R}) \approx \sum_{g} (N_{g})^{2}.\frac{1-f}{n_{g}} s_{\hat{u}}^{2}$
+
+$V(\hat{T}_{Y}^{R}) \approx \sum_{g} (N_{g})^{2}.\frac{1-f}{n_{g} (n_{g} - 1)} \sum_{j \in s_{g}} \tilde{U}_{j}^{2}$
+
+À partir de cette formule approchée de la variance d’un total au niveau d’un quartier QPV, on peut évaluer les coefficients de variation des estimations issues du recensement pour tous les quartiers QPV des Antilles et de la Guyane. Le coefficient de variation étant le rapport de l’écart-type par la moyenne d’une variable, on approxime cet écart-type par la racine-carrée de l’estimateur de variance. **On sait qu’un tel estimateur de l’écart-type n’est a priori pas sans biais, mais étant donné la taille de l’échantillon du recensement – plusieurs centaines d’adresses par QPV – on peut raisonnablement négliger le biais de cet estimateur**.
+
+
+## II.2. Estimation de la précision par simulation
+
+**A voir si ca vaut le peine de l'implementer dans Agate**
+
+
+## II.3. Amélioration de la précision par calage sur marges
+
+Une raison qui explique la grande perte de précision lorsque l’on passe à l’échelle infracommunale tient dans la taille des QPV, généralement peuplés de quelques milliers d’habitants alors que les villes concernées par le recensement par sondage au 10 000 habitants et plus. Or à taux de sondage constant, plus le domaine estimé est petit plus grande est l’imprécision, toutes choses égales par ailleurs. Néanmoins l’écart-type ne dépend pas linéairement de la taille. La taille du domaine n’explique donc qu’une partie de la perte de précision.
+
+Une raison majeure réside dans l’absence d’équilibrage au niveau du QPV comme cela est réalisé au niveau domaine de la commune à partir de l’information exhaustive du nombre de logements. Ainsi le recours à une estimation par le ratio contribue à réduire significativement la variance dès lors qu’il y a une bonne corrélation entre la variable d’intérêt (le nombre total d’habitants ici) et la variable d’équilibre (le nombre de logements), autrement dit dès lors que le ratio est pertinent (ratio taille des ménages dans notre exemple).
+
+Le problème qui se pose est que les nombres de logements cartographiés au sein de ce fichier RIL pour chaque commune ne coïncident pas exactement avec les estimations que le fichier du recensement permet de faire. Les poids qui sont fournis dans ce fichier produisent des estimations qui s’écartent du nombre de logements RIL dans des proportions parfois relativement importantes (5 à 10%).
+
+D’une part les nouveaux logements recensés ne conduisent pas à une mise à jour systématique du RIL et d’autre part certaines zones connaissent des départs importants de population d’une année à l’autre. Considérant que le retraitement du fichier du recensement fait appel à une information de total de logements fiable et surtout rafraîchie, c’est plutôt sur cette information que nous avons choisi de nous baser pour l’exercice. Or puisque l’équilibrage est fait uniquement au niveau communal, il n’est pas envisageable d’utiliser l’estimation au niveau QPV comme information exhaustive.
+
+Pour contourner cette difficulté, la méthode qui a été retenue était de combiner les éléments du RIL et du total communal de logements estimé par le recensement.
+
+En pratique, on suppose que les mouvements de population d’une année à l’autre ainsi que les autres sources qui viennent modifier le périmètre considéré de logements ne modifient pas significativement la structure des poids relatifs des différents quartiers au sein d’une commune.
+
+Ainsi l’information exhaustive de l’enquête cartographique à l’année N-1 permet de calculer le poids relatif que représente chaque QPV, ainsi que la partie hors-QPV, au sein de la commune en termes de nombre d’habitants. En appliquant ces poids relatifs supposés constants au total de logement estimés à la commune l’année N, on a une estimation du total de logements par QPV à l’année N qui permet de trouver une cohérence à la fois avec le total communal estimé ainsi qu’avec les estimations de population au niveau QPV du recensement.
+
+À l’inverse utiliser exclusivement l’information du RIL aurait conduit à introduire de trop fortes corrections des estimations du recensement, bien au-delà des corrections à la marge qu’est censée permettre ce calage. En outre, cela contredirait dans la plupart des cas l’estimation du total communal qui est censée être précise.
+
+
+**IMPORTANT : faire un calage sur marge au sein de chaque zone. Utiliser le jeu de poids calé pour calculer les statistiques du RP. A IMPLEMENTER DANS AGATE et comparer les résultats**
+
+**Analyse des résultats du calage : A FAIRE**
+
+
+## Sans Calage
+
+
+## Avec Calage
+
+L'estimation par calage necessite les totaux de population par commune. Par conséquent, les estimations de la qualité sont moins pertinentes pour des zones à cheval sur plusieurs communes.
+
+
+
