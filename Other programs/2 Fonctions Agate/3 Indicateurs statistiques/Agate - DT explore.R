@@ -56,27 +56,34 @@ shinyApp(
       
       if(input$si_categorie != ""){
   
-        # Construction de la table
+        # Selection des données
         df <- indStat$indicateur_stat %>% 
           select(source,domaine,categorie,com,idZonage,indicateur,type.indicateur,value) %>% 
-          filter(domaine == input$si_domaine & categorie == input$si_categorie) %>% 
+          filter(domaine == input$si_domaine & categorie == input$si_categorie) 
+        
+        # selection des libelles de colonnes
+        type.ind <- typInd[typInd %in% unique(df$type.indicateur)]
+        
+        # Construction du tableau final
+        df <- df %>% 
           spread(key = type.indicateur, value = value) %>% 
           select(-domaine,-categorie)
         
         # Affichage du titre de la
         output$TO_titleTab <- renderText({lstCategorie$titreTab[lstCategorie$idDomaine == input$si_domaine & 
                                                                    lstCategorie$idCategorie == input$si_categorie]})
-      
         # Affichage
         output$table = renderDT(
-          datatable(df, extensions = 'Buttons',
+          datatable(df,
+                    colnames = type.ind,
+                    extensions = 'Buttons',
                     options = list(
                       scrollX = TRUE,
                       # fixedColumns = TRUE,
                       # autoWidth = TRUE,
                       ordering = FALSE,
                       dom = 'lBfrtip',
-                      buttons = c(I('colvis'),'excel', 'pdf')),
+                      buttons = c(I('colvis'),'excel')),
                     rownames= FALSE)
         )
       } # end if

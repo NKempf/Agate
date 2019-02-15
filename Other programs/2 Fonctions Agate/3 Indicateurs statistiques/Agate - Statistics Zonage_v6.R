@@ -283,7 +283,7 @@ statistics_zone <- function(group_var,zone,rpi,rpl,filo,sourceRpi,sourceRpl,sour
   indicateur_stat <- filo %>%
     mutate(indicateur = paste0("D_",decile_nivvie)) %>% 
     statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = filo.weight,
-                 domaine = domaine,categorie = 1,source = sourceFilo)
+                 domaine = domaine,categorie = 2,source = sourceFilo)
   
   # I.5 Taux de pauvrete selon le seuil metropolitain et departemental
   #--------------------------------------------------------------------
