@@ -1,0 +1,220 @@
+---
+title: "ShinyFlex"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+params:
+  n: NA
+
+---
+
+```{r,include=FALSE}
+# Working directory
+setwd(dir=dirname(rstudioapi::getActiveDocumentContext()$path))
+getwd()
+
+# Library
+library(flexdashboard) # Tableaux de bord statiques
+library(plotly) # Graphiques interactifs
+library(questionr) # Statistiques descriptives
+
+# Chargement des données
+load("../../../Bdd/RData/statTmp.RData")
+
+# Exemple de qpv
+idZonage <- as.character(params$n)
+# Base temporaire
+df.filtered <- statZona$tStatRP[statZona$tStatRP$id %in% idZonage,]
+filo.filtered <- statZona$filoStat.nivvie[statZona$filoStat.nivvie$id %in% idZonage,]
+```
+
+
+
+# Tableau de bord pour la zone
+
+    
+Row
+-------------------------------------
+### Zonage
+```{r}
+valueBox(params$n, icon = "fa-pencil",color = "yellow")
+```
+
+    
+### Population totale
+
+```{r}
+valueBox(format(round(df.filtered$pop_qpv_p,digits = 0),digits = 9,decimal.mark=",", big.mark=" "), icon = "fa-child",color = "green")
+``` 
+ 
+ 
+### Niveau de vie mensuel moyen
+```{r}
+valueBox(format(round(filo.filtered$nivvie.mean / 12,digits = 0),digits = 9,decimal.mark=",", big.mark=" "), icon = "fa-eur",color = "blue")
+```
+ 
+### Taux de chomage (au sens du recensement de la population)
+```{r}
+valueBox(paste(format(round(df.filtered$t_chom_15_64,digits = 0),digits = 9,decimal.mark=",", big.mark=" ")," %",sep=""), icon = "fa-industry",color = "orange")
+```
+  
+ 
+ 
+Row
+-------------------------------------
+    
+### Niveau de vie annuel (en euros)  
+
+```{r,include=TRUE}
+ comZone <- statZona$filo$depcom[statZona$filo$idZonage %in% idZonage]
+    
+    plot_ly(type = 'box') %>%
+      # Boxplot d'un equipement
+      add_boxplot(y = statZona$filo$nivviem[statZona$filo$idZonage %in% idZonage], 
+                  boxpoints = FALSE,
+                  marker = list(color = 'rgb(255,69,0)'),
+                  line = list(color = 'rgb(255,69,0)'),
+                  name = "Zonage") %>%
+      # Boxplot des individus de la commune qui ne vivent pas le zonage
+      add_boxplot(y = statZona$filo$nivviem[!(statZona$filo$idZonage %in% idZonage) & 
+                                              statZona$filo$depcom %in% comZone],
+                  name = "Hors zonage", boxpoints = FALSE,
+                  marker = list(color = 'rgb(113,113,198)'),
+                  line = list(color = 'rgb(113,113,198)')) %>%
+      # Boxplot des individus de la commune 
+      add_boxplot(y = statZona$filo$nivviem[statZona$filo$depcom %in% comZone],
+                  name = "Communal", boxpoints = FALSE,
+                  marker = list(color = 'rgb(113,198,113)'),
+                  line = list(color = 'rgb(113,198,113)')) %>%
+      # Reglage des axes
+      layout(
+        yaxis = list(range = c(0, 50000))) 
+
+```
+ 
+
+### Composition familiale
+
+
+```{r}
+# Label du type de ménage
+typmenR.label <- c("famille monoparentale","couple sans enfant","couple avec enfant(s)","menage complexe",
+                   "femme seule","homme seul")
+
+# Calcul des statistiques par type de ménage
+t1 <- as.data.frame(xtabs(data = statZona$filo,formula = ~idZonage + typmenR))
+t2 <-as.data.frame(lprop(xtabs(data = statZona$filo,formula = ~idZonage + typmenR),2,digits = 2,total = F))
+colnames(t1)[colnames(t1) == "Freq"] <- "eff"
+colnames(t2)[colnames(t2) == "Freq"] <- "rpct"
+filotyp<- merge(t1,t2,by=c("idZonage","typmenR"),all.x=TRUE)
+
+# Transformation en factor
+filotyp$typmenR <-factor(x = filotyp$typmenR,labels = typmenR.label)
+
+# Extraction du niveau de vie moyen
+niv <- statZona$statFilo.typmenR[statZona$statFilo.typmenR$idZonage %in% idZonage,]
+
+# Selection des variables
+df <- filotyp[filotyp$idZonage %in% idZonage,c("typmenR","rpct")]
+
+# Couleurs utilisées
+colors <- c('rgb(127,201,127)', 'rgb(190,174,212)', 'rgb(253,192,134)', 'rgb(255,255,153)', 'rgb(56,108,176)',
+            'rgb(240,2,127)')
+
+# Pie chart
+p <- plot_ly(df, labels = ~typmenR, values = ~rpct, type = 'pie',
+             #The 'pull' attribute can also be used to create space between the sectors
+             showlegend = TRUE) %>%
+  layout(xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+p
+
+
+```
+
+ 
+ 
+
+ 
+   
+Row
+-------------------------------------
+### Information sur les individus
+
+
+```{r}
+# Selection des variables
+    list_var <- c("p_etranger","p_immigre","p_cadre_prof_inter","t_decrocheur","p_Nscola_6_14","p_65plus",
+                  "p_moins20","p_femmes")
+    xvar <- c("Etranger","Immigre","Cadre et profession  intermediaire","Decrocheur","Non scolarise de 6 a 14 ans",
+              "65 ans et plus","Moins de 20 ans","Femmes")
+    # Selection de la commune de la zone
+    comZona <- statZona$filo$depcom[statZona$filo$idZonage %in% idZonage]
+    # Zonage
+    zonage.df <- as.matrix(statZona$tStatRP[statZona$tStatRP$id %in% idZonage,list_var])
+    # Hors zonage
+    Hzonage.df <- as.matrix(statZona$statHZone[statZona$statHZone$id %in% comZona, list_var])
+    # Commune
+    comZona.df <- as.matrix(statZona$statCom[statZona$statCom$id %in% comZona, list_var])
+    # Base synthetique
+    df <- data.frame(xvar=xvar,zonage=zonage.df[1,],Hzonage=Hzonage.df[1,],comZona=comZona.df[1,])
+    
+    # Graphique
+     p <-  plot_ly(df,x = ~zonage, y = ~xvar , type = 'bar', name = 'Zonage',
+              marker = list(color = 'rgb(255,69,0)'),line = list(color = 'rgb(255,69,0)')) %>%
+      add_trace(x = ~Hzonage, name = 'Hors zonage',marker = list(color = 'rgb(113,113,198)'),
+                line = list(color = 'rgb(113,113,198)')) %>%
+      add_trace(x = ~comZona, name = 'Commune',marker = list(color = 'rgb(113,198,113)'),
+                line = list(color = 'rgb(113,198,113)')) %>%
+      layout(xaxis = list(title = '%'),yaxis = list(title = '',categoryorder = "array",
+                                                    categoryarray = xvar), barmode = 'group')
+     
+    # Correction de la marge pour l'affichage des libelles de la colonne y
+    p$x$layout$margin$l <- p$x$layout$margin$l + 40
+ # p$x$layout$margin$b <- p$x$layout$margin$b + 30
+ p
+     
+```
+
+  
+  
+  
+  
+   
+### Information sur les logements
+```{r}
+
+# Selection des variables
+    list_var <- c("p_N_tout_egout","p_N_Bain_douche","p_N_eau_chaude","p_surf100p","p_residHlm",
+                  "p_log_vacants","p_resid_princ")
+    xvar <- c("Pas de tout a l'egout","Pas de douche","Pas d'eau chaude","Surface de 100m carre et plus",
+              "Residence HLM","Logements vacants","Residences principales")
+    # Selection de la commune de la zone
+    comZona <- statZona$filo$depcom[statZona$filo$idZonage %in% idZonage]
+    # Zonage
+    zonage.df <- as.matrix(statZona$tStatRP[statZona$tStatRP$id %in% idZonage,list_var])
+    # Hors zonage
+    Hzonage.df <- as.matrix(statZona$statHZone[statZona$statHZone$id %in% comZona, list_var])
+    # Commune
+    comZona.df <- as.matrix(statZona$statCom[statZona$statCom$id %in% comZona, list_var])
+    # Base synthetique
+    df <- data.frame(xvar=xvar,zonage=zonage.df[1,],Hzonage=Hzonage.df[1,],comZona=comZona.df[1,])
+    
+    # Graphique
+    p <- plot_ly(df,x = ~zonage, y = ~xvar , type = 'bar', name = 'Zonage',
+            marker = list(color = 'rgb(255,69,0)'),line = list(color = 'rgb(255,69,0)')) %>%
+      add_trace(x = ~Hzonage, name = 'Hors zonage',marker = list(color = 'rgb(113,113,198)'),
+                line = list(color = 'rgb(113,113,198)')) %>%
+      add_trace(x = ~comZona, name = 'Commune',marker = list(color = 'rgb(113,198,113)'),
+                line = list(color = 'rgb(113,198,113)')) %>%
+      layout(xaxis = list(title = '%'),yaxis = list(title = '',categoryorder = "array",
+                                                    categoryarray = xvar), barmode = 'group')
+    
+        # Correction de la marge pour l'affichage des libelles de la colonne y
+    p$x$layout$margin$l <- p$x$layout$margin$l + 60
+ # p$x$layout$margin$b <- p$x$layout$margin$b + 30
+ p
+
+
+```   
+ 
