@@ -258,7 +258,7 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                   navbarMenu("Documentation",
 
                              tabPanel("Amelioration",
-                                      includeHTML("Html pages/AmeliorationAppli/Amelioration.html")
+                                      includeHTML("Other programs/3 Documentation/1 Agate documentation/AmeliorationAppli/Amelioration.html")
                              ),
                              # tabPanel("Maintenance Agate",
                              #          includeHTML("Html pages/Maintenance/MaintenanceAgate.html")
@@ -273,7 +273,7 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                              #          includeHTML("Html pages/Qualite du RP/QualiteRp.html")
                              # ),
                              tabPanel("Remerciements",
-                                      includeHTML("Html pages/Remerciements/Remerciements.html")
+                                      includeHTML("Other programs/3 Documentation/1 Agate documentation/Remerciements/Remerciements.html")
                              )
                              
                              
