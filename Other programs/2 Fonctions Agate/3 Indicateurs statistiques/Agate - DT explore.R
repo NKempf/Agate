@@ -1,5 +1,6 @@
 library(shiny)
 library(DT)
+library(tidyverse)
 library(readxl)
 
 # Chargement des options
@@ -15,7 +16,7 @@ shinyApp(
            # II.1. Zone selection
            #---------------------
            selectInput("SI_ZoneSelect", "Zone selection",
-                       choices = c("Commune","Departement","HorsZone","Zone"),
+                       choices = c("Commune","Departement","QPV","Zone"),
                        selected = c("Zone"))
     ),
     column(4,
@@ -49,7 +50,11 @@ shinyApp(
   
   server = function(session,input, output) {
     
-    load("Data/Tmp/qpv_stat_tmp.RData")
+    # 0. Reactive Values
+    #----------------------------------------------------------------------------------------------------------------------------
+    rv <- reactiveValues(df.explore=NULL)
+    
+
     
     # Affichage de la table + titre
     observeEvent(c(input$si_categorie,input$si_domaine),{

@@ -335,7 +335,8 @@ statistics_zone <- function(group_var,zone,rpi,rpl,filo,sourceRpi,sourceRpl,sour
   #-----------------------------------------------
   pyramide_detail <- rpi %>%
     group_by(!!! syms(group_var),SEXE,AGEREV) %>%
-    weighted_frequency(rpi.weight)
+    weighted_frequency(rpi.weight) %>% 
+    mutate(source = sourceRpi)
   
   # VI.2. Pyramide par sexe, zonage et tranche d'age 
   #------------------------------------------------
@@ -345,7 +346,8 @@ statistics_zone <- function(group_var,zone,rpi,rpl,filo,sourceRpi,sourceRpl,sour
                      include.lowest = TRUE,
                      right = FALSE)) %>%
     group_by(!!! syms(group_var),SEXE,age) %>%
-    weighted_frequency(rpi.weight)
+    weighted_frequency(rpi.weight) %>% 
+    mutate(source = sourceRpi)
   
   # II.2 Courbe de lorenz
   #----------------------
@@ -354,7 +356,8 @@ statistics_zone <- function(group_var,zone,rpi,rpl,filo,sourceRpi,sourceRpl,sour
   c_lorenz <- filo %>% 
     group_by(!!! syms(group_var)) %>% 
     do(data.frame(Q=prob, stat=quantile(.$nivviem, probs=prob))) %>%
-    mutate(stat = ifelse(stat<0,0,stat)) 
+    mutate(stat = ifelse(stat<0,0,stat),
+           source = sourceFilo) 
   
   #----------------------------------------------------------------------------------------------------------------------------------------------#
   #                                             VII. Listes de tableaux finaux                                                                   #
