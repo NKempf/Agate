@@ -36,12 +36,12 @@ library(DT) # Interactive datatable
 
 # II. 1 Functions
 #----------------
-source ("Other programs/Fake data/Agate - Fake data fct.R",encoding = "UTF-8")
-source("Other programs/Zonage/Agate - Cartographie fct.R",encoding = "UTF-8")
-source("Other programs/Quality/Agate - Census infra quality.R",encoding = "UTF-8")
-source("Other programs/Export Report/Agate - Export Excel fct.R",encoding = "UTF-8")
-source("Other programs/StatZonage/Agate - Statistics Zonage_v4.R",encoding = "UTF-8")
-source("Other programs/Plotly/Agate - plotly graphes fonctions_v3.R",encoding = "UTF-8")
+source ("Other programs/2 Fonctions Agate/1 Fake data/Agate - Fake data fct.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/2 Cartographie/Agate - Cartographie fct.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/6 Census Quality/Agate - Census infra quality.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/5 Export Report/Agate - Export Excel fct.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Ancien/Agate - Statistics Zonage_v4.R",encoding = "UTF-8")
+source("Other programs/0 A implementer/4 Plotly/Agate - plotly graphes fonctions_v3.R",encoding = "UTF-8")
 # source("Other programs/Export Report/Agate - excel report.R")
 
 # II.2. Fake data
