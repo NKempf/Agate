@@ -44,7 +44,16 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                               #------------------------
                                               actionButton("b_paramCarte", "Paramètres carte"),
                                               
-                                              # I.1.2.4. Sweet pop-up
+                                              # I.1.2.4. HeatPoints
+                                              #--------------------
+                                              materialSwitch(
+                                                inputId = "ms_heatpts",
+                                                label = "Zones de chaleur",
+                                                value = FALSE, 
+                                                status = "warning"
+                                              ),
+                                              
+                                              # I.1.2.5. Sweet pop-up
                                               #----------------------
                                               useSweetAlert()
                                             ),

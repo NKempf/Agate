@@ -21,11 +21,12 @@ server <- function(input, output,session) {
   # I.1. Initiate interactive web map
   #----------------------------------
   output$mymap <- renderLeaflet({
-    leaflet("map",data = FakeHeatpoint) %>% addTiles()%>% 
+    leaflet("map",data = heat.pts) %>% addTiles()%>% 
       fitBounds(lng1 = -65,lat1 = 18,lng2 = -45,lat2 = 3) %>% 
-      addHeatmap(lng = ~x, lat = ~y,
+      addHeatmap(group = "heatpts",lng = ~x, lat = ~y,
                  # intensity = ~nivviem,
-                 blur = 40, radius = 20)
+                 blur = 60, radius = 30) %>% 
+      hideGroup("heatpts")
     # %>%
     #   addPolygons(data=qpv_stat,opacity = 3,
     #               color = "green", stroke = TRUE, weight = 2,
@@ -75,7 +76,23 @@ server <- function(input, output,session) {
                 lng2 = mapSelect.bbox$max[1] + zoom_lng,
                 lat2 = mapSelect.bbox$min[2] - zoom_lat)
   })
-   
+  
+  # I.5. Heatpoints
+  #----------------
+  observeEvent(input$ms_heatpts, {
+    
+    if(input$ms_heatpts){
+      leafletProxy("mymap") %>% 
+        showGroup("heatpts")
+    }else{
+      leafletProxy("mymap") %>% 
+        hideGroup("heatpts")
+    }
+  })
+  
+  
+  
+  
   
 # II. Import user shapefile map
 #-----------------------------------------------------------------------------------------------------------------------------------
@@ -148,8 +165,9 @@ server <- function(input, output,session) {
     #---------------------------------------------------------------
       # Utilise les valeurs saisies par l'utilisateur
       # Ril
-      ril.an <- "15"
-      ril.path.string <- paste0("Data/Ril/ril",ril.an,".fst")
+      # ril.an <- "15"
+      # ril.path.string <- paste0("Data/Ril/ril",ril.an,".fst")
+      ril.path.string <- "Data/Ril/ril_leger.fst"
       rilPath <- ifelse(file.exists(ril.path.string),ril.path.string,"Data/Ril/FakeRil.fst")
       # RP
       rp.an <- substr(input$SI_Rp,3,4)

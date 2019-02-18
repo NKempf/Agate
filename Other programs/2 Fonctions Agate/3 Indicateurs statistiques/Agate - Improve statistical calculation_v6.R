@@ -35,11 +35,10 @@ if(file.exists("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData")){
 # O. Selection des bases de travail (donnees reelles ou fausses)
 #---------------------------------------------------------------
 
-
 # Ril
-# ril.an <- "15"
-# ril.path.string <- paste0("Data/Ril/ril",ril.an,".fst")
-ril.path.string <- "Data/Ril/ril_leger.fst"
+ril.an <- "15"
+ril.path.string <- paste0("Data/Ril/ril",ril.an,".fst")
+# ril.path.string <- "Data/Ril/ril_leger.fst"
 rilPath <- ifelse(file.exists(ril.path.string),ril.path.string,"Data/Ril/FakeRil.fst")
 # RP
 rp.an <- "14"
@@ -107,6 +106,12 @@ rpl <- read_fst(rplPath) %>%
   mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage)) %>% 
   left_join(zonage@data,"idZonage")
 
+# III.4. Table multicommunes
+#---------------------------
+zonage.com <- rpl %>% 
+  group_by(dep,com,com.lib,idZonage,idZonage.name) %>% 
+  summarise(freq=n())
+
 # IV. Ajout de la zone aux données fiscales
 #------------------------------------------
 
@@ -134,12 +139,9 @@ rm(filo.sp)
 
 # II. Indicateurs statistiques par zones
 #---------------------------------------------------------------------------------------------------------------------------------------------
-
-indStat <- statistics_zone(group_var = c("com","idZonage","idZonage.name"),zone = zonage,rpi = rpi,rpl = rpl, filo = filo,
+indStat <- statistics_zone(group_var = c("idZonage","idZonage.name"),zone = zonage,rpi = rpi,rpl = rpl, filo = filo,
                            sourceRpi = "rpi14",sourceRpl = "rpl14",
                            sourceFilo = "filo14",rpi.weight = "IPONDI",rpl.weight = "IPONDL",filo.weight = "nbpersm")
 
-save(indStat,file = "Data/Tmp/qpv_stat_tmp.RData")
-
-
+save(indStat,zonage.com,file = "Data/Tmp/qpv_stat_tmp.RData")
 
