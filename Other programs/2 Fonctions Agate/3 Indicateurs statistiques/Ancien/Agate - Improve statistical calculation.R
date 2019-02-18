@@ -14,8 +14,8 @@ library(tidyverse) # Tidy data
 library(fst) # Read partial data
 library(fstplyr) # dplyr for fst object
 
-source("Other programs/Zonage/Agate - Cartographie fct.R",encoding = "UTF-8")
-source("Other programs/StatZonage/Agate - Statistics Zonage_v4.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/2 Cartographie/Agate - Cartographie fct.R",encoding = "UTF-8")
+# source("Other programs/StatZonage/Agate - Statistics Zonage_v4.R",encoding = "UTF-8")
 
 # Statistical summary about cities and territory
 if(file.exists("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData")){
@@ -39,7 +39,7 @@ filoPath <- ifelse(file.exists("Data/Filosofi/filo14.fst"),"Data/Filosofi/filo14
 # I. Preparation du zonage
 #-------------------------
 # I.1. Creation de la variable zonage
-zonage <- readOGR(dsn = "../Data/Maps/QPV/qpv.shp")[1:2,]
+zonage <- readOGR(dsn = "Data/QPV/qpv.shp")[1:2,]
 zonage@data <- zonage@data %>% 
   rename(idZonage = CODE_QP)
 zonage <- spTransform(zonage, "+init=epsg:3857")

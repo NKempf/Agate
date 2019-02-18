@@ -307,13 +307,17 @@ indicateur_stat <- addIndicateurDiscret(df_discret = stat_discrete_detail,
   #---------------------------------------------------
   tFilo.I.1 <- filo %>% 
     group_by(!!! syms(group_var)) %>% 
-    income_distrib("nivviem",proba)
+    income_distrib("nivviem",proba) %>% 
+    ungroup() %>% 
+    gather("indicateur","value",- group_var)
   
   # I.2. Distribution du niveau de vie selon le type de menage et le zonage
   #------------------------------------------------------------------------
   tFilo.I.2 <- filo %>% 
     group_by(!!! syms(group_var),typmenR.lib) %>% 
-    income_distrib("nivviem",proba)
+    income_distrib("nivviem",proba) %>% 
+    ungroup() %>% 
+    gather("indicateur","value",- group_var,-typmenR.lib)
   
   # I.3. Part des menages selon le type de menage et le zonage
   #-----------------------------------------------------------

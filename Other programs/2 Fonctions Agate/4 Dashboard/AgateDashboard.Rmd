@@ -8,7 +8,15 @@ output: flexdashboard::flex_dashboard
 ```{r setup, include=FALSE}
 library(readxl) # Read Excel file
 library(flexdashboard) # Widget for dashboard
+library(dplyr)
 library(DT) # Interactive table
+
+load("../../Data/Tmp/qpv_stat_tmp.RData")
+ind <- qpv_stat$indicateur_stat %>% 
+  filter(idZonage == "QP971001")
+
+table(ind$indicateur)
+
 ```
 
 Territoire {data-orientation=rows}
@@ -20,7 +28,9 @@ Row
 ### Population
 
 ```{r}
-valueBox("100 000", icon = "fa-pencil")
+valueBox(ind %>% 
+           filter(domaine == "Territoire" & indicateur == "population" & type.indicateur == "freq_p") %>% 
+           select(value), icon = "fa-pencil")
 ```
 
 ### Densité
@@ -32,7 +42,9 @@ valueBox("300 hab/km²", icon = "fa-pencil")
 ### Superficie
 
 ```{r}
-valueBox("1 060 km²", icon = "fa-pencil")
+valueBox(ind %>% 
+           filter(domaine == "Territoire " & categorie == "population" & indicateur == "population" & type.indicateur == "superficie")%>% 
+           select(value), icon = "fa-pencil")
 ```
 
 Row 
@@ -59,7 +71,7 @@ Row
 
 ```{r}
 library("wpp2015") # Données de population
-library(tidyverse) # Transformation de données
+# library(tidyverse) # Transformation de données
 
 #load data in wpp2015
 data(popF)
@@ -184,7 +196,7 @@ ggplot(airquality, aes(x = Month, y = Ozone)) +
 
 ```{r}
 df <- read_excel("Dashboard table example.xls",sheet = "Pauvrete")
-datatable(df,rownames = FALSE)
+datatable(df,rownames = FALSE, options = list(dom = 't'))
 ```
 
 Row 
@@ -214,7 +226,7 @@ ggplot(lorenz,aes(x=f))+
 
 ```{r}
 df <- read_excel("Dashboard table example.xls",sheet = "Pauvrete2")
-datatable(df,rownames = FALSE)
+datatable(df,rownames = FALSE, options = list(dom = 't'))
 ```
 
 Row 
@@ -271,7 +283,7 @@ ggplot(df, aes(x=var, y=nums)) + geom_bar(stat = "identity") + coord_flip()
 ### Statistiques de l'emploi
 ```{r}
 df <- read_excel("Dashboard table example.xls",sheet = "Emploi")
-datatable(df,rownames = FALSE)
+datatable(df,rownames = FALSE, options = list(dom = 't'))
 ```
 
 Scolarisation {data-orientation=rows}
