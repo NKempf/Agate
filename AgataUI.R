@@ -2,6 +2,12 @@
 #                                             Agate - Graphic web interface                                                 #
 #---------------------------------------------------------------------------------------------------------------------------#
 
+# Options statistiques
+#---------------------
+load("Data/Liste indicateurs statistiques/lstIndicateur.RData")
+dmn <- lstDomaine$idDomaine
+names(dmn) <- lstDomaine$labelDomaine
+
 ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                  
                  # I. Interactive web map
@@ -75,10 +81,10 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                                              <p style="text-align:justify"> Select datasets'
                                     ),
                                     # III.4.2. Ril
-                                    column(4,
-                                           selectInput(inputId = "SI_ril", label = "Ril", choices = c("2015"),
-                                                       selected = "2015" )
-                                    ),
+                                    # column(4,
+                                    #        selectInput(inputId = "SI_ril", label = "Ril", choices = c("2015"),
+                                    #                    selected = "2015" )
+                                    # ),
                                     # III.4.3. Census
                                     column(4,
                                            
@@ -87,11 +93,11 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                     ),
                                     # III.4.4. Filosofi
                                     column(4,
-                                           selectInput(inputId = "SI_filo", label = "Fichiers fiscaux",choices = c("2014"),
+                                           selectInput(inputId = "SI_filo", label = "Fichiers fiscaux",choices = c("2014","2015"),
                                                        selected="2014")
                                     ),
                                     # III.4.5. Compute
-                                    column(12,
+                                    column(4,
                                            actionButton("b_calcul", "Compute !")
                                     )
                                     
@@ -174,75 +180,36 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                           
                           fluidRow(
                             column(4,
-
                                    # II.1. Zone selection
                                    #---------------------
-                                   selectInput("SI_ZoneSelect", "Zone selection",
-                                               choices = c("Commune","Departement","HorsZone","Zone"),
-                                               selected = c("Zone"))
-
+                                   selectInput("si_zoneSelect", "Zone",
+                                               choices = pred.choice,
+                                               selected = 4)
                             ),
                             column(4,
-
-                                   # II.2. Tab selection
-                                   #--------------------
-                                   selectInput("SI_TabSelect", "Tab selection",
-                                               choices = c(""),
+                                   
+                                   # II.2. Domaine selection
+                                   #------------------------
+                                   selectInput("si_domaine", "Domaine",
+                                               choices = c("Choice" ="",dmn),
                                                selected = c(""))
                             ),
                             column(4,
-                                   # II.3. Save statistics into Excel report
-                                   #----------------------------------------
-                                   downloadButton(outputId = "DL_StatReport","Download report")
-                                   )
+                                   # II.3. Categorie selection
+                                   #--------------------------
+                                   selectInput("si_categorie", "Catégorie",
+                                               choices = c("Choice" =""),
+                                               selected = c(""))
+                            )
                           ),
-
+                          
                           hr(), # Line between buttons and plot
-
+                          
                           # II.4. Table visualisation
                           #--------------------------
                           textOutput("TO_titleTab"),
                           tags$head(tags$style("#TO_titleTab{font-size: 30px;font-style: bold;}")),
                           DT::dataTableOutput("table")
-                          
-                          # # Sidebar layout with input and output definitions ----
-                          # sidebarLayout(
-                          #   
-                          #   # Sidebar panel for inputs ----
-                          #   sidebarPanel(width = 3,
-                          #     
-                          #     # II.1. Zone selection
-                          #     #---------------------
-                          #     selectInput("SI_ZoneSelect", "Zone selection",
-                          #                 choices = c("Commune","Departement","HorsZone","Zone"),
-                          #                 selected = c("Zone")),
-                          #     
-                          #     # II.2. Tab selection
-                          #     #--------------------
-                          #     selectInput("SI_TabSelect", "Tab selection",
-                          #                 choices = c(""),
-                          #                 selected = c("")),
-                          #     
-                          #     # Button
-                          #     downloadButton(outputId = "DL_StatReport","Download report")
-                          #     
-                          #   ),
-                          #   
-                          #   # Main panel for displaying outputs ----
-                          #   mainPanel(width = 9,
-                          #             textOutput("TO_titleTab"),
-                          #             tags$head(tags$style("#TO_titleTab{font-size: 30px;
-                          #        font-style: bold;
-                          #        }"
-                          #             )
-                          #             ), # Title text style
-                          #             
-                          #             DT::dataTableOutput("table")
-                          #             #tableOutput("table")
-                          #   )
-                          #   
-                          # )
-                          
                           
                           ),
                  

@@ -11,7 +11,9 @@ server <- function(input, output,session) {
   rv <- reactiveValues(AgateMap=NULL,
                        statZone=NULL,
                        statHZone=NULL,
-                       qualityZone=NULL)
+                       qualityZone=NULL,
+                       source = NULL, # Page Statistiques
+                       df.zone=NULL) # Page Statistiques
   
 # I. Interactive web map
 #----------------------------------------------------------------------------------------------------------------------------
@@ -45,19 +47,7 @@ server <- function(input, output,session) {
                     fill = TRUE, fillOpacity = 0.2,popup = ~paste(idZonage.name),layerId = ~paste(idZonage))
     }
   })
-  # observeEvent(input$file1,{
-  #   if (!is.null(input$file1)) {
-  #     # Boundary box
-  #     userMap.bbox <- as.data.frame(bbox(userMap()))
-  #     # Update leaflet
-  #     leafletProxy("mymap") %>%
-  #       fitBounds(lng1 = userMap.bbox$min[1],lat1 = userMap.bbox$max[2],lng2 = userMap.bbox$max[1],lat2 = userMap.bbox$min[2]) %>%
-  #       addPolygons(data=userMap(),opacity = 3,
-  #                                 color = "green", stroke = TRUE, weight = 2,
-  #                                 fill = TRUE, fillOpacity = 0.2,popup = ~paste(NOM_QP),layerId = ~paste(CODE_QP))
-  #   }
-  # })
-  
+
   # I.3. Open reactive dashboard on click
   #--------------------------------------
   observeEvent(input$mymap_shape_click,{
@@ -154,15 +144,23 @@ server <- function(input, output,session) {
     
     withProgress(message = "Creation de l'identifiant",style = "notification", value = 0, {
       
-    # O. Selection des bases de travail (donnees reelles ou fausses)
+    # 0. Selection des bases de travail (donnees reelles ou fausses)
     #---------------------------------------------------------------
+      # Utilise les valeurs saisies par l'utilisateur
       # Ril
-      rilPath <- ifelse(file.exists("Data/Ril/ril15.fst"),"Data/Ril/ril15.fst","Data/Ril/FakeRil.fst")
+      ril.an <- "15"
+      ril.path.string <- paste0("Data/Ril/ril",ril.an,".fst")
+      rilPath <- ifelse(file.exists(ril.path.string),ril.path.string,"Data/Ril/FakeRil.fst")
       # RP
-      rpiPath <- ifelse(file.exists("Data/Rp/rp13i.fst"),"Data/Rp/rp13i.fst","Data/Rp/FakeRpi.fst")
-      rplPath <- ifelse(file.exists("Data/Rp/rp13l.fst"),"Data/Rp/rp13l.fst","Data/Rp/FakeRpl.fst")
+      rp.an <- substr(input$SI_Rp,3,4)
+      rpi.path.string <- paste0("Data/Rp/rp",rp.an,"i.fst")
+      rpl.path.string <- paste0("Data/Rp/rp",rp.an,"l.fst")
+      rpiPath <- ifelse(file.exists(rpi.path.string),rpi.path.string,"Data/Rp/FakeRpi.fst")
+      rplPath <- ifelse(file.exists(rpl.path.string),rpl.path.string,"Data/Rp/FakeRpl.fst")
       # Filosofi
-      filoPath <- ifelse(file.exists("Data/Filosofi/filo14.fst"),"Data/Filosofi/filo14.fst","Data/Filosofi/FakeFilo.fst")
+      filo.an <- substr(input$SI_filo,3,4)
+      filo.path.string <- paste0("Data/Filosofi/filo",filo.an,".fst")
+      filoPath <- ifelse(file.exists(filo.path.string),filo.path.string,"Data/Filosofi/FakeFilo.fst")
     
     # I. Preparation du zonage
     #-------------------------
@@ -171,8 +169,7 @@ server <- function(input, output,session) {
       zonage <- spTransform(zonage, "+init=epsg:3857")
       
       # I.2. Creation de l'identifiant idZonage
-      zonage@data$idZonage <- zonage@data$idZonage
-      
+      # zonage@data$idZonage <- zonage@data$idZonage
       
     # II. Logements géolocalisés du RIL 
     #----------------------------------
@@ -208,13 +205,15 @@ server <- function(input, output,session) {
     rpi <- read_fst(rpiPath) %>% 
       filter(idx %in% ril@data$idx) %>% 
       left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
-      mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
+      mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage)) %>% 
+      left_join(zonage@data %>% select(idZonage,idZonage.name),"idZonage")
     
     # III.3. Ajout de la zone aux données du rp logement
     rpl <- read_fst(rplPath) %>% 
       filter(idx %in% ril@data$idx) %>% 
       left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
-      mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
+      mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage)) %>% 
+      left_join(zonage@data %>% select(idZonage,idZonage.name),"idZonage")
     
     # IV. Ajout de la zone aux données fiscales
     #------------------------------------------
@@ -241,15 +240,24 @@ server <- function(input, output,session) {
              typmenR.lib = factor(typmenR,labels = typmen.label))
     rm(filo.sp)
     
+    str(filo)
+    
     # V. Calcul des indicateurs statistiques
     #---------------------------------------
     incProgress(amount = 0.4,message = "Calcul des statistiques")
     
     # V.1. Statistiques dans la zone
-    rv$statZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("idZonage"))
+    rv$statZone <- statistics_zone(group_var = c("com","idZonage","idZonage.name"),zone = zonage,rpi = rpi,rpl = rpl, filo = filo,
+                               sourceRpi = paste0("rpi",rp.an),
+                               sourceRpl = paste0("rpl",rp.an),
+                               sourceFilo = paste0("filo",filo.an),
+                               rpi.weight = "IPONDI",
+                               rpl.weight = "IPONDL",
+                               filo.weight = "nbpersm")
     
-    # V.2. Statistiques communales hors zone
-    rv$statHZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("com","com.lib","idZonage"))
+    # V.2. Objets pour page "statistiques"
+    rv$df.zone <- rv$statZone$indicateur_stat
+    rv$source <- unique(rv$df.zone$source)
     
     # VI. Qualité des données du RP
     #------------------------------
@@ -263,11 +271,9 @@ server <- function(input, output,session) {
     
     # VI.2. Base sondage (special calage)
     sondage <- sondageZon(rpa = rpa)
-    print(sondage)
     
     # VI.3. Calcul de la precision analytique sans calage
     rv$qualityZone <- precision_analytique_nc(rpa = rpa,Y = INPER,zonage = zonage,idZonage = "idZonage",sondage = sondage) # Nombre de personne
-    print(rv$qualityZone)
       
     }) # Fermeture du withprogress
 
@@ -394,89 +400,90 @@ server <- function(input, output,session) {
 # V. Statistics dataSet
 #--------------------------------------------------------------------------------------------------------------------------------------
   
-  # V.1. Update Tab selection
-  #--------------------------
-  observeEvent(rv$statZone, {
-    if(!is.null(rv$statZone)){
-      updateSelectInput(session, "SI_TabSelect", 
-                        choices = rv$statZone$tab_lib,
-                        # label = rv$statZone$tab_lib[names(rv$statZone$tab_lib) %in% names(rv$statZone)],
-                        selected = rv$statZone$tab_lib[2])
-    }
+  # V.1. Table utilisateur et source
+  #---------------------------------
+  # observe({
+  #   rv$df.zone <- indStat$indicateur_stat
+  #   rv$source <- unique(indStat$indicateur_stat$source)
+  # })
+  
+  # V.2. MAJ liste des catégories
+  #------------------------------
+  observeEvent(input$si_domaine,{
+    cat <- lstCategorie$idCategorie[lstCategorie$idDomaine == input$si_domaine]
+    names(cat) <- lstCategorie$labelCategorie[lstCategorie$idDomaine == input$si_domaine]
+    updateSelectInput(session, "si_categorie",
+                      choices = cat)
   })
   
-  # V.2 Reactive value for selected dataset
-  #----------------------------------------
-  datasetInput <- reactive({
+  # V.3. Reactive data table
+  #-------------------------
+  observeEvent(c(input$si_categorie,input$si_domaine,input$si_zoneSelect),{
     
-    tab.select <- names(rv$statZone)[rv$statZone$tab_lib == input$SI_TabSelect]
-    
-    switch(input$SI_ZoneSelect,
-           Commune = {
-             df <- com.stat[[tab.select]]
-           },
-           Departement = {
-             df <- dep.stat[[tab.select]]
-           },
-           HorsZone = {
-             df <- rv$statHZone[[tab.select]]
-           },
-           {
-             df <- rv$statZone[[tab.select]]
-           }
-    )
-    return(df)
-  })
-  
-  # V.3. Reactive title
-  #--------------------
-  output$TO_titleTab <- renderText({ 
-    # paste("Titre : ", input$SI_TabSelect)
-    input$SI_TabSelect
-  })
-  
-  # V.3. Display table
-  #-------------------
-  output$table = DT::renderDataTable(
-    datasetInput(),
-    extensions = 'Buttons',
-    options = list(
-      scrollX = TRUE,
-      # fixedColumns = TRUE,
-      # autoWidth = TRUE,
-      ordering = FALSE,
-      dom = 'lBfrtip',
-      buttons = c(I('colvis'),'excel', 'pdf')
+    if(input$si_categorie != ""){
+      # V.3.1. Selection de la base de données
+      if(input$si_zoneSelect == 4){
+        df <- rv$df.zone %>% 
+          select(source,domaine,categorie,com,idZonage,idZonage.name,indicateur,type.indicateur,value) %>%
+          filter(type.indicateur != "part_np") %>% 
+          filter(domaine == input$si_domaine & categorie == input$si_categorie)
+      }else{
+        df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>% 
+          filter(zone.predefine == input$si_zoneSelect & domaine == input$si_domaine & 
+                   categorie == input$si_categorie & source %in% rv$source) %>%
+          filter(type.indicateur != "part_np") %>% 
+          select(source,domaine,categorie,idZonage,idZonage.name,indicateur,type.indicateur,value)
+      }
       
-    ),
-    rownames= FALSE,
-    class = "display" #if you want to modify via .css
-  )
-  
-  # V.4 Reactive value for report input
-  #------------------------------------
-  reportInput <- reactive({
+      # V.3.2. Libelles de colonnes du tableau
+      type.ind <- typInd[typInd %in% c("idZonage","idZonage.name",unique(df$type.indicateur))]
+      
+      # V.3.3. Construction tableau
+      df <- df %>%
+        spread(key = type.indicateur, value = value) %>%
+        left_join(lstIndicateur %>% select(nomIndicateur,labelIndicateur),c("indicateur" = "nomIndicateur")) %>% 
+        mutate(indicateur = labelIndicateur) %>% 
+        select(-domaine,-categorie,-labelIndicateur)
+      
+      # V.3.4. Titre du tableau
+      output$TO_titleTab <- renderText({lstCategorie$titreTab[lstCategorie$idDomaine == input$si_domaine &
+                                                                lstCategorie$idCategorie == input$si_categorie]})
+      # V.3.5. Affichage du tableau
+      output$table = renderDT(
+        datatable(df,
+                  colnames = type.ind,
+                  extensions = 'Buttons',
+                  options = list(
+                    scrollX = TRUE,
+                    # fixedColumns = TRUE,
+                    # autoWidth = TRUE,
+                    ordering = FALSE,
+                    dom = 'lBfrtip',
+                    buttons = c(I('colvis'),'excel')),
+                  rownames= FALSE)
+      )
+    } # end if
     
-    switch(input$SI_ZoneSelect,
-           Commune = {
-             df <- com.stat
-           },
-           Departement = {
-             df <- dep.stat
-           },
-           HorsZone = {
-             df <- rv$statHZone
-           },
-           {
-             df <- rv$statZone
-           }
-    )
-    
-    print(df[1])
-    print(names(df))
-    
-    return(df)
   })
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   # V.5. Download report
   #---------------------

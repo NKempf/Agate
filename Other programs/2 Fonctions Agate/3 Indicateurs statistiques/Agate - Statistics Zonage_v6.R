@@ -25,7 +25,7 @@ statistics_zone <- function(group_var,zone,rpi,rpl,filo,sourceRpi,sourceRpl,sour
   #----------------------------------------------------
   
   # Superficie en km²
-  zone@data$superficie <- gArea(zone,byid = T)/1000000
+  zone@data$superficie <- round(gArea(zone,byid = T)/1000000,1)
   zone <- zone@data
   
   indicateur_stat <- rpi %>%
@@ -390,13 +390,21 @@ majDf <- function(df_init,df_final,group_var = group_var,domaine,source,categori
 income_distrib <- function(df,income,
                            proba = c(0.01,0.05,0.1,0.2,0.25,0.5,0.75,0.80,0.90,0.95,0.99)){
   # Programming tips about do function : https://www.r-bloggers.com/dplyr-do-some-tips-for-using-and-programming/
-  df %>%
+  df <- df %>%
     do(data.frame(Q=proba, n = length(.[[income]]), avg = mean(.[[income]]), stat=quantile(.[[income]], probs=proba))) %>% 
     spread(Q, stat,sep = "_") %>%
     mutate(d9_d1 = round(Q_0.9 / Q_0.1,2),
            q4_q1 = round(Q_0.8 / Q_0.2,2),
            d5_d1 = round(Q_0.5 / Q_0.1,2),
-           d9_d5 = round(Q_0.9 / Q_0.5,2))
+           d9_d5 = round(Q_0.9 / Q_0.5,2),
+           avg = round(avg,0))
+  
+  # Arrondi
+  df.select <- colnames(df)[substr(colnames(df),1,2) == "Q_"]
+  df[,df.select] <- round(df[,df.select],0)
+  
+  return(df)
+  
 }
 
 # Statistiques discretes RP et mise à jour table finale
