@@ -13,6 +13,9 @@
 #---------------------
 library(tidyverse)
 library(plotly)
+library(OpenStreetMap)
+
+
 
 # Fonction necessaire
 

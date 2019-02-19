@@ -9,7 +9,7 @@ dmn <- lstDomaine$idDomaine
 names(dmn) <- lstDomaine$labelDomaine
 
 ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
-                 
+
                  # I. Interactive web map
                  #-------------------------------------------------------------------------------------------------------------
                  tabPanel("Carte",value="vis",
