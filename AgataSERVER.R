@@ -230,6 +230,11 @@ server <- function(input, output,session) {
       mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage)) %>% 
       left_join(zonage@data %>% select(idZonage,idZonage.name),"idZonage")
     
+    # III.4. Table multicommunes
+    zonage.com <- rpl %>% 
+      group_by(dep,com,com.lib,idZonage,idZonage.name) %>% 
+      summarise(freq=n())
+    
     # IV. Ajout de la zone aux données fiscales
     #------------------------------------------
     

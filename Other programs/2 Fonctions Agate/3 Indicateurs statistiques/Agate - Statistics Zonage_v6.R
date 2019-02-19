@@ -55,7 +55,7 @@ statistics_zone <- function(group_var,zone,rpi,rpl,filo,sourceRpi,sourceRpl,sour
   #------------------------------
   indicateur_stat <- rpi %>%
     mutate(indicateur = cut(as.numeric(rpi$AGEREV),
-                            breaks = c(0,20,60,120),
+                            breaks = c(0,20,60,75,120),
                             include.lowest = TRUE,
                             right = FALSE)) %>%
     group_by(!!! syms(group_var),indicateur) %>%

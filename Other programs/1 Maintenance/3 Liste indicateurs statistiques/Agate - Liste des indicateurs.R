@@ -35,7 +35,8 @@ names(ind.label) <- lstIndicateur$labelIndicateur
 
 # II. Enregistrement
 #------------------------------------------------------------------------------------------------------------------------------
-save(lstDomaine,lstCategorie,lstIndicateur,typInd,pred.choice,ind.label,file = "Data/Liste indicateurs statistiques/lstIndicateur.RData")
+save(lstDomaine,lstCategorie,lstIndicateur,typInd,pred.choice,ind.label,lstTypeIndicateur,
+     file = "Data/Liste indicateurs statistiques/lstIndicateur.RData")
 
 
 

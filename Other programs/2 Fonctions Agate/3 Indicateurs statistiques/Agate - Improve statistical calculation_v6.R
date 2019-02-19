@@ -54,7 +54,7 @@ filoPath <- ifelse(file.exists(filo.path.string),filo.path.string,"Data/Filosofi
 # I. Preparation du zonage
 #-------------------------
 # I.1. Creation de la variable zonage
-zonage <- readOGR(dsn = "Data/QPV/qpv.shp")[1:2,]
+zonage <- readOGR(dsn = "Data/QPV/qpv.shp",encoding = "UTF-8",stringsAsFactors = FALSE)[1:2,]
 zonage@data <- zonage@data %>% 
   rename(idZonage = CODE_QP,
          idZonage.name = NOM_QP) %>% 
@@ -110,7 +110,9 @@ rpl <- read_fst(rplPath) %>%
 #---------------------------
 zonage.com <- rpl %>% 
   group_by(dep,com,com.lib,idZonage,idZonage.name) %>% 
-  summarise(freq=n())
+  summarise(freq=n()) %>% 
+  ungroup() %>% 
+  mutate(dep = substr(com,1,3))
 
 # IV. Ajout de la zone aux données fiscales
 #------------------------------------------
@@ -143,5 +145,5 @@ indStat <- statistics_zone(group_var = c("idZonage","idZonage.name"),zone = zona
                            sourceRpi = "rpi14",sourceRpl = "rpl14",
                            sourceFilo = "filo14",rpi.weight = "IPONDI",rpl.weight = "IPONDL",filo.weight = "nbpersm")
 
-save(indStat,zonage.com,file = "Data/Tmp/qpv_stat_tmp.RData")
+save(zonage,indStat,zonage.com,file = "Data/Tmp/qpv_stat_tmp.RData")
 
