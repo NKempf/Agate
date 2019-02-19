@@ -91,9 +91,6 @@ server <- function(input, output,session) {
   })
   
   
-  
-  
-  
 # II. Import user shapefile map
 #-----------------------------------------------------------------------------------------------------------------------------------
   
@@ -165,9 +162,9 @@ server <- function(input, output,session) {
     #---------------------------------------------------------------
       # Utilise les valeurs saisies par l'utilisateur
       # Ril
-      # ril.an <- "15"
-      # ril.path.string <- paste0("Data/Ril/ril",ril.an,".fst")
-      ril.path.string <- "Data/Ril/ril_leger.fst"
+      ril.an <- "15"
+      ril.path.string <- paste0("Data/Ril/ril",ril.an,".fst")
+      # ril.path.string <- "Data/Ril/ril_leger.fst"
       rilPath <- ifelse(file.exists(ril.path.string),ril.path.string,"Data/Ril/FakeRil.fst")
       # RP
       rp.an <- substr(input$SI_Rp,3,4)
