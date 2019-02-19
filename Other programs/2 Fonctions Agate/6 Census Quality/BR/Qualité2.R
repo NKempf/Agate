@@ -198,7 +198,6 @@ if(! exists("rpl_qpv")){load("Extension/base_qpv.Rdata")}
 ############################
   
   
-  
 Ql <- function(zone){
   ## CommuneZone : Liste des communes dans la zone
   ## rpaZ        : Liste des adresse recensé avec Z, Id€Zone
@@ -250,7 +249,7 @@ Ql <- function(zone){
 rpatest<-rpa
 rpatest[!rpatest$idZonage %in%c("QP971001","QP971002","QP971003","QP971004","QP971005","QP971006"),]$idZonage<-"HorsZone"
   
-Qlf <- function(zone,rpa){
+Qlf <- function(zone,rpa,constante=3.75){
     ## CommuneZone : Liste des communes dans la zone
     ## rpaZ        : Liste des adresse recensé avec Z, Id€Zone
     ## rpaZ_s      : Liste des adresse sondée (ou f=0.4 / w=2.5)  <- ## pour l'instant ou ZAP ##
@@ -284,7 +283,7 @@ Qlf <- function(zone,rpa){
     
     T_Zg_t <- rpaZ_t %>% group_by(C_ANNEE_COL,com) %>% summarise(TZg=sum(Z*IPONDL))
     
-    Vf <- 3.75*sum(rpaf$Tf2)
+    Vf <- constante*sum(rpaf$Tf2)
     ec <- Vf^0.5
     cv <- ec/sum(T_Zg_t$TZg)
     TtZ<- sum(T_Zg_t$TZg)
@@ -294,7 +293,7 @@ Qlf <- function(zone,rpa){
 QlfTotal <- function (rpa,y){
   y <- substitute(y)
   rpa2 <- rpa %>% mutate(Y=eval(y))
-  zone <- rpa %>% filter(idZonage!="HorsZone") %>% filter(!duplicated(idZonage)) %>% select(idZonage)
+  zone <- rpa %>% filter(idZonage!="horsZon") %>% filter(!duplicated(idZonage)) %>% select(idZonage)
   r<-apply(zone,1,Qlf,rpa2)
   r<-t(r)
   colnames(r)<-c("CV","Ecart-Type","Tz","TzMin","TzMax")
@@ -530,10 +529,272 @@ test <- rildata %>% left_join(rpl)
 
 
 
-
-
-
-
+t1 <- Sys.time()
+QlfrationTotal(rpa,INPCM,INPER)
+Sys.time() - t1
   
   
+t1 <- Sys.time()
+QlfTotal(rpa,INPCM)
+QlfTotal(rpa,INPER)
+Sys.time() - t1
+#################################################################################################################
+###################################### Derniere version Qualité avant opti ######################################
+#################################################################################################################
+
+library(rlang)
+library(tidyverse)
+
+Qlbase <- function(Y,zone,rpa,constante=0.4){
+  ## CommuneZone : Liste des communes dans la zone
+  ## rpaZ        : Liste des adresse recensé avec Z, Id€Zone
+  ## rpaZ_s      : Liste des adresse sondée (ou f=0.4 / w=2.5)  <- ## pour l'instant ou ZAP ##
+  ## T_Xg        : Nombre total de logement (com/gr) d'apres le recensement
+  ## T_Yg        : Nombre total de Y        (com/gr)
+  ## T_Zg        : Nombre total de Z        (com/gr)
+  ## Tt          : Table des Total et Ratio (com/gr)
+  # Rz     : Nombre de Z par logement (com/gr) 
+  ## rpaU        : table avec les U = Z - RX
+  ## T_Ug        : Total de U = Z-RX        (com/gr)
+  ## U_          : moyenne des U = Z-RX     (com/gr)
+  ## rpaf        : rpa avec les Tf = Z - RX - U_ et Tf²
+  
+  rpaZ_t <- rpa %>% mutate(Id=(idZonage==zone)) %>% mutate(Z=Id*!!parse_quosure(Y))
+  
+  rpaZ <- rpaZ_t %>% filter(IPOND>1.75 & !com %in% c("97360","97357"))
+  T_Xg <- rpaZ %>% group_by(C_ANNEE_COL,com) %>% summarise(TXg=sum(X*IPOND))
+  T_Zg <- rpaZ %>% group_by(C_ANNEE_COL,com) %>% summarise(TZg=sum(Z*IPOND))
+  Tt <- T_Xg %>% left_join(T_Zg,by = c("C_ANNEE_COL", "com")) %>% mutate(Rz=TZg/TXg)
+  
+  rpaU <- rpaZ %>% left_join(Tt,by = c("C_ANNEE_COL", "com")) %>% mutate(U = (Z-Rz*X))
+  
+  T_Ug <- rpaU %>% group_by(C_ANNEE_COL,com) %>% summarise(TUg=sum(U*IPOND))
+  U_ <- rpaU %>% group_by(C_ANNEE_COL,com) %>% summarise(u_=sum(U*IPOND)/sum(IPOND))
+  rpaf <- rpaU %>% left_join(U_,by = c("C_ANNEE_COL", "com")) %>% mutate(Tf = U -u_, Tf2 = (U -u_)^2)
+  
+  
+  T_Zg_t <- rpaZ_t %>% group_by(C_ANNEE_COL,com) %>% summarise(TZg=sum(Z*IPOND))
+  
+  Vf <- (1-constante)/(constante^2)*sum(rpaU$Tf2)
+  ec <- Vf^0.5
+  cv <- ec/sum(T_Zg_t$TZg)
+  TtZ<- sum(T_Zg_t$TZg)
+  return(c(zone,Y,round(cv,3),round(ec),round(TtZ),round(TtZ-1.96*ec),round(TtZ+1.96*ec)))
+}
+Qlrtio <- function (Y,zone,rpa,constante=0.4){
+  ## R           : Ration (Y1/Y2)
+  ## 'Z'         : variable linéariser pour les calcule de variance 
+  ## Rz1 / Rz2   : variable du ratio calculé sur la zone
+  ## CommuneZone : Liste des communes dans la zone
+  ## rpaR        : Liste des adresse avec Rz1 et Rz2
+  ## rpaZ        : Liste des adresse recensé avec Z, Id€Zone
+  ## rpaZ_s      : Liste des adresse sondée (ou f=0.4 / w=2.5)  <- ## pour l'instant ou ZAP ##
+  ## T_Xg        : Nombre total de logement (com/gr) d'apres le recensement
+  ## T_Zg        : Nombre total de Z        (com/gr)
+  ## T_Rg        : Nombre total de R        (com/gr)
+  ## Tt          : Table des Total et Ratio (com/gr)
+  #  Rz     : Nombre de Z par logement (com/gr) 
+  ## rpaU        : table avec les U = Z - RX
+  ## T_Ug        : Total de U = Z-RX        (com/gr)
+  ## U_          : moyenne des U = Z-RX     (com/gr)
+  ## rpaf        : rpa avec les Tf = Z - RX - U_ et Tf²
+  Y<-strsplit(Y," / ",fixed = TRUE)
+  r1<-Y[[1]][1]
+  r2<-Y[[1]][2]
+  
+  rpaR <- rpa %>% mutate(Id=(idZonage==zone),join=1) %>% mutate(Rz1=Id*!!parse_quosure(r1),Rz2=Id*!!parse_quosure(r2))
+  T_R <- rpaR %>% group_by(join) %>% summarise(TR1=sum(Rz1*IPOND),TR2=sum(Rz2*IPOND),n=sum(join)) %>% mutate(TR= TR1/TR2)
+  
+  rpaZ_t <- rpaR %>% left_join(T_R,by = "join") %>% mutate(Z=(Rz1-TR*Rz2)/(TR2)) %>% filter(!is.nan(Z))
+  
+  rpaZ <- rpaZ_t %>% filter(IPOND>1.75 & !com %in% c("97360","97357"))
+  T_Xg <- rpaZ %>% group_by(C_ANNEE_COL,com) %>% summarise(TXg=sum(X*IPOND))
+  T_Zg <- rpaZ %>% group_by(C_ANNEE_COL,com) %>% summarise(TZg=sum(Z*IPOND))
+  
+  Tt <- T_Xg %>% left_join(T_Zg, by = c("C_ANNEE_COL", "com")) %>% mutate(Rz=TZg/TXg)
+  
+  rpaU <- rpaZ %>% left_join(Tt, by = c("C_ANNEE_COL", "com")) %>% mutate(U = Z-Rz*X)
+  
+  T_Ug <- rpaU %>% group_by(C_ANNEE_COL,com) %>% summarise(TUg=sum(U*IPOND))
+  U_ <- rpaU %>% group_by(C_ANNEE_COL,com) %>% summarise(u_=sum(U*IPOND)/sum(IPOND))
+  
+  rpaf <- rpaU %>% left_join(U_, by = c("C_ANNEE_COL", "com")) %>% mutate(Tf = U -u_, Tf2 = (U -u_)^2)
+  
+  
+  Vf <- (1-constante)/(constante^2)*sum(rpaf$Tf2)
+  ec <- Vf^0.5
+  cv <- ec/sum(T_R$TR)
+  TtZ<- sum(T_R$TR)
+  return(c(zone,paste0(r1," / ",r2),round(cv,3),round(ec,3),round(TtZ,3),round(TtZ-1.96*ec,3),round(TtZ+1.96*ec,3)))
+} 
+Qlfinal<-function(rpa,group_var){
+  zone <- rpa %>% filter(idZonage!="Hors zonage") %>% filter(!duplicated(idZonage)) %>% select(idZonage)
+  
+  total_var<-group_var[!grepl(" / ", group_var, fixed=TRUE)]
+  if(!is_empty(total_var)){
+    totaux<-bind_rows(apply(zone, 1, Qlinter,total_var,rpa))
+    r<-totaux
+  }
+  ratio_var<-group_var[grepl(" / ", group_var, fixed=TRUE)]
+  if(!is_empty(ratio_var)){
+    ratios<-bind_rows(apply(zone, 1, Qlrintr,ratio_var,rpa))
+    r<-ratio
+    if(!is_empty(total_var)){
+      r<-rbind(totaux,ratios)
+    }
+  }
+  return(r)
+}
+
+Qlinter<-function(zone,total_var,rpa){
+  a<-apply(as.array(total_var),1, Qlbase, zone,rpa=rpa)
+  a<-as.data.frame(t(a))
+  colnames(a)<-c("zonage","Variable","CoefVariation","Ecart-Type","EstVariable","minIntervalConf.","maxIntervalConf.")
+  return(a)
+}
+Qlrintr<-function(zone,ratio_var,rpa){
+  a<-apply(as.array(ratio_var),1, Qlrtio, zone,rpa=rpa)
+  a<-as.data.frame(t(a))
+  colnames(a)<-c("zonage","Variable","CoefVariation","Ecart-Type","EstVariable","minIntervalConf.","maxIntervalConf.")
+  return(a)
+}
+
+
+
+######################################################################################################
+###################################### Derniere version Qualité ######################################
+######################################################################################################
+
+library(rlang)
+library(tidyverse)
+
+Qlbase <- function(Y,zone,rpa,constante=0.4){
+  ## rpaZ_t      : Liste des adresse avec Z, Id€Zone
+  ## rpaZ        : Liste des adresse sondée avec Z, Id€Zone (ou f=0.4 / w=2.5)
+  ## Tt          : Table des Total et Ratio (com/gr)
+  ## rpaU        : table avec les U2 = (Z - RX)^2
+  ## T_Zg_t      : 
+  
+  rpaZ_t <- rpa %>% mutate(Id=(idZonage==zone)) %>% mutate(Z=Id*!!parse_quosure(Y))
+  
+  rpaZ <- rpaZ_t %>% filter(IPOND>1.75 & !com %in% c("97360","97357"))
+  
+  Tt <- rpaZ %>% group_by(C_ANNEE_COL,com) %>% summarise(TXg=sum(X*IPOND),TZg=sum(Z*IPOND))
+  
+  rpaU <- rpaZ %>% left_join(Tt,by = c("C_ANNEE_COL", "com")) %>% mutate(U2 = (Z-TZg/TXg*X)^2)
+  
+  T_Zg_t <- rpaZ_t %>% group_by(C_ANNEE_COL,com) %>% summarise(TZg=sum(Z*IPOND))
+  
+  Vf <- (1-constante)/(constante^2)*sum(rpaU$U2)
+  ec <- Vf^0.5
+  TtZ<- sum(T_Zg_t$TZg)
+  cv <- ec/TtZ
+  return(c(zone,Y,round(cv,3),round(ec),round(TtZ),round(TtZ-1.96*ec),round(TtZ+1.96*ec)))
+}
+Qlrtio <- function (Y,zone,rpa,constante=0.4){
+  ## R           : Ration (Y1/Y2)
+  ## 'Z'         : variable linéariser pour les calcule de variance 
+  ## Rz1 / Rz2   : variable du ratio calculé sur la zone
+  ## CommuneZone : Liste des communes dans la zone
+  ## rpaR        : Liste des adresse avec Rz1 et Rz2
+  ## rpaZ        : Liste des adresse recensé avec Z, Id€Zone
+  ## rpaZ_s      : Liste des adresse sondée (ou f=0.4 / w=2.5)  <- ## pour l'instant ou ZAP ##
+  ## T_Xg        : Nombre total de logement (com/gr) d'apres le recensement
+  ## T_Zg        : Nombre total de Z        (com/gr)
+  ## T_Rg        : Nombre total de R        (com/gr)
+  ## Tt          : Table des Total et Ratio (com/gr)
+  #  Rz     : Nombre de Z par logement (com/gr) 
+  ## rpaU        : table avec les U = Z - RX
+  ## T_Ug        : Total de U = Z-RX        (com/gr)
+  ## U_          : moyenne des U = Z-RX     (com/gr)
+  ## rpaf        : rpa avec les Tf = Z - RX - U_ et Tf²
+  Y<-strsplit(Y," / ",fixed = TRUE)
+  r1<-Y[[1]][1]
+  r2<-Y[[1]][2]
+  
+  rpaR <- rpa %>% mutate(Id=(idZonage==zone),join=1) %>% mutate(Rz1=Id*!!parse_quosure(r1),Rz2=Id*!!parse_quosure(r2))
+  
+  T_R <- rpaR %>% group_by(join) %>% summarise(TR1=sum(Rz1*IPOND),TR2=sum(Rz2*IPOND))
+  
+  rpaZ <- rpaR %>% left_join(T_R,by = "join") %>% mutate(Z=(Rz1-(TR1/TR2)*Rz2)/(TR2)) %>% 
+    filter(!is.nan(Z) & IPOND>1.75 & !com %in% c("97360","97357"))
+  
+  Tt <- rpaZ %>% group_by(C_ANNEE_COL,com) %>% summarise(TZg=sum(Z*IPOND),TXg=sum(X*IPOND))
+  
+  rpaU <- rpaZ %>% left_join(Tt, by = c("C_ANNEE_COL", "com")) %>% mutate(U2 = (Z-(TZg/TXg)*X)^2)
+  
+  Vf <- (1-constante)/(constante^2)*sum(rpaU$U2)
+  ec <- Vf^0.5
+  TtZ<- sum(T_R$TR1/T_R$TR2)
+  cv <- ec/TtZ
+  return(c(zone,paste0(r1," / ",r2),round(cv,3),round(ec,3),round(TtZ,3),round(TtZ-1.96*ec,3),round(TtZ+1.96*ec,3)))
+} 
+
+Qlinter<-function(zone,total_var,rpa){
+  a<-apply(as.array(total_var),1, Qlbase, zone,rpa=rpa)
+  a<-as.data.frame(t(a))
+  colnames(a)<-c("zonage","Variable","CoefVariation","Ecart-Type","EstVariable","minIntervalConf.","maxIntervalConf.")
+  return(a)
+}
+Qlrintr<-function(zone,ratio_var,rpa){
+  a<-apply(as.array(ratio_var),1, Qlrtio, zone,rpa=rpa)
+  a<-as.data.frame(t(a))
+  colnames(a)<-c("zonage","Variable","CoefVariation","Ecart-Type","EstVariable","minIntervalConf.","maxIntervalConf.")
+  return(a)
+}
+
+Qlfinal<-function(rpa,group_var){
+  zone <- rpa %>% filter(idZonage!="Hors zonage") %>% filter(!duplicated(idZonage)) %>% select(idZonage)
+  
+  total_var<-group_var[!grepl(" / ", group_var, fixed=TRUE)]
+  if(!is_empty(total_var)){
+    totaux<-bind_rows(apply(zone, 1, Qlinter,total_var,rpa))
+    r<-totaux
+  }
+  ratio_var<-group_var[grepl(" / ", group_var, fixed=TRUE)]
+  if(!is_empty(ratio_var)){
+    ratios<-bind_rows(apply(zone, 1, Qlrintr,ratio_var,rpa))
+    r<-ratios
+    if(!is_empty(total_var)){
+      r<-rbind(totaux,ratios)
+    }
+  }
+  return(r)
+}
+rpa <- rpl %>% mutate(X=as.numeric(C_LOG)) %>% group_by(C_IMM,C_ANNEE_COL,com,idZonage) %>% 
+  summarise(X=max(1,X),IPOND=mean(IPONDL),INPER=sum(INPER),INPCM=sum(INPCM)) %>% ungroup()
+
+group_var=c("INPER","INPCM","X","NbJeune","NbVieux","NbMoyen","NbEtranger","NbImmigre","NbEtudian1825","NbHomme","NbFemme",
+            "ACTIF","INPCM / ACTIF","NbFemme / INPER","NbHomme / INPER","NbJeune / INPER","NbEtudian1825 / Nb1825","HommeChomeur / HommeActif",
+            "FemmeChomeur / FemmeActif","NbEtranger / INPER","NbImmigre / INPER")
+
+t1 <- Sys.time()
+rpa2 <- rpi %>% mutate(X=as.numeric(C_LOG)) %>% group_by(C_IMM,C_ANNEE_COL,com,idZonage) %>% 
+  summarise(X=max(1,X),IPOND=mean(IPONDI),NbHomme=sum(SEXE=="homme"),NbFemme=sum(SEXE=="femme"),ACTIF=sum(inactif=="actif"),INPCM=sum(TACT=="chomeur"),
+            NbJeune=sum(as.numeric(AGEREV)<20),NbVieux=sum(as.numeric(AGEREV)>=65),NbMoyen=sum(as.numeric(AGEREV)>=20 & as.numeric(AGEREV)<65),
+            FemmeActif=sum(SEXE=="femme" & inactif=="actif"),HommeActif=sum(SEXE=="homme" & inactif=="actif"),
+            FemmeChomeur=sum(SEXE=="femme" & TACT=="chomeur"),HommeChomeur=sum(SEXE=="homme" & TACT=="chomeur"),
+            NbEtranger=sum(etranger=="etranger"),NbImmigre=sum(immigre=="immigre"),Nb1825=sum(as.numeric(AGEREV)>=18 & as.numeric(AGEREV)<=25),
+            NbEtudian1825=sum(as.numeric(AGEREV)>=18 & as.numeric(AGEREV)<25 & ETUD=="etudi")) %>% mutate(INPER=NbFemme+NbHomme) %>% ungroup()
+Sys.time() - t1
+
+
+t1 <- Sys.time()
+qualite<-Qlfinal(rpa2,group_var)
+Sys.time() - t1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
