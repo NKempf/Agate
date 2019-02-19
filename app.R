@@ -40,30 +40,14 @@ source ("Other programs/2 Fonctions Agate/1 Fake data/Agate - Fake data fct.R",e
 source("Other programs/2 Fonctions Agate/2 Cartographie/Agate - Cartographie fct.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/6 Census Quality/Agate - Census infra quality.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/5 Export Report/Agate - Export Excel fct.R",encoding = "UTF-8")
-source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Ancien/Agate - Statistics Zonage_v4.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v6.R",encoding = "UTF-8")
 source("Other programs/0 A implementer/4 Plotly/Agate - plotly graphes fonctions_v3.R",encoding = "UTF-8")
 # source("Other programs/Export Report/Agate - excel report.R")
-
-# II.2. Fake data
-#----------------
-load("Data/Fake/fakeHeatPts.RData") # Fake spatialpoints for heatmap
-FakeHeatpoint <-  spTransform(FakeHeatpoint,"+init=epsg:4326")
-FakeHeatpoint@data %>% 
-  mutate(x = FakeHeatpoint@coords[,1],
-         y = FakeHeatpoint@coords[,2]) -> FakeHeatpoint
-
-# Statistical summary about cities and territory
-if(file.exists("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData")){
-  load("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData")  # Real data
-  com.stat <- statCom_rp14_filo14
-  dep.stat <- statReg_rp14_filo14
-}else{
-  load("Data/Stats/Region and cities/region_stat.RData") # Fake region and cities stat
-}
 
 # II.3. Maps
 #----------------
 load("Data/Maps/Cities/cities.RData") # Cities map
+load("Data/Maps/HeatPoint/heatpoints.Rdata") # heat points
 
 # III. Graphic web interface
 #----------------------------------------------------------------------------------------------------------------------------------

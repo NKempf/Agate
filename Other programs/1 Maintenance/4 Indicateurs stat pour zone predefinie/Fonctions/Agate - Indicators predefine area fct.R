@@ -96,8 +96,6 @@ indStat_AutZOn <- function(zonage,rp.an, filo.an, ril.an){
 
 indStat_RegCities <- function(zonage,var,rp.an, filo.an, ril.an){
   
-  var.group <- substitute(var)
-  
   # O. Selection des bases de travail (donnees reelles ou fausses)
   #---------------------------------------------------------------
   
@@ -116,10 +114,10 @@ indStat_RegCities <- function(zonage,var,rp.an, filo.an, ril.an){
   # I.1. Recensement de la population
   #--------------------------------
   rpi <- read_fst(rpiPath) %>% 
-    mutate(idZonage = eval(var.group))
+    mutate(idZonage = !!parse_quosure(var))
   
   rpl <- read_fst(rplPath) %>% 
-    mutate(idZonage = eval(var.group))
+    mutate(idZonage = !!parse_quosure(var))
   
   # I.2. Données fiscales
   #---------------------
@@ -127,7 +125,7 @@ indStat_RegCities <- function(zonage,var,rp.an, filo.an, ril.an){
                     "femme seule","homme seul")
   filo <- read_fst(filoPath) %>% 
     mutate(dep = substr(com,1,3),
-           idZonage = eval(var.group),
+           idZonage = !!parse_quosure(var),
            typmenR.lib = factor(typmenR,labels = typmen.label))
   
   # I.3. Indicateurs statistiques

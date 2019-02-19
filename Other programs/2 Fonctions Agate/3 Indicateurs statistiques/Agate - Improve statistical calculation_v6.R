@@ -2,9 +2,9 @@
 #                                   Agata - Statistical calculation improvement                                        #
 #----------------------------------------------------------------------------------------------------------------------#
 
-# 21.12.2018
+# 18.02.2019
 
-# Improve statistical calculation of indicators
+# Improve statistical calculation of indicators and display them into cool datatable (package DT)
 
 # Packages nécessaires
 #---------------------
@@ -13,9 +13,15 @@ library(rgeos) # Map tools
 library(tidyverse) # Tidy data
 library(fst) # Read partial data
 library(fstplyr) # dplyr for fst object
+library(DT) # Interactive datatable
+library(openxlsx)
 
+# Fonction necessaire
 source("Other programs/2 Fonctions Agate/2 Cartographie/Agate - Cartographie fct.R",encoding = "UTF-8")
-# source("Other programs/StatZonage/Agate - Statistics Zonage_v4.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v6.R",encoding = "UTF-8")
+
+# I. Import des bases
+#----------------------------------------------------------------------------------------------------------------------------------------------
 
 # Statistical summary about cities and territory
 if(file.exists("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData")){
@@ -28,26 +34,33 @@ if(file.exists("Data/Statistiques Zonage/StatRegCom_rp14_filo14.RData")){
 
 # O. Selection des bases de travail (donnees reelles ou fausses)
 #---------------------------------------------------------------
+
 # Ril
-rilPath <- ifelse(file.exists("Data/Ril/ril15.fst"),"Data/Ril/ril15.fst","Data/Ril/FakeRil.fst")
+ril.an <- "15"
+ril.path.string <- paste0("Data/Ril/ril",ril.an,".fst")
+# ril.path.string <- "Data/Ril/ril_leger.fst"
+rilPath <- ifelse(file.exists(ril.path.string),ril.path.string,"Data/Ril/FakeRil.fst")
 # RP
-rpiPath <- ifelse(file.exists("Data/Rp/rp13i.fst"),"Data/Rp/rp13i.fst","Data/Rp/FakeRpi.fst")
-rplPath <- ifelse(file.exists("Data/Rp/rp13l.fst"),"Data/Rp/rp13l.fst","Data/Rp/FakeRpl.fst")
+rp.an <- "14"
+rpi.path.string <- paste0("Data/Rp/rp",rp.an,"i.fst")
+rpl.path.string <- paste0("Data/Rp/rp",rp.an,"l.fst")
+rpiPath <- ifelse(file.exists(rpi.path.string),rpi.path.string,"Data/Rp/FakeRpi.fst")
+rplPath <- ifelse(file.exists(rpl.path.string),rpl.path.string,"Data/Rp/FakeRpl.fst")
 # Filosofi
-filoPath <- ifelse(file.exists("Data/Filosofi/filo14.fst"),"Data/Filosofi/filo14.fst","Data/Filosofi/FakeFilo.fst")
+filo.an <- "14"
+filo.path.string <- paste0("Data/Filosofi/filo",filo.an,".fst")
+filoPath <- ifelse(file.exists(filo.path.string),filo.path.string,"Data/Filosofi/FakeFilo.fst")
 
 # I. Preparation du zonage
 #-------------------------
 # I.1. Creation de la variable zonage
-zonage <- readOGR(dsn = "Data/QPV/qpv.shp")[1:2,]
+zonage <- readOGR(dsn = "Data/QPV/qpv.shp",encoding = "UTF-8",stringsAsFactors = FALSE)[1:2,]
 zonage@data <- zonage@data %>% 
   rename(idZonage = CODE_QP,
-         idZonage.label = NOM_QP) %>% 
-  select(idZonage,idZonage.label)
+         idZonage.name = NOM_QP) %>% 
+  select(idZonage,idZonage.name)
 zonage <- spTransform(zonage, "+init=epsg:3857")
 
-# I.2. Creation de l'identifiant idZonage
-zonage@data$idZonage <- zonage@data$idZonage
 
 # II. Logements géolocalisés du RIL 
 #----------------------------------
@@ -83,13 +96,23 @@ incProgress(amount = 0.2,message = "Ajout de la zone aux données du RP")
 rpi <- read_fst(rpiPath) %>% 
   filter(idx %in% ril@data$idx) %>% 
   left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
-  mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
+  mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage)) %>% 
+  left_join(zonage@data,"idZonage")
 
 # III.3. Ajout de la zone aux données du rp logement
 rpl <- read_fst(rplPath) %>% 
   filter(idx %in% ril@data$idx) %>% 
   left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
-  mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage))
+  mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage)) %>% 
+  left_join(zonage@data,"idZonage")
+
+# III.4. Table multicommunes
+#---------------------------
+zonage.com <- rpl %>% 
+  group_by(dep,com,com.lib,idZonage,idZonage.name) %>% 
+  summarise(freq=n()) %>% 
+  ungroup() %>% 
+  mutate(dep = substr(com,1,3))
 
 # IV. Ajout de la zone aux données fiscales
 #------------------------------------------
@@ -113,25 +136,14 @@ filo <- filo.sp@data %>%
   left_join(data.frame(unique(rpl[,c("com","com.lib")])),"com") %>% 
   mutate(dep = substr(com,1,3),
          idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage),
-         typmenR.lib = factor(typmenR,labels = typmen.label))
+         typmenR.lib = factor(typmenR,labels = typmen.label)) 
 rm(filo.sp)
 
-# Enregistrement des bases nécessaires
-save(zonage,rpi,rpl,filo,file="Data/Tmp/FakeDataImproveCalcul.RData")
+# II. Indicateurs statistiques par zones
+#---------------------------------------------------------------------------------------------------------------------------------------------
+indStat <- statistics_zone(group_var = c("idZonage","idZonage.name"),zone = zonage,rpi = rpi,rpl = rpl, filo = filo,
+                           sourceRpi = "rpi14",sourceRpl = "rpl14",
+                           sourceFilo = "filo14",rpi.weight = "IPONDI",rpl.weight = "IPONDL",filo.weight = "nbpersm")
 
-
-
-# V. Calcul des indicateurs statistiques
-#---------------------------------------
-incProgress(amount = 0.4,message = "Calcul des statistiques")
-
-# V.1. Statistiques dans la zone
-rv$statZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("idZonage"))
-
-# V.2. Statistiques communales hors zone
-rv$statHZone <- statistics_zone(rpi = rpi,rpl = rpl,filo = filo,group_var = c("com","com.lib","idZonage"))
-
-
-
-
+save(zonage,indStat,zonage.com,file = "Data/Tmp/qpv_stat_tmp.RData")
 
