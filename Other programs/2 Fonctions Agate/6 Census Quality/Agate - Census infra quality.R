@@ -4,10 +4,133 @@
 
 # Nicolas Kempf
 
-# Derniere MAJ : 31.10.2018
+# Derniere MAJ : 20.02.2019
 
 # Les fonctions ci-dessus sont de légères modifications des travaux de Lionel Delta (stage ENSAE)
 
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+# Travaux de Baptiste Raimbaud
+Qlbase <- function(Y,zone,rpa,constante=0.4){
+  ## rpaZ_t      : Liste des adresse avec Z, Id€Zone
+  ## rpaZ        : Liste des adresse sondée avec Z, Id€Zone (ou f=0.4 / w=2.5)
+  ## Tt          : Table des Total et Ratio (com/gr)
+  ## rpaU        : table avec les U2 = (Z - RX)^2
+  ## T_Zg_t      : 
+  
+  rpaZ_t <- rpa %>% mutate(Id=(idZonage==zone)) %>% mutate(Z=Id*!!parse_quosure(Y))
+  
+  rpaZ <- rpaZ_t %>% filter(IPOND>1.75 & !com %in% c("97360","97357"))
+  
+  Tt <- rpaZ %>% group_by(C_ANNEE_COL,com) %>% summarise(TXg=sum(X*IPOND),TZg=sum(Z*IPOND))
+  
+  rpaU <- rpaZ %>% left_join(Tt,by = c("C_ANNEE_COL", "com")) %>% mutate(U2 = (Z-TZg/TXg*X)^2)
+  
+  T_Zg_t <- rpaZ_t %>% group_by(C_ANNEE_COL,com) %>% summarise(TZg=sum(Z*IPOND))
+  
+  Vf <- (1-constante)/(constante^2)*sum(rpaU$U2)
+  ec <- Vf^0.5
+  TtZ<- sum(T_Zg_t$TZg)
+  cv <- ec/TtZ
+  return(c(zone,Y,round(cv,3),round(ec),round(TtZ),round(TtZ-1.96*ec),round(TtZ+1.96*ec)))
+}
+Qlrtio <- function (Y,zone,rpa,constante=0.4){
+  ## R           : Ration (Y1/Y2)
+  ## 'Z'         : variable linéariser pour les calcule de variance 
+  ## Rz1 / Rz2   : variable du ratio calculé sur la zone
+  ## CommuneZone : Liste des communes dans la zone
+  ## rpaR        : Liste des adresse avec Rz1 et Rz2
+  ## rpaZ        : Liste des adresse recensé avec Z, Id€Zone
+  ## rpaZ_s      : Liste des adresse sondée (ou f=0.4 / w=2.5)  <- ## pour l'instant ou ZAP ##
+  ## T_Xg        : Nombre total de logement (com/gr) d'apres le recensement
+  ## T_Zg        : Nombre total de Z        (com/gr)
+  ## T_Rg        : Nombre total de R        (com/gr)
+  ## Tt          : Table des Total et Ratio (com/gr)
+  #  Rz     : Nombre de Z par logement (com/gr) 
+  ## rpaU        : table avec les U = Z - RX
+  ## T_Ug        : Total de U = Z-RX        (com/gr)
+  ## U_          : moyenne des U = Z-RX     (com/gr)
+  ## rpaf        : rpa avec les Tf = Z - RX - U_ et Tf²
+  Y<-strsplit(Y," / ",fixed = TRUE)
+  r1<-Y[[1]][1]
+  r2<-Y[[1]][2]
+  
+  rpaR <- rpa %>% mutate(Id=(idZonage==zone),join=1) %>% mutate(Rz1=Id*!!parse_quosure(r1),Rz2=Id*!!parse_quosure(r2))
+  
+  T_R <- rpaR %>% group_by(join) %>% summarise(TR1=sum(Rz1*IPOND),TR2=sum(Rz2*IPOND))
+  
+  rpaZ <- rpaR %>% left_join(T_R,by = "join") %>% mutate(Z=(Rz1-(TR1/TR2)*Rz2)/(TR2)) %>% 
+    filter(!is.nan(Z) & IPOND>1.75 & !com %in% c("97360","97357"))
+  
+  Tt <- rpaZ %>% group_by(C_ANNEE_COL,com) %>% summarise(TZg=sum(Z*IPOND),TXg=sum(X*IPOND))
+  
+  rpaU <- rpaZ %>% left_join(Tt, by = c("C_ANNEE_COL", "com")) %>% mutate(U2 = (Z-(TZg/TXg)*X)^2)
+  
+  Vf <- (1-constante)/(constante^2)*sum(rpaU$U2)
+  ec <- Vf^0.5
+  TtZ<- sum(T_R$TR1/T_R$TR2)
+  cv <- ec/TtZ
+  return(c(zone,paste0(r1," / ",r2),round(cv,3),round(ec,3),round(TtZ,3),round(TtZ-1.96*ec,3),round(TtZ+1.96*ec,3)))
+} 
+
+Qlinter<-function(zone,total_var,rpa){
+  a<-apply(as.array(total_var),1, Qlbase, zone,rpa=rpa)
+  a<-as.data.frame(t(a))
+  colnames(a)<-c("zonage","Variable","CoefVariation","Ecart-Type","EstVariable","minIntervalConf.","maxIntervalConf.")
+  return(a)
+}
+Qlrintr<-function(zone,ratio_var,rpa){
+  a<-apply(as.array(ratio_var),1, Qlrtio, zone,rpa=rpa)
+  a<-as.data.frame(t(a))
+  colnames(a)<-c("zonage","Variable","CoefVariation","Ecart-Type","EstVariable","minIntervalConf.","maxIntervalConf.")
+  return(a)
+}
+
+Qlfinal<-function(rpa,group_var){
+  zone <- rpa %>% filter(idZonage!="Hors zonage") %>% filter(!duplicated(idZonage)) %>% select(idZonage)
+  
+  total_var<-group_var[!grepl(" / ", group_var, fixed=TRUE)]
+  if(!is_empty(total_var)){
+    totaux<-bind_rows(apply(zone, 1, Qlinter,total_var,rpa))
+    r<-totaux
+  }
+  ratio_var<-group_var[grepl(" / ", group_var, fixed=TRUE)]
+  if(!is_empty(ratio_var)){
+    ratios<-bind_rows(apply(zone, 1, Qlrintr,ratio_var,rpa))
+    r<-ratios
+    if(!is_empty(total_var)){
+      r<-rbind(totaux,ratios)
+    }
+  }
+  return(r)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+
+# Travaux de Nicola Kempf
 
 # Base sondage (special calage)
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------

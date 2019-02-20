@@ -226,7 +226,42 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                  #-------------------------------------------------------------------------------------------------------------                 
                  tabPanel("Qualité",value="vis",
                           titlePanel("Qualité de la population estimée par le recensement de la population dans la zone"),
-                          DT::dataTableOutput("qualityTable")
+                          
+                          fluidRow(
+                            column(4,
+                                   # II.1. Zone selection
+                                   #---------------------
+                                   selectInput("si_select_qual", "Zone selection",
+                                               choices = c("Par Zone","Par Variable","Tout Selectionner"),
+                                               selected = c("Par Zone"))
+                            ),
+                            column(4,
+                                   # II.3. Categorie selection
+                                   #--------------------------
+                                   selectInput("si_variable_qual", "Variable",
+                                               choices = c("Choice" ="",dmn),
+                                               selected = c(""))
+                            ),   
+                            column(4,
+                                   # II.3. Categorie selection
+                                   #--------------------------
+                                   selectInput("si_zone_qual", "Zone",
+                                               choices = c("Choice" ="",dmn),
+                                               selected = c(""))
+                            )
+                          ),
+                          
+                          
+                          hr(), # Line between buttons and plot
+                          
+                          # II.4. Table visualisation
+                          #--------------------------
+                          textOutput("TO_titleTab_qual"),
+                          tags$head(tags$style("#TO_titleTab_qual{font-size: 30px;font-style: bold;}")),
+                          DT::dataTableOutput("dt_qualite")
+                          
+                          # DT::dataTableOutput("qualityTable")
+        
                  ),                       
                           
                   # III. Documentation

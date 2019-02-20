@@ -30,6 +30,7 @@ library(openxlsx) # Export data in Excel
 library(fst) # Read partial data
 library(fstplyr) # dplyr for fst object
 library(DT) # Interactive datatable
+library(rlang) # Non Standard evaluation
 
 # II. Data
 #----------------------------------------------------------------------------------------------------------------------------------

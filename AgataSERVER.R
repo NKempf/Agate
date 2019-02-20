@@ -283,17 +283,32 @@ server <- function(input, output,session) {
     #------------------------------
     incProgress(amount = 0.5,message = "Qualité des données du rp")
     
+    ###### MAJ 20.02.2019 : Ajout des travaux de Baptiste Raimbaud
     # VI.1. Chargement de la base adresses
-    rpa <- read_fst("Data/Rp/rpa13.fst") %>% 
+    rpa <- read_fst("Data/Tmp/rpa.fst") %>% 
       filter(idx %in% ril@data$idx) %>% 
       left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
       mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage","horsZon", idZonage))
     
-    # VI.2. Base sondage (special calage)
-    sondage <- sondageZon(rpa = rpa)
+    # VI.2. Liste des variables à calculer
+    group_var.qualite <- c("INPER","INPCM","X","NbJeune","NbVieux","NbMoyen","NbEtranger","NbImmigre","NbEtudian1825","NbHomme","NbFemme",
+                           "ACTIF","INPCM / ACTIF","NbFemme / INPER","NbHomme / INPER","NbJeune / INPER","NbEtudian1825 / Nb1825","HommeChomeur / HommeActif",
+                           "FemmeChomeur / FemmeActif","NbEtranger / INPER","NbImmigre / INPER")
     
-    # VI.3. Calcul de la precision analytique sans calage
-    rv$qualityZone <- precision_analytique_nc(rpa = rpa,Y = INPER,zonage = zonage,idZonage = "idZonage",sondage = sondage) # Nombre de personne
+    # VI.3. Estimation de la qualité
+    rv$qualityZone <- Qlfinal(rpa,group_var.qualite)
+    
+    # # VI.1. Chargement de la base adresses
+    # rpa <- read_fst("Data/Rp/rpa13.fst") %>% 
+    #   filter(idx %in% ril@data$idx) %>% 
+    #   left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
+    #   mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage","horsZon", idZonage))
+    # 
+    # # VI.2. Base sondage (special calage)
+    # sondage <- sondageZon(rpa = rpa)
+    # 
+    # # VI.3. Calcul de la precision analytique sans calage
+    # rv$qualityZone <- precision_analytique_nc(rpa = rpa,Y = INPER,zonage = zonage,idZonage = "idZonage",sondage = sondage) # Nombre de personne
       
     }) # Fermeture du withprogress
 
@@ -487,24 +502,7 @@ server <- function(input, output,session) {
   })
   
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
   # V.5. Download report
   #---------------------
   output$DL_StatReport <- downloadHandler(
@@ -535,31 +533,120 @@ server <- function(input, output,session) {
 # VI. Census quality
 #--------------------------------------------------------------------------------------------------------------------------------------  
   
+  # VI.1. MAJ Select input
+  #-----------------------
+  observeEvent(rv$qualityZone,{
+    
+    print(is.null(rv$qualityZone))
+    
+    if(!is.null(rv$qualityZone)){
+      QualiteVar<- rv$qualityZone %>% filter(!duplicated(Variable)) %>% select(Variable)
+      QualiteZone<- rv$qualityZone %>% filter(!duplicated(zonage)) %>% select(zonage)
+
+      updateSelectInput(session, "si_variable_qual",
+                        choices = as.character(QualiteVar$Variable),
+                        selected = as.character(QualiteVar$Variable[1])
+      )
+
+      updateSelectInput(session, "si_zone_qual",
+                        choices = as.character(QualiteZone$zonage),
+                        selected = as.character(QualiteZone$zonage[1])
+      )
+      
+      
+      
+    }
+    
+  })
+  
+  
+  
+  
   # VI.1. Display data
   #-------------------
   
-  output$qualityTable = DT::renderDataTable(
-    datatable(rv$qualityZone,
-              extensions = 'Buttons',
-              options = list(
-                scrollX = TRUE,
-                # fixedColumns = TRUE,
-                # autoWidth = TRUE,
-                ordering = FALSE,
-                dom = 'lBfrtip',
-                buttons = c(I('colvis'),'excel', 'pdf')),
-              rownames= FALSE,
-              class = "display" #if you want to modify via .css
-              ) %>% formatStyle(
-      'CV_Y',
-      target = 'row',
-      # backgroundColor = styleEqual(c(0,28.8), c('blank', 'yellow'))
-      backgroundColor = styleInterval(c(15,30,100), c("blank","#fee8c8","#fdbb84","#e34a33"))
-    ) %>% 
-      formatCurrency(columns = 2:4, currency = "", interval = 3, mark = " ",digits = 0) 
-  )
+  # output$qualityTable = DT::renderDataTable(
+  #   datatable(rv$qualityZone,
+  #             extensions = 'Buttons',
+  #             options = list(
+  #               scrollX = TRUE,
+  #               # fixedColumns = TRUE,
+  #               # autoWidth = TRUE,
+  #               ordering = FALSE,
+  #               dom = 'lBfrtip',
+  #               buttons = c(I('colvis'),'excel', 'pdf')),
+  #             rownames= FALSE,
+  #             class = "display" #if you want to modify via .css
+  #             ) %>% formatStyle(
+  #     'CV_Y',
+  #     target = 'row',
+  #     # backgroundColor = styleEqual(c(0,28.8), c('blank', 'yellow'))
+  #     backgroundColor = styleInterval(c(15,30,100), c("blank","#fee8c8","#fdbb84","#e34a33"))
+  #   ) %>% 
+  #     formatCurrency(columns = 2:4, currency = "", interval = 3, mark = " ",digits = 0) 
+  # )
   
-  
+  observeEvent(c(input$si_zone_qual,input$si_variable_qual,input$si_select_qual),{
+    
+    if(!is.null(rv$qualityZone)){
+      
+      if(input$si_select_qual=="Par Zone"){
+        output$TO_titleTab_qual <- renderText(paste0("Toutes les variables sur ",input$si_zone_qual))
+        
+        df<-rv$qualityZone %>% filter(zonage==input$si_zone_qual)
+        output$dt_qualite = renderDT(
+          datatable(df,
+                    #colnames = type.ind,
+                    extensions = 'Buttons',
+                    options = list(
+                      scrollX = TRUE,
+                      # fixedColumns = TRUE,
+                      # autoWidth = TRUE,
+                      ordering = FALSE,
+                      dom = 'lBfrtip',
+                      buttons = c(I('colvis'),'excel')),
+                    rownames= FALSE)
+        )
+      } else if(input$si_select_qual=="Par Variable"){
+        output$TO_titleTab_qual <- renderText(paste0(input$si_variable_qual," sur toutes les zones"))
+        
+        df<-rv$qualityZone %>% filter(Variable==input$si_variable_qual)
+        output$dt_qualite = renderDT(
+          datatable(df,
+                    #colnames = type.ind,
+                    extensions = 'Buttons',
+                    options = list(
+                      scrollX = TRUE,
+                      # fixedColumns = TRUE,
+                      # autoWidth = TRUE,
+                      ordering = FALSE,
+                      dom = 'lBfrtip',
+                      buttons = c(I('colvis'),'excel')),
+                    rownames= FALSE)
+        )
+      }
+      else{
+        output$TO_titleTab_qual <- renderText("Toutes les Variables sur toutes les zones")
+        
+        df<-rv$qualityZone
+        output$dt_qualite = renderDT(
+          datatable(df,
+                    #colnames = type.ind,
+                    extensions = 'Buttons',
+                    options = list(
+                      scrollX = TRUE,
+                      # fixedColumns = TRUE,
+                      # autoWidth = TRUE,
+                      ordering = FALSE,
+                      dom = 'lBfrtip',
+                      buttons = c(I('colvis'),'excel')),
+                    rownames= FALSE)
+        )
+      }# end if
+      
+    }# end if
+    
+  })
   
   
   

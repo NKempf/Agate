@@ -16,6 +16,7 @@ library(fst) # Read partial data
 library(fstplyr) # dplyr for fst object
 library(DT) # Interactive datatable
 library(openxlsx)
+library(rlang)
 
 # Fonction necessaire
 source("Other programs/2 Fonctions Agate/2 Cartographie/Agate - Cartographie fct.R",encoding = "UTF-8")
@@ -140,6 +141,34 @@ filo <- filo.sp@data %>%
          idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage),
          typmenR.lib = factor(typmenR,labels = typmen.label)) 
 rm(filo.sp)
+
+
+# VI. Qualité des données du RP
+#------------------------------
+incProgress(amount = 0.5,message = "Qualité des données du rp")
+
+# VI.1. Chargement de la base adresses
+rpa <- read_fst("Data/Tmp/rpa.fst") %>% 
+  filter(idx %in% ril@data$idx) %>% 
+  left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
+  mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage","horsZon", idZonage))
+
+# VI.2. Liste des variables à calculer
+group_var.qualite <- c("INPER","INPCM","X","NbJeune","NbVieux","NbMoyen","NbEtranger","NbImmigre","NbEtudian1825","NbHomme","NbFemme",
+            "ACTIF","INPCM / ACTIF","NbFemme / INPER","NbHomme / INPER","NbJeune / INPER","NbEtudian1825 / Nb1825","HommeChomeur / HommeActif",
+            "FemmeChomeur / FemmeActif","NbEtranger / INPER","NbImmigre / INPER")
+
+t1 <- Sys.time()
+qualite <- Qlfinal(rpa,group_var.qualite)
+print(paste0("Temps calcul qualité : ",Sys.time() - t1))
+
+# VI.3. Calcul de la precision analytique sans calage
+rv$qualityZone <- precision_analytique_nc(rpa = rpa,Y = INPER,zonage = zonage,idZonage = "idZonage",sondage = sondage) # Nombre de personne
+
+
+
+
+
 
 # II. Indicateurs statistiques par zones
 #---------------------------------------------------------------------------------------------------------------------------------------------
