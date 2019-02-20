@@ -34,6 +34,10 @@ install.packages("shinydashboard")
 #------------------------------
 install.packages("leaflet")
 
+# leaflet.extras
+#---------------
+install.packages("leaflet.extras")
+
 # rgdal : Input shapefile
 #------------------------
 install.packages("rgdal")
@@ -49,13 +53,14 @@ install.packages("tidyverse")
 # Plotly : Interactive graphics 
 #------------------------------
 # NB : radar chart available only on Github
-options(download.file.method = "wininet")
-install.packages("httr")
-library(httr)
-set_config(use_proxy(url = "proxy-rie.http.insee.fr", port = 8080))
-install.packages("devtools")
-library(devtools)
-devtools::install_github("ropensci/plotly")
+# options(download.file.method = "wininet")
+# install.packages("httr")
+# library(httr)
+# set_config(use_proxy(url = "proxy-rie.http.insee.fr", port = 8080))
+# install.packages("devtools")
+# library(devtools)
+# devtools::install_github("ropensci/plotly")
+install.packages("plotly")
 
 # openxlsx : export report excel
 #-------------------------------
@@ -64,6 +69,18 @@ install.packages("openxlsx")
 # DT : Shiny table
 #-----------------
 install.packages("DT")
+
+# rlang : Non standard evaluation
+#--------------------------------
+install.packages("rlang")
+
+# fst : Efficient table format
+#-----------------------------
+install.packages("fst")
+
+# fstplyr : dplyr for fst table
+#------------------------------
+install.packages("rlang")
 
 
 

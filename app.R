@@ -23,7 +23,7 @@ library(leaflet) # Interactive web map
 library(leaflet.extras) # Extras functions for leaflet
 library(rgdal) # Input shapefile
 library(rgeos) # Map tools
-library(sampling) # Sampling tools
+# library(sampling) # Sampling tools
 library(tidyverse) # Tidy data
 library(plotly) # Interactive graphics
 library(openxlsx) # Export data in Excel
