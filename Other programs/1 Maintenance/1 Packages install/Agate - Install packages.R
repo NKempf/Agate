@@ -80,7 +80,10 @@ install.packages("fst")
 
 # fstplyr : dplyr for fst table
 #------------------------------
-install.packages("rlang")
+# Le plus simple est de télécharger le zip depuis github 
+library(devtools)
+install_local("chemin vers le zip")
+
 
 
 
