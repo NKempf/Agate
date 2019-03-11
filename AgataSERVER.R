@@ -198,7 +198,7 @@ server <- function(input, output,session) {
     
     # II.2. Chargement des logements du RIL dans les communes d'interets
     ril <- read_fst(rilPath) %>% 
-      select(idx,x,y) %>% 
+      select(idx,nb_logn,x,y) %>% 
       mutate(com = substr(idx,1,5)) %>%
       filter(com %in% com.dom.select)
     
@@ -288,15 +288,37 @@ server <- function(input, output,session) {
     rpa <- read_fst("Data/Tmp/rpa.fst") %>% 
       filter(idx %in% ril@data$idx) %>% 
       left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
-      mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage","horsZon", idZonage))
+      mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage","horsZon", idZonage)) %>%
+      mutate(idZonage = ifelse(idZonage=="horsZon",paste0(idZonage,com),idZonage))
+    
+    rilqualite <- pts.sp@data %>% mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage","horsZon", idZonage)) %>%
+      mutate(idZonage = ifelse(idZonage=="horsZon",paste0(idZonage,com),idZonage))
     
     # VI.2. Liste des variables à calculer
-    group_var.qualite <- c("INPER","INPCM","X","NbJeune","NbVieux","NbMoyen","NbEtranger","NbImmigre","NbEtudian1825","NbHomme","NbFemme",
-                           "ACTIF","INPCM / ACTIF","NbFemme / INPER","NbHomme / INPER","NbJeune / INPER","NbEtudian1825 / Nb1825","HommeChomeur / HommeActif",
-                           "FemmeChomeur / FemmeActif","NbEtranger / INPER","NbImmigre / INPER")
+    group_var.qualite <- c("INPER","NbFemme / INPER","NbHomme / INPER","NbJeune / INPER","NbMoyen / INPER","NbVieux / INPER", #Territoire
+                           "NbVieux2 / INPER","NbMoyen2 / INPER","NbVieux3 / INPER",
+                           "ACTIF / NbAgeTravaille","- ACTIF / NbAgeTravaille","INPCM / ACTIF","- INPCM / ACTIF","HommeActif / NbHomme", # Emploi
+                           "- HommeActif / NbHomme","FemmeActif / NbFemme","- FemmeActif / NbFemme","NbCadre / NbAgeTravaille","- NbCadre / NbAgeTravaille",
+                           "NbEtudian1825 / INPER","NbEtudian0206 / INPER","NbEtudian0614 / Nb0614","NbDecrocheur / Nb1625","NbScole_15plus / NbScole", #Scolarité
+                           "- NbEtudian1825 / INPER","- NbEtudian0206 / INPER","- NbEtudian0614 / Nb0614","- NbDecrocheur / Nb1625","- NbScole_15plus / NbScole",
+                           "NbImmigre / INPER","- NbImmigre / INPER","NbEtranger / INPER","- NbEtranger / INPER", # Immigration
+                           "CATL1 / X","CATL2 / X","CATL3 / X","CATL4 / X","NbLocataire / X","- NbLocataire / X","NblocHLM / X", #Logement
+                           "- NblocHLM / X","NbAppartement / X","- NbAppartement / X",
+                           "NbHLM / CATL1","Surface / CATL1","- Surface / CATL1","NbBain / CATL1","NbEAU / CATL1","NbEGOUL / CATL1", # Residence principal
+                           "- NbHLM / CATL1","- NbBain / CATL1","- NbEAU / CATL1","- NbEGOUL / CATL1"
+    )
+    TablePassage <- data.frame(group_var.qualite)
+    TablePassage$LibVar <- c("population","femme","homme","[0,20)" ,"[20,65)","[65,120]","[75,120]","[20,60)","[60,75)", #Territoire
+                             "actif","inactif","chomeur","actifocc","actif homme","inactif homme","actif femme","inactif femme","cadre_prof_inter","autre", #Emploi
+                             "etudi[18,25)","etudi[2,6)","etudi","decrocheur","nScola_15plus","n_etudi[18,25)","n_etudi[2,6)","n_etudi","n_decrocheur","autre", #Scolarité
+                             "immigre","non_immigre","etranger","francais", #Immigration
+                             "CATL_1","CATL_2","CATL_3","CATL_4","locataire","autre","locataireHlm","autre","appartement","autre", #Logement
+                             "hlm","surf100etplus","surf100moins","bain_douche","Eau_chaude","tout_egout","n_hlm","N_bain_douche","N_eau_chaude","N_tout_egout") # Residence principal
+    TablePassage$Domaine <-   c(1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,5,5,5,5,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7)
+    TablePassage$Categorie <- c(1,2,2,3,3,3,3,3,3,1,1,1,1,2,2,2,2,3,3,1,1,2,3,4,1,1,2,3,4,1,1,2,2,1,1,1,1,2,2,3,3,4,4,1,2,2,3,4,5,1,3,4,5)
     
     # VI.3. Estimation de la qualité
-    rv$qualityZone <- Qlfinal(rpa,group_var.qualite)
+    rv$qualityZone <- Qlfinal(rpa,group_var.qualite,ril = rilqualite)
     
     # # VI.1. Chargement de la base adresses
     # rpa <- read_fst("Data/Rp/rpa13.fst") %>% 

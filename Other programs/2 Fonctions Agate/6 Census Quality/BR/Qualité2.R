@@ -674,6 +674,7 @@ Qlbase <- function(Y,zone,rpa,constante=0.4){
   ## Tt          : Table des Total et Ratio (com/gr)
   ## rpaU        : table avec les U2 = (Z - RX)^2
   ## T_Zg_t      : 
+
   
   rpaZ_t <- rpa %>% mutate(Id=(idZonage==zone)) %>% mutate(Z=Id*!!parse_quosure(Y))
   
@@ -681,16 +682,45 @@ Qlbase <- function(Y,zone,rpa,constante=0.4){
   
   Tt <- rpaZ %>% group_by(C_ANNEE_COL,com) %>% summarise(TXg=sum(X*IPOND),TZg=sum(Z*IPOND))
   
-  rpaU <- rpaZ %>% left_join(Tt,by = c("C_ANNEE_COL", "com")) %>% mutate(U2 = (Z-TZg/TXg*X)^2)
+  rpaU <- rpaZ %>% left_join(Tt,by = c("C_ANNEE_COL", "com")) %>% mutate(U2 = (Z-TZg/TXg*X)^2) %>% filter(TZg!=0)
   
   T_Zg_t <- rpaZ_t %>% group_by(C_ANNEE_COL,com) %>% summarise(TZg=sum(Z*IPOND))
   
   Vf <- (1-constante)/(constante^2)*sum(rpaU$U2)
   ec <- Vf^0.5
   TtZ<- sum(T_Zg_t$TZg)
-  cv <- ec/TtZ
-  return(c(zone,Y,round(cv,3),round(ec),round(TtZ),round(TtZ-1.96*ec),round(TtZ+1.96*ec)))
+  cv <- ec/TtZ*100
+  return(c(zone,Y,round(cv,1),round(ec),round(TtZ),paste0("[ ",floor(TtZ-1.96*ec)," ; ",ceiling(TtZ+1.96*ec)," ]")))
 }
+Qlbsrt <- function(Y,zone,rpa,constante=0.4){
+  ## Estimation par le ratio d'un total
+  ## T_Xrec : totaux pour les addresse prit avec probabilité 1.
+  
+  EstAdr<-pts.sp@data %>% group_by(com) %>% mutate(Id=(idZonage==zone)) %>% summarise(TX_=sum(Id*nb_logn),TtX_=sum(nb_logn))
+
+  rpaR <- rpa %>% mutate(Id=(idZonage==zone)) %>% mutate(Z=Id*!!parse_quosure(Y))
+  
+  T_rec <- rpaR %>% group_by(com) %>% filter(IPOND<1.75) %>% summarise(TZrec=sum(Z*IPOND),TXrec=sum(Id*X*IPOND),TtXrec=sum(X*IPOND))
+  T_R <- rpaR %>% group_by(com) %>% filter(IPOND>1.75) %>% summarise(TZ=sum(Z*IPOND),TX=sum(Id*X*IPOND),TtX=sum(X*IPOND)) %>% 
+  full_join(T_rec, by="com") %>% left_join(EstAdr, by="com") 
+  T_R[is.na(T_R)]<-0
+  T_R <- T_R %>% mutate(TXmod=(TX_-TXrec)*(TtX/(TtX_-TtXrec))) %>% filter(com!=0)
+  # ,test=5*sum(abs(0.5-Id))
+  rpaZ <- rpaR %>% left_join(T_R, by="com") %>% mutate(Z2=(Z-(TZ/TX)*Id*X),Ztest=Z) %>% filter(IPOND>1.75) 
+  
+  Tt <- rpaZ %>% group_by(C_ANNEE_COL,com) %>% summarise(TZg=sum(Z2*IPOND),TXg=sum(X*IPOND),TZgtest=sum(Ztest*IPOND))
+  
+  rpaU <- rpaZ %>% left_join(Tt, by = c("C_ANNEE_COL", "com")) %>% mutate(U2 = (Z2-(TZg/TXg)*X)^2,Utest = (Ztest-(TZgtest/TXg)*X)^2)
+  
+  Vf <- (1-constante)/(constante^2)*sum(rpaU$U2)
+  ec <- Vf^0.5
+  a<-T_R %>% mutate(Z=TZ/TX*TXmod)
+  a$Z[is.na(a$Z)]<-0
+  a$Z[is.nan(a$Z)]<-0
+  TtZ<- sum(a$Z)+sum(T_R$TZrec) # estimation par le ration modifier pour que le total des adresse rpa = total des adresse ril
+  cv <- ec/TtZ*100
+  return(c(zone,Y,round(cv,1),round(ec),round(TtZ),paste0("[ ",floor(TtZ-1.96*ec)," ; ",ceiling(TtZ+1.96*ec)," ]")))
+} # Necessite la base "pts.sp@data" (ril avec zonage + nombre de logement par point)
 Qlrtio <- function (Y,zone,rpa,constante=0.4){
   ## R           : Ration (Y1/Y2)
   ## 'Z'         : variable linéariser pour les calcule de variance 
@@ -711,6 +741,11 @@ Qlrtio <- function (Y,zone,rpa,constante=0.4){
   Y<-strsplit(Y," / ",fixed = TRUE)
   r1<-Y[[1]][1]
   r2<-Y[[1]][2]
+  oppose<-FALSE
+  if(grepl("- ",r1,fixed=TRUE)){
+    r1<-substr(r1,3,100)
+    oppose<-TRUE
+  }
   
   rpaR <- rpa %>% mutate(Id=(idZonage==zone),join=1) %>% mutate(Rz1=Id*!!parse_quosure(r1),Rz2=Id*!!parse_quosure(r2))
   
@@ -724,28 +759,50 @@ Qlrtio <- function (Y,zone,rpa,constante=0.4){
   rpaU <- rpaZ %>% left_join(Tt, by = c("C_ANNEE_COL", "com")) %>% mutate(U2 = (Z-(TZg/TXg)*X)^2)
   
   Vf <- (1-constante)/(constante^2)*sum(rpaU$U2)
-  ec <- Vf^0.5
+  ec <- Vf^0.5*100
   TtZ<- sum(T_R$TR1/T_R$TR2)
-  cv <- ec/TtZ
-  return(c(zone,paste0(r1," / ",r2),round(cv,3),round(ec,3),round(TtZ,3),round(TtZ-1.96*ec,3),round(TtZ+1.96*ec,3)))
+  if (oppose){
+    TtZ <- 1 - TtZ
+    r1<-paste0("- ",r1)
+  }
+  cv <- ec/(0.5-abs(TtZ-0.5))
+  TtZ <- 100*TtZ
+  if(ceiling(TtZ+1.96*ec)<=10 & floor(TtZ-1.96*ec)<3){
+    Intconf <- paste0("inferieur à ",ceiling(TtZ+1.96*ec),"%")
+  }else if(floor(TtZ-1.96*ec)>=90 & ceiling(TtZ+1.96*ec)>97){
+    Intconf <- paste0("supérieur à ",floor(TtZ-1.96*ec),"%")
+  }else{
+    Intconf <- paste0("[ ",floor(TtZ-1.96*ec),"% , ",ceiling(TtZ+1.96*ec),"% ]")
+  }
+  return(c(zone,paste0(r1," / ",r2),round(cv,1),round(ec,1),round(TtZ,1),Intconf))
 } 
 
 Qlinter<-function(zone,total_var,rpa){
-  a<-apply(as.array(total_var),1, Qlbase, zone,rpa=rpa)
+  t1 <- Sys.time()
+  
+  rpa2 <- rpa %>% filter(com %in% unique(rpa$com[rpa$idZonage == zone]))
+  
+  a<-apply(as.array(total_var),1, Qlbsrt, zone,rpa=rpa2)
   a<-as.data.frame(t(a))
-  colnames(a)<-c("zonage","Variable","CoefVariation","Ecart-Type","EstVariable","minIntervalConf.","maxIntervalConf.")
+  colnames(a)<-c("zonage","Variable","CoefVariation","Ecart-Type","EstVariable","IntervalConf.")
+  print(paste0(zone," finis en ",round(Sys.time()-t1,3)))
   return(a)
 }
 Qlrintr<-function(zone,ratio_var,rpa){
-  a<-apply(as.array(ratio_var),1, Qlrtio, zone,rpa=rpa)
+  t1 <- Sys.time()
+  
+  rpa2 <- rpa %>% filter(com %in% unique(rpa$com[rpa$idZonage == zone]))
+  
+  a<-apply(as.array(ratio_var),1, Qlrtio, zone,rpa=rpa2)
   a<-as.data.frame(t(a))
-  colnames(a)<-c("zonage","Variable","CoefVariation","Ecart-Type","EstVariable","minIntervalConf.","maxIntervalConf.")
+  colnames(a)<-c("zonage","Variable","CoefVariation","Ecart-Type","EstVariable","IntervalConf.")
+  print(paste0(zone," finis en ",round(Sys.time()-t1,3)))
   return(a)
 }
 
 Qlfinal<-function(rpa,group_var){
-  zone <- rpa %>% filter(idZonage!="Hors zonage") %>% filter(!duplicated(idZonage)) %>% select(idZonage)
-  
+  zone <- rpa %>% filter(!duplicated(idZonage)) %>% select(idZonage)
+
   total_var<-group_var[!grepl(" / ", group_var, fixed=TRUE)]
   if(!is_empty(total_var)){
     totaux<-bind_rows(apply(zone, 1, Qlinter,total_var,rpa))
@@ -759,42 +816,140 @@ Qlfinal<-function(rpa,group_var){
       r<-rbind(totaux,ratios)
     }
   }
+  r$CoefVariation<-as.numeric(r$CoefVariation)
+  r$`Ecart-Type`<-as.numeric(r$`Ecart-Type`)
+  r$EstVariable<-as.numeric(r$EstVariable)
   return(r)
 }
-rpa <- rpl %>% mutate(X=as.numeric(C_LOG)) %>% group_by(C_IMM,C_ANNEE_COL,com,idZonage) %>% 
-  summarise(X=max(1,X),IPOND=mean(IPONDL),INPER=sum(INPER),INPCM=sum(INPCM)) %>% ungroup()
 
-group_var=c("INPER","INPCM","X","NbJeune","NbVieux","NbMoyen","NbEtranger","NbImmigre","NbEtudian1825","NbHomme","NbFemme",
-            "ACTIF","INPCM / ACTIF","NbFemme / INPER","NbHomme / INPER","NbJeune / INPER","NbEtudian1825 / Nb1825","HommeChomeur / HommeActif",
-            "FemmeChomeur / FemmeActif","NbEtranger / INPER","NbImmigre / INPER")
+
+rpi<-rp14i
+rpl<-rp14l
 
 t1 <- Sys.time()
-rpa2 <- rpi %>% mutate(X=as.numeric(C_LOG)) %>% group_by(C_IMM,C_ANNEE_COL,com,idZonage) %>% 
-  summarise(X=max(1,X),IPOND=mean(IPONDI),NbHomme=sum(SEXE=="homme"),NbFemme=sum(SEXE=="femme"),ACTIF=sum(inactif=="actif"),INPCM=sum(TACT=="chomeur"),
-            NbJeune=sum(as.numeric(AGEREV)<20),NbVieux=sum(as.numeric(AGEREV)>=65),NbMoyen=sum(as.numeric(AGEREV)>=20 & as.numeric(AGEREV)<65),
+
+rpa <- rpa %>% right_join(rpa2)
+rpa[is.na(rpa)]<-0
+Sys.time() - t1
+#rpai   167 850
+#rpal   204 828
+
+group_var=c("INPER","NbFemme / INPER","NbHomme / INPER","NbJeune / INPER","NbMoyen / INPER","NbVieux / INPER", #Territoire
+            "NbVieux2 / INPER","NbMoyen2 / INPER","NbVieux3 / INPER",
+            "ACTIF / NbAgeTravaille","- ACTIF / NbAgeTravaille","INPCM / ACTIF","- INPCM / ACTIF","HommeActif / NbHomme", # Emploi
+            "- HommeActif / NbHomme","FemmeActif / NbFemme","- FemmeActif / NbFemme","NbCadre / NbAgeTravaille","- NbCadre / NbAgeTravaille",
+            "NbEtudian1825 / INPER","NbEtudian0206 / INPER","NbEtudian0614 / Nb0614","NbDecrocheur / Nb1625","NbScole_15plus / NbScole", #Scolarité
+            "- NbEtudian1825 / INPER","- NbEtudian0206 / INPER","- NbEtudian0614 / Nb0614","- NbDecrocheur / Nb1625","- NbScole_15plus / NbScole",
+            "NbImmigre / INPER","- NbImmigre / INPER","NbEtranger / INPER","- NbEtranger / INPER", # Immigration
+            "CATL1 / X","CATL2 / X","CATL3 / X","CATL4 / X","NbLocataire / X","- NbLocataire / X","NblocHLM / X", #Logement
+            "- NblocHLM / X","NbAppartement / X","- NbAppartement / X",
+            "NbHLM / CATL1","Surface / CATL1","- Surface / CATL1","NbBain / CATL1","NbEAU / CATL1","NbEGOUL / CATL1", # Residence principal
+            "- NbHLM / CATL1","- NbBain / CATL1","- NbEAU / CATL1","- NbEGOUL / CATL1"
+            )
+TablePassage <- data.frame(group_var)
+TablePassage$LibVar <- c("population","femme","homme","[0,20)" ,"[20,65)","[65,120]","[75,120]","[20,60)","[60,75)", #Territoire
+                         "actif","inactif","chomeur","actifocc","actif homme","inactif homme","actif femme","inactif femme","cadre_prof_inter","autre", #Emploi
+                         "etudi[18,25)","etudi[2,6)","etudi","decrocheur","nScola_15plus","n_etudi[18,25)","n_etudi[2,6)","n_etudi","n_decrocheur","autre", #Scolarité
+                         "immigre","non_immigre","etranger","francais", #Immigration
+                         "CATL_1","CATL_2","CATL_3","CATL_4","locataire","autre","locataireHlm","autre","appartement","autre", #Logement
+                         "hlm","surf100etplus","surf100moins","bain_douche","Eau_chaude","tout_egout","n_hlm","N_bain_douche","N_eau_chaude","N_tout_egout") # Residence principal
+TablePassage$Domaine <-   c(1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,5,5,5,5,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7)
+TablePassage$Categorie <- c(1,2,2,3,3,3,3,3,3,1,1,1,1,2,2,2,2,3,3,1,1,2,3,4,1,1,2,3,4,1,1,2,2,1,1,1,1,2,2,3,3,4,4,1,2,2,3,4,5,1,3,4,5)
+group_var=c("INPER")
+
+t1 <- Sys.time()
+qualite<-Qlfinal(rpa,group_var)
+Sys.time() - t1
+
+QuatiteRatio<- qualite7 %>% left_join(qualite6, by= c("zonage")) %>% mutate(`Ecart-Type.y`=`Ecart-Type.y`/100) %>% mutate(ecartEstimation=EstVariable.x-EstVariable.y,ecartVariance=`Ecart-Type.x`-`Ecart-Type.y`)
+
+sum(rpa$INPER * rpa$IPOND) -
+sum(qualite7$EstVariable)
+
+save(QuatiteRatio,file="Data/Tmp/QualiteRatiofinal.RData")
+
+#####################################################################################################
+#################################### Création du RPA ################################################
+#####################################################################################################
+
+
+rp.an <- "14"
+rpi.path.string <- paste0("Data/Rp/rp",rp.an,"i.fst")
+rpl.path.string <- paste0("Data/Rp/rp",rp.an,"l.fst")
+rpiPath <- ifelse(file.exists(rpi.path.string),rpi.path.string,"Data/Rp/FakeRpi.fst")
+rplPath <- ifelse(file.exists(rpl.path.string),rpl.path.string,"Data/Rp/FakeRpl.fst")
+
+rpi <- read_fst(rpiPath)
+rpl <- read_fst(rplPath) 
+ 
+t1 <- Sys.time()
+rpa1 <- rpi %>% group_by(idx,C_IMM) %>% 
+  summarise(NbHomme=sum(SEXE=="homme"),NbFemme=sum(SEXE=="femme"),ACTIF=sum(inactif=="actif"),INPCM=sum(TACT=="chomeur"),
+            NbJeune=sum(as.numeric(AGEREV)<20),NbVieux=sum(as.numeric(AGEREV)>=65),
+            NbVieux2=sum(as.numeric(AGEREV)>=75),NbMoyen2=sum(as.numeric(AGEREV)>=20 & as.numeric(AGEREV)<60),
+            NbVieux3=sum(as.numeric(AGEREV)>=60 & as.numeric(AGEREV)<75),
+            NbMoyen=sum(as.numeric(AGEREV)>=20 & as.numeric(AGEREV)<65),
             FemmeActif=sum(SEXE=="femme" & inactif=="actif"),HommeActif=sum(SEXE=="homme" & inactif=="actif"),
             FemmeChomeur=sum(SEXE=="femme" & TACT=="chomeur"),HommeChomeur=sum(SEXE=="homme" & TACT=="chomeur"),
             NbEtranger=sum(etranger=="etranger"),NbImmigre=sum(immigre=="immigre"),Nb1825=sum(as.numeric(AGEREV)>=18 & as.numeric(AGEREV)<=25),
-            NbEtudian1825=sum(as.numeric(AGEREV)>=18 & as.numeric(AGEREV)<25 & ETUD=="etudi")) %>% mutate(INPER=NbFemme+NbHomme) %>% ungroup()
+            NbEtudian1825=sum(as.numeric(AGEREV)>=18 & as.numeric(AGEREV)<25 & ETUD=="etudi"),
+            NbAgeTravaille=sum(as.numeric(AGEREV)>=15 & as.numeric(AGEREV)<65),Nb0614=sum(as.numeric(AGEREV)>=06 & as.numeric(AGEREV)<14),
+            NbCadre=sum(POSP %in% c("1J","1I","1H","1G","1F")),NbEtudian0206=sum(as.numeric(AGEREV)>=2 & as.numeric(AGEREV)<6 & ETUD=="etudi"),
+            NbEtudian0614=sum(as.numeric(AGEREV)>=6 & as.numeric(AGEREV)<14 & ETUD=="etudi"),
+            NbDecrocheur=sum(DIPL == "A" & ETUD == "n_etudi" & as.numeric(AGEREV) %in% c(16:25)),Nb1625=sum(as.numeric(AGEREV) %in% c(16:25)),
+            NbScole_15plus=sum(ETUD == "n_etudi" & as.numeric(AGEREV) >= 15 & DIPL == "A"),NbScole=sum(as.numeric(AGEREV) >= 15 & DIPL == "A")
+  ) %>% mutate(INPER=NbFemme+NbHomme) %>% ungroup()
+
 Sys.time() - t1
 
-
-t1 <- Sys.time()
-qualite<-Qlfinal(rpa2,group_var)
+rpa2 <- rpl %>% mutate(X=as.numeric(C_LOG)) %>% group_by(idx,C_IMM,C_ANNEE_COL,com) %>% 
+  summarise(X=max(1,X),IPOND=mean(IPONDL),CATL1=sum(CATL==1),CATL2=sum(CATL==2),CATL3=sum(CATL==3),CATL4=sum(CATL==4),
+            NbLocataire=sum(locataire=="locataire"),NblocHLM=sum(locataireHlm=="locataireHlm"),
+            NbAppartement=sum(appartement=="appartement"),NbHLM=sum(hlm=="hlm"& CATL==1),Surface=sum(surf100=="surf100etplus"& CATL==1),NbBain=sum(BAIN=="1" & CATL==1),
+            NbEAU=sum(EAU=="2"& CATL==1),NbEGOUL=sum(EGOUL =="1"& CATL==1)
+  ) %>% ungroup()
+Sys.time() - t1
+rpa <- rpa1 %>% right_join(rpa2,by="idx")
+rpa[is.na(rpa)]<-0
 Sys.time() - t1
 
+write.fst(rpa, path = "Data/Tmp/rpa.fst")
 
 
+  ########################################## Test #############################
 
-
-
-
-
-
-
-
-
-
-
+  ril.an <- "15"
+  ril.path.string <- paste0("Data/Ril/ril",ril.an,".fst")
+  # ril.path.string <- "Data/Ril/ril_leger.fst"
+  rilPath <- ifelse(file.exists(ril.path.string),ril.path.string,"Data/Ril/FakeRil.fst")
+  
+  
+  zonage <- readOGR(dsn = "Data/QPV/qpv.shp",encoding = "UTF-8",stringsAsFactors = FALSE)[1:6,]
+  zonage@data <- zonage@data %>% 
+    rename(idZonage = CODE_QP,
+           idZonage.name = NOM_QP) %>% 
+    select(idZonage,idZonage.name)
+  zonage <- spTransform(zonage, "+init=epsg:3857")
+  # II.2. Chargement des logements du RIL dans les communes d'interets
+  ril <- read_fst(rilPath) %>% 
+    select(idx,nb_logn,x,y) %>% 
+    mutate(com = substr(idx,1,5)) %>%
+    filter(com %in% c("97101","97120","97102"))
+  
+  # II.3. Transformation du ril en objet spatial
+  coordinates(ril) <- ~x+y
+  ril@proj4string <- CRS("+init=epsg:3857")
+  
+  # III. Ajout de la zone aux données du recensement
+  #-------------------------------------------------
+  
+  # III.1. Zone dans laquelle chaque logement se situe
+  incProgress(amount = 0.1,message = "Zone dans laquelle chaque logement se situe")
+  pts.sp <- zonaPts(pts.sp = ril,zonage = zonage)
+  
+  # III.2. Ajout de la zone aux données du rp individu
+  # Note : pour des raisons de performances, les données du RP sont préalablement filtrées selon les communes étudiées
+  incProgress(amount = 0.2,message = "Ajout de la zone aux données du RP")
+  
 
 
