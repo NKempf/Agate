@@ -84,6 +84,10 @@ install.packages("fst")
 library(devtools)
 install_local("chemin vers le zip")
 
+# easySdcTable : statistical disclosure
+#--------------------------------------
+install.packages("easySdcTable")
+
 
 
 
