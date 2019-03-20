@@ -271,6 +271,9 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                              tabPanel("Amelioration",
                                       includeHTML("Other programs/3 Documentation/1 Agate documentation/AmeliorationAppli/Amelioration.html")
                              ),
+                             # tabPanel("Qualité de l'appariement RIL-RP",
+                             #          includeHTML("Other programs/3 Documentation/1 Agate documentation/1 Qualite appariement RIL RP/AgateRIlRP.html")
+                             # ),
                              # tabPanel("Maintenance Agate",
                              #          includeHTML("Html pages/Maintenance/MaintenanceAgate.html")
                              # ),
