@@ -15,8 +15,9 @@ library(tidyverse) # Tidy data
 library(fst) # Read partial data
 library(fstplyr) # dplyr for fst object
 library(DT) # Interactive datatable
-library(openxlsx)
-library(rlang)
+library(openxlsx) # Export en excel
+library(rlang) # non standard evaluation
+library(easySdcTable) # Statistical disclosure
 
 # Fonction necessaire
 source("Other programs/2 Fonctions Agate/2 Cartographie/Agate - Cartographie fct.R",encoding = "UTF-8")
@@ -163,11 +164,7 @@ qualite <- Qlfinal(rpa,group_var.qualite)
 print(paste0("Temps calcul qualité : ",Sys.time() - t1))
 
 # VI.3. Calcul de la precision analytique sans calage
-rv$qualityZone <- precision_analytique_nc(rpa = rpa,Y = INPER,zonage = zonage,idZonage = "idZonage",sondage = sondage) # Nombre de personne
-
-
-
-
+# rv$qualityZone <- precision_analytique_nc(rpa = rpa,Y = INPER,zonage = zonage,idZonage = "idZonage",sondage = sondage) # Nombre de personne
 
 
 # II. Indicateurs statistiques par zones
@@ -175,6 +172,32 @@ rv$qualityZone <- precision_analytique_nc(rpa = rpa,Y = INPER,zonage = zonage,id
 indStat <- statistics_zone(group_var = c("idZonage","idZonage.name"),zone = zonage,rpi = rpi,rpl = rpl, filo = filo,
                            sourceRpi = "rpi14",sourceRpl = "rpl14",
                            sourceFilo = "filo14",rpi.weight = "IPONDI",rpl.weight = "IPONDL",filo.weight = "nbpersm")
+
+# III. Secret statistique
+#---------------------------------------------------------------------------------------------------------------------------------------------
+# Utiliser la règle des 11 observations minimum par case.
+seuil_secret_stat <- 11
+
+test <- indStat$indicateur_stat %>% 
+  filter(substr(source,1,3) == "rpi" & type.indicateur == "freq") %>% 
+  select(domaine,categorie,idZonage,indicateur,value) %>% 
+  as.data.frame() %>% 
+  ProtectTable(dimVar = c("domaine","categorie","idZonage","indicateur"),freqVar = "value",maxN = seuil_secret_stat,addName = TRUE) 
+
+
+test2 <- test$data %>% 
+  filter(idZonage != "Total") %>%
+  filter(domaine != "Total") %>% 
+  filter(categorie != "Total") %>% 
+  filter(indicateur != "Total") %>% 
+  filter(freq != 0)
+  
+# IV. Table finale
+#--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
 
 save(zonage,indStat,zonage.com,file = "Data/Tmp/qpv_stat_tmp.RData")
 

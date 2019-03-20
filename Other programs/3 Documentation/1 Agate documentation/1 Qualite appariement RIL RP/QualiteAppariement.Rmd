@@ -1,0 +1,324 @@
+---
+title: "Qualité de l'appariement entre le RIL et le RP"
+author: "Nicolas Kempf"
+date: "17/07/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+# packages necessaires
+library(knitr)
+library(tidyverse) # Transformation des données
+library(kableExtra) # Amélioration des tableaux
+library(formattable) # Color into cells
+
+knitr::opts_chunk$set(echo = TRUE)
+load("../../Bdd/RData/Qualite/RilRp_appariement.RData")
+```
+
+
+## Résumé
+
+TO DO
+
+## Introduction
+
+Le programme R permettant de générer les chiffres du rapport se nomme `Agate - Qualité appariement RIL-RP.R`. 
+
+L'enquête cartographique (ril) aux Antilles-Guyane est réalisée chaque année dans le but de fournir une base fiable d'adresse. Elle est ensuite utilisée comme base de tirage du recensement de la population (RP).Il est donc théoriquement possible d'obtenir la géolocalisation précise des logements et des individus du recensement à des fins d'études. Toutefois, ces deux bases présentes des différences notables liées principalement à la collecte du recensement. Du coup, l'appariement de ces deux bases n'est malheureusement pas parfait : certains logements du RP ne sont pas retrouvés dans les données du ril. L'expertise ci-dessous présente les principales forces et faiblesses de cet appariement. La premiere partie propose quelques statistiques de cadrage de l'appariement. La seconde partie explore la table corrective fournie par le CRIEM. Enfin, la troisième partie expose le gain de qualité lié à l'emploi de la table corrective sur les données de l'appariement. 
+
+
+## I. Statistique de cadrage sur l'appariement
+
+### Identifiant d'appariement
+
+L'appariement du RIL et du RP nécessite l'utilisation d'un identifiant commun aux deux bases. Le RIL niveau habitation contient une variable identifiant compatible avec le recensement de la population. Il s'agit de la variable `id`. Les modalités de cette variable comporte des `espaces` ce qui n'est pas optimal en informatique. On remplace donc ces espaces par des `tirets` pour conserver la structure de la variable. 
+
+L'identifiant final nommé `idx` comporte **16 caractères** et est construit de la manière suivante : 
+
+* Code Insee de la commune : **5 caractères**
+* 3 tirets
+* Identifiant de l'îlot : **4 caractères**
+* 1 tiret
+* Numero de rang de l'adresse : **3 caractères**
+
+En résumé :
+
+> idx = codeCommune___idIlot_rgAdresse
+
+### Statistiques de cadrade de l'appariement
+
+On apparie donc le ril et le RP à l'aide de la variable `idx` créée au préalable dans les deux tables. 
+
+
+#### Comptages qualifiant l'appariement RIL-RP
+
+```{r pI_Stat, echo=FALSE}
+kable(tab1) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+```
+
+*Source : RP 2013 et RIL2015.*
+
+L'appariement n'est manifestement pas exhaustif. Ce résultat est normal car le recensement de la population est réalisé par enquête dans les communes de 10 000 habitants et plus. Le RIL contient donc des adresses qui n'ont pas été recensées au cours des cinq dernières années (cf variable `rilNonRp`). 
+
+Toutefois, des adresses issues du recensement ne sont pas retrouvées dans le RIL soit **17 482 logements** ce qui semble étonnant (cf variable `nonRilRp`). Elles représentent **2 %** des logements en Guadeloupe, **3 %** en Martinique et **11 %** en Guyane. Plusieurs raisons sont avancées par P. Dorelon, chef de SES. Lors du recensement, les enquêteurs peuvent remarquer des changements à l'adresse indiquée contractoires avec les données RIL. Par exemple, un logement de type individuel (dans l'enquête cartographique) peut avoir été transformé en logement collectif. Le passage d'un enquêteur du recensement va entrainer la modification du numéro de rang de l'adresse (uniquement dans le rp). Ce changement n'est pas intégré dans le RIL pour des raisons de stabilité. Ainsi, il y a donc une rupture entre le RIL et le RP. De plus, l'enquête cartographique n'est pas exhaustive dans les communes de moins de 10 000 habitants. Enfin, en Guyane, la pression démographique et migratoire fait pousser des bidonvilles difficilement intégrables dans l'enquête cartographique mais qui sont tout de même recensés. 
+
+## II. Principales forces et faiblesses de la table de passage
+
+Le CRIEM fait le lien entre les changements de numéros de rang survenus entre la collecte de l'enquête cartographique et la collecte du RP. Une table de passage (malheureusement non exhaustive) est fournit. Elle comporte quatre variables : la commune, l'identifiant du ril, l'identifiant du rp et l'année de collecte. 
+
+### II.1. Informations sur la base non nettoyée
+
+```{r pont_Stat, echo=FALSE}
+kable(tab3[,!colnames(tab3) %in% c("p_id.diff","p_id.ril.manquant","p_id.rp.manquant","id.ril.duplicated","id.rilRp.duplicated")]) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+*Source : table de passage CRIEM sur données du RP 2013 et du RIL 2015.*
+
+Cette base comporte plusieures bizzareries :
+
+* Certains couples identifiant du ril et du rp sont identiques (variable `id.diff`). **Décision : on les supprime**.
+* Certains identifiant du ril sont manquants (variable `id.ril.manquant`). Autrement dit, il n'existe pas d'adresse dans le ril correspondante au logement du RP. **Décision : on les supprime**.
+* Certains couples identifiant du ril et du rp et l'année de collecte sont dupliqués (variables `id.rp.duplicated` et `id.rilRpAn.duplicated`). **Décison : on supprime**.
+
+Au final, la base nettoyée passe de **90 084** adresses à **43 804** adresses (normalement uniques !). 
+
+
+### II.2. Amélioration de la qualité de l'appariement avec la table du CRIEM
+
+Sur les **17 482 logements** non retrouvé dans le RIL, la table du CRIEM permet de corriger **6 038 logements** soit **35 %** des logements non retrouvés. Lorsqu'on apparie avec le ril, aucun identifiant cartographique (issu de la table de passage du CRIEM) n'est retrouvé. Autrement dit, la table de passage du CRIEM ne corrige aucun des **17 482 logements** non retrouvés dans le RIL. 
+
+
+**TO DO : se mettre en contact avec P. Dorelon et le CRIEM**
+
+
+## III. Propositions de bonnes pratiques
+
+Que faire des logements du RP non retrouvés dans le RIL ? 
+
+L'analyse du non-appariement RP-ril commune par commune permet d'avoir une idée de la qualité des données. 
+
+```{r,include=FALSE}
+# Preparation de la base
+com.lib <- read.csv(file = "../../Bdd/Commune/RP13_Communes_DFA.csv") %>% 
+  select(cod_mod,lib_mod2,popRp13.pond,logRp13.pond) %>% 
+  rename(com.lib = lib_mod2,
+         popRp13 = popRp13.pond,
+         logRp13 = logRp13.pond) %>% 
+  mutate(cod_mod = as.character(cod_mod))
+
+
+tab <- tab2 %>% 
+  select(-com.lib,-nonRilnonRp,-part_riletRp,-logRil.total,-rilNonRp) %>% 
+  left_join(com.lib,c("com"="cod_mod")) %>% 
+  mutate(part_nonRilRp = case_when(part_nonRilRp > 40 ~ cell_spec(part_nonRilRp,background = "black", color = "white", align = "center",bold = TRUE),
+                                   part_nonRilRp > 10 & part_nonRilRp <= 40 ~ cell_spec(part_nonRilRp,background = "red", color = "white", align = "center",bold = TRUE),
+                                   part_nonRilRp < 5 ~ cell_spec(part_nonRilRp,background = "green", color = "white", align = "center",bold=TRUE),
+                                   TRUE ~ cell_spec(part_nonRilRp, color = "black", align = "center",bold=TRUE) ),
+         
+         popRp13 = case_when(popRp13 >= 10000 ~ cell_spec(popRp13, color = "green", align = "center",italic = TRUE),
+                             popRp13 < 10000 ~ cell_spec(popRp13, color = "orange", align = "center",italic = TRUE))
+         ) %>% 
+  select(dep,com,com.lib,popRp13,logRp13,part_nonRilRp,everything())
+  
+# colnames(com.lib)
+
+```
+
+### III.1. Communes de Guadeloupe
+
+La proportion communale de logements du rp non retrouvé dans le RIL est faible dans toutes les grandes communes guadeloupéennes, en moyenne 1 %  des logements du rp ne sont pas retrouvés. Dans les petites communes, cette part augmente jusqu'à 14 % pour la Désirade. 
+
+**A valider avec la hierarchie**
+
+Afin de conserver une qualité suffisante, je propose la règle suivante pour diffuser des résultats à l'infracommunal en Guadeloupe: 
+
+> **`part_nonRilRp` > 10 %**, il faut que la zone contiennent **au moins 30 logements (en non-pondéré)**
+
+>  **5 % =< `part_nonRilRp` < 10 %**, il faut que la zone contiennent **au moins 20 logements (en non-pondéré)**
+
+>  **`part_nonRilRp` < 5 %**, il faut que la zone contiennent **au moins 15 logements (en non-pondéré)**
+
+#### Part des logements du RP non retrouvé dans le RIL par communes guadeloupéennes
+```{r,echo=FALSE}
+tab %>% 
+  filter(dep == "971") %>% 
+  kable(escape = F) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+*Note : les variables `riletRp`,`nonRilRp`, `logRp.total` et `logRp13` sont exprimées en effectifs de logements.* 
+
+*Champ : Logements guadeloupéens.* 
+
+*Source : RP 2013 et RIL2015.*
+
+
+### III.2. Communes de Martinique
+
+La qualité de l'appariement est trés bons dans les grandes communes martiniquaises, moins d'1% en moyenne de logements du RP non retrouvé dans le RIL. Dans les petites communes, 
+la qualité se détériore atteignant 16 % dans les communes de Macouba et le Carbet. 
+
+**A valider avec la hierarchie**
+
+Je propose de conserver les règles guadeloupéennes en matière de diffusion à l'infracommunal. Les communes où la qualité est la plus faible sont aussi les moins peuplées. En conservant 30 logements, on garde ainsi les effets (certes faible) de la loi des grands nombres. 
+
+
+#### Part des logements du RP non retrouvé dans le RIL par communes martiniquaises
+```{r,echo=FALSE}
+tab %>% 
+  filter(dep == "972") %>% 
+  kable(escape = F) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+*Note : les variables `riletRp`,`nonRilRp`, `logRp.total` et `logRp13` sont exprimées en effectifs de logements.* 
+
+*Champ : Logements martiniquais* 
+
+*Source : RP 2013 et RIL2015.*
+
+
+### III.3. Communes de Guyane
+
+La situation en Guyane est différentes. Les communes de la Guyane intérieure ne sont pas concernées par l'enquête cartographique. 
+
+
+
+**A valider avec la hierarchie**
+
+En raison de la qualité de l'appariement trop faible, je propose de :
+
+> Ne pas diffuser de données à l'infracommunale pour les communes de : Roura, Maripasoula, Camopi, Grand-Santi, Saint-Eli, Apatou et Papaichton  
+
+En raison d'un nombre d'habitant trop faible, je propose de :
+
+> Ne pas diffuser de données à l'infracommunale pour les communes de : Ouanary, Saul et Awala-Yalimapo
+
+Pour le reste des communes, on pourrait adapter la règle proposée pour les Antilles en augmentant un peu les seuils. 
+
+
+#### Part des logements du RP non retrouvé dans le RIL par communes guyanaises
+```{r,echo=FALSE}
+tab %>% 
+  filter(dep == "973") %>% 
+  kable(escape = F) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+```
+
+*Note : les variables `riletRp`,`nonRilRp`, `logRp.total` et `logRp13` sont exprimées en effectifs de logements.* 
+
+*Champ : Logements guyanais* 
+
+*Source : RP 2013 et RIL2015.*
+
+
+## IV. Calage sur marges
+
+La qualité de l'appariement varie selon la commune. Je propose de faire un calage sur marge à la commune sur le modèle des travaux de redressement du RP.
+
+**TO DO : faire le calage sur marge et comparer la déformation des poids des logements et des individus**
+
+
+### IV.1. Niveau logement
+
+Les variables de calage retenues sont : 
+
+* `log` : nombre total de logement de la commune
+* `NBPI` : nombre de pièce du logement en tranche
+* `SURF` : Surface du logement en tranche
+* `TYPLR` : Type de logement regroupé
+
+La méthode de calage utilisée est un logit avec des bornes comprises entre 0.2 et 1.8. 
+
+
+#### Résultats du calage au niveau logement
+```{r,echo=FALSE}
+tab4 %>% 
+  left_join(com.lib,c("com"="cod_mod")) %>% 
+  mutate(com = ifelse(calage == 1,
+                      cell_spec(com,background = "lightblue", color = "white", align = "center",bold = TRUE),
+                      cell_spec(com,color = "black", align = "center")),
+         com.lib = ifelse(calage == 1,
+                      cell_spec(com.lib,background = "lightblue", color = "white", align = "center",bold = TRUE),
+                      cell_spec(com.lib,color = "black", align = "center")),
+         part.cal = case_when(part.cal < 5 ~ cell_spec(part.cal,background = "green", color = "white", align = "center",bold=TRUE),
+                              part.cal > 10 ~ cell_spec(part.cal,background = "red", color = "white", align = "center",bold = TRUE),
+                              TRUE ~ cell_spec(part.cal, color = "black", align = "center",bold=TRUE))
+         ) %>% 
+  select(com,com.lib,popLog.p,popLogApa.cal,part.p,part.cal) %>% 
+  kable(escape = F,col.names = c("Code","Commune","Pop Rp","Pop cal","Part de logement non retrouvés (avant calage)","Part (apres calage)")) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+```
+
+*Note : le surlignement en bleu indique la convergence du calage. Sans couleur indique qu'il n'y a pas eu de calage.* 
+
+*Champ : Logements guyanais* 
+
+*Source : RP 2013 et RIL2015.*
+
+
+**TO DO : commentaire**
+
+
+### IV.2. Niveau individus
+
+Les variables de calage retenues sont : 
+
+* `TRAGE` : l'âge de l'individu en tranche : 0 à 20 ans, 20 à 65 ans, 65 ans et plus. 
+* `SEXE` : sexe de l'individu
+
+**TO DO**
+
+
+#### Résultats du calage au niveau individu
+```{r,echo=FALSE}
+tab5 %>% 
+  left_join(com.lib,c("com"="cod_mod")) %>% 
+  mutate(com = ifelse(calage == 1,
+                      cell_spec(com,background = "lightblue", color = "white", align = "center",bold = TRUE),
+                      cell_spec(com,color = "black", align = "center")),
+         com.lib = ifelse(calage == 1,
+                      cell_spec(com.lib,background = "lightblue", color = "white", align = "center",bold = TRUE),
+                      cell_spec(com.lib,color = "black", align = "center")),
+         part.cal = case_when(part.cal < 5 ~ cell_spec(part.cal,background = "green", color = "white", align = "center",bold=TRUE),
+                              part.cal > 10 ~ cell_spec(part.cal,background = "red", color = "white", align = "center",bold = TRUE),
+                              TRUE ~ cell_spec(part.cal, color = "black", align = "center",bold=TRUE))
+         ) %>% 
+  select(com,com.lib,popInd.p,popIndApa.cal,part.p,part.cal) %>% 
+  kable(escape = F,col.names = c("Code","Commune","Pop Rp","Pop cal","Part des individus non retrouvés (avant calage)","Part (apres calage)")) %>%
+  kable_styling(bootstrap_options = "striped", full_width = F)
+
+```
+
+*Note : le surlignement en bleu indique la convergence du calage. Sans couleur indique qu'il n'y a pas eu de calage.* 
+
+*Champ : individus guyanais* 
+
+*Source : RP 2013 et RIL2015.*
+
+
+**TO DO : commentaire**
+
+## V. Propositions pour améliorer l'appariement
+
+Pour améliorer l'appariement, plusieurs pistes sont possibles : 
+
+> Avoir accès au RIL millesimé. Pour chaque logement du RP, rechercher sa position dans le ril de l'année de collecte. P. Dorelon doit nous fournir ces bases prochainement.
+
+> Pour les logements du RP non retrouvés restant, affecter aléatoirement une position au sein de l'îlot. Evite les concentrations de points à un seul endroit et dilue l'erreur toute en conservant un maximum d'informations dans la zone. Inconvénient : si l'îlot est trop grand (notamment en Guyane), cela risque de créer des points au milieu de nulle part. 
+
+> Alternative : Pour les logements du RP non retrouvés restant, affecter le centroïde de l'îlot. Plusieurs problèmes : si l'îlot est trop grand, cette façon de procéder n'a aucun sens. De plus, on risque d'avoir des effets de bords importants (c'est-à-dire trop grosse concentration d'informations sur un seul point) pour des zonages "maison". Avis personnel : cette solution est insatisfaisante.
+
+> Suppression des logements non retrouvés restant et effectuer un calage à la commune. Avantage : simple à mettre en oeuvre. Inconvénients : ne fonctionne que dans les communes où le nombre de logements non retrouvés est raisonnable. Perte d'informations.  
+
+
+## Conclusion
+
+**TO DO**
+
