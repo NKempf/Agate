@@ -76,9 +76,9 @@ Qlrtio <- function (Y,zone,rpa,constante=0.4){
   cv <- ec/(0.5-abs(TtZ-0.5))
   TtZ <- 100*TtZ
   if(ceiling(TtZ+1.96*ec)<=10 & floor(TtZ-1.96*ec)<3){
-    Intconf <- paste0("inferieur à ",ceiling(TtZ+1.96*ec),"%")
+    Intconf <- paste0("[  0% ,",ceiling(TtZ+1.96*ec),"% ]")
   }else if(floor(TtZ-1.96*ec)>=90 & ceiling(TtZ+1.96*ec)>97){
-    Intconf <- paste0("supérieur à ",floor(TtZ-1.96*ec),"%")
+    Intconf <- paste0("[ ",floor(TtZ-1.96*ec),"% ,100% ]")
   }else{
     Intconf <- paste0("[ ",floor(TtZ-1.96*ec),"% , ",ceiling(TtZ+1.96*ec),"% ]")
   }
