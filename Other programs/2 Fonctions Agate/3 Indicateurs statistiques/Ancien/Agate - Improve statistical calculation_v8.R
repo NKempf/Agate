@@ -2,7 +2,7 @@
 #                                   Agata - Statistical calculation improvement                                        #
 #----------------------------------------------------------------------------------------------------------------------#
 
-# 20.02.2019
+# 20.03.2019
 
 # Improve statistical calculation of indicators and display them into cool datatable (package DT)
 # Ajout des travaux de Baptiste Raimbaud

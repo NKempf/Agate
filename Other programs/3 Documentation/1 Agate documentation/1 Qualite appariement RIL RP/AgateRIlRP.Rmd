@@ -32,7 +32,13 @@ Notre analyse montre que l'appariement est meilleur en utilisant le ril millesim
 
 * Guyane : utiliser en priorité RP2013 (qualité de l'appariement est meilleure). Les communes de l'intérieure sont non-diffusables. La qualité de l'appariement est trop mauvaise. 
 * Saint-Barthélemy : utiliser RP2015. Il n'y a pas d'appariement en 2014 et 2013
-* Saint-Martin : Non-diffusable : qualité de l'appariement insuffisante 25 % des logements non appariés
+* Saint-Martin : qualité de l'appariement est faible : 25 % des logements non appariés
+
+**Solutions techniques mise en oeuvre**
+
+* Les communes dont le taux de logements non-appariés est supérieur à 30 % sont exclues de l'analyse dans Agate. Cela concerne les communes de l'intérieure de Guyane et Saint-barthélemy certaines années de RP.
+* Pour les autres communes, on effectue un calage au niveau adresse sur le nombre de logement et d'individu. Le but est de prendre en compte les logements non-appariés dans les poids du RP. 
+
 
 ## Introduction
 
