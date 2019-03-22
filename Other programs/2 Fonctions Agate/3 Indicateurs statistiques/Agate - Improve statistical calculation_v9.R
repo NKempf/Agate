@@ -229,6 +229,25 @@ df.zone <- df.zone.secret %>%
   select(-cat.secret,-diff.secret) %>% 
   bind_rows(df.zone)
 
+# VIII. Valeur diffusable
+
+test <- lstIndicateur %>% 
+  rename(domaine = idDomaine,
+         categorie = idCategorie,
+         indicateur = nomIndicateur,
+         type.indicateur = typeIndicateurDiffusable) %>% 
+  select(-labelIndicateur,-qualiteIndicateur,-idIndicateur) %>% 
+  left_join(df.zone,by=c("domaine","categorie","indicateur","type.indicateur"))
+
+
+colnames(test)
+
+df.zone %>% 
+  filter(type.indicateur %in% c('secret_stat',"val_diff")) %>% 
+  spread(key = type.indicateur, value = value) %>% 
+  select(-source,-idZonage.name)
+
+
 # IX. Enregistrement temporaire pour test
 #----------------------------------------
 save(zonage,df.zone,statZone,zonage.com,file = "Data/Tmp/qpv_stat_tmp.RData")

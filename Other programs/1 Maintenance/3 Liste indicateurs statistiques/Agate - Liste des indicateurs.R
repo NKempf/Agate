@@ -80,6 +80,13 @@ com.label <- com.dom@data %>%
 # 
 # write.xlsx(test,"Data/Liste indicateurs statistiques/test.xlsx")
 
+
+test <- lstIndicateur %>% 
+  # left_join(lstCategorie %>% 
+  #             select(idDomaine,idCategorie,nomVariable),by=c("idDomaine","idCategorie")) %>% 
+  mutate(qualiteIndicateur2 = paste0(nomVariable,nomIndicateur,"/",qualiteIndicateurDenom))
+write.xlsx(test,"Data/Liste indicateurs statistiques/test.xlsx")
+
 # II. Enregistrement
 #------------------------------------------------------------------------------------------------------------------------------
 save(lstDomaine,lstCategorie,lstIndicateur,typInd,pred.choice,ind.label,lstTypeIndicateur,dep.label,com.label,
