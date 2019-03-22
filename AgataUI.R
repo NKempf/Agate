@@ -2,8 +2,14 @@
 #                                             Agate - Graphic web interface                                                 #
 #---------------------------------------------------------------------------------------------------------------------------#
 
+# Options statistiques
+#---------------------
+load("Data/Liste indicateurs statistiques/lstIndicateur.RData")
+dmn <- lstDomaine$idDomaine
+names(dmn) <- lstDomaine$labelDomaine
+
 ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
-                 
+
                  # I. Interactive web map
                  #-------------------------------------------------------------------------------------------------------------
                  tabPanel("Carte",value="vis",
@@ -38,7 +44,16 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                               #------------------------
                                               actionButton("b_paramCarte", "Paramètres carte"),
                                               
-                                              # I.1.2.4. Sweet pop-up
+                                              # I.1.2.4. HeatPoints
+                                              #--------------------
+                                              materialSwitch(
+                                                inputId = "ms_heatpts",
+                                                label = "Zones de chaleur",
+                                                value = FALSE, 
+                                                status = "warning"
+                                              ),
+                                              
+                                              # I.1.2.5. Sweet pop-up
                                               #----------------------
                                               useSweetAlert()
                                             ),
@@ -75,10 +90,10 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                                              <p style="text-align:justify"> Select datasets'
                                     ),
                                     # III.4.2. Ril
-                                    column(4,
-                                           selectInput(inputId = "SI_ril", label = "Ril", choices = c("2015"),
-                                                       selected = "2015" )
-                                    ),
+                                    # column(4,
+                                    #        selectInput(inputId = "SI_ril", label = "Ril", choices = c("2015"),
+                                    #                    selected = "2015" )
+                                    # ),
                                     # III.4.3. Census
                                     column(4,
                                            
@@ -87,11 +102,11 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                     ),
                                     # III.4.4. Filosofi
                                     column(4,
-                                           selectInput(inputId = "SI_filo", label = "Fichiers fiscaux",choices = c("2014"),
+                                           selectInput(inputId = "SI_filo", label = "Fichiers fiscaux",choices = c("2014","2015"),
                                                        selected="2014")
                                     ),
                                     # III.4.5. Compute
-                                    column(12,
+                                    column(4,
                                            actionButton("b_calcul", "Compute !")
                                     )
                                     
@@ -174,75 +189,36 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                           
                           fluidRow(
                             column(4,
-
                                    # II.1. Zone selection
                                    #---------------------
-                                   selectInput("SI_ZoneSelect", "Zone selection",
-                                               choices = c("Commune","Departement","HorsZone","Zone"),
-                                               selected = c("Zone"))
-
+                                   selectInput("si_zoneSelect", "Zone",
+                                               choices = pred.choice,
+                                               selected = 4)
                             ),
                             column(4,
-
-                                   # II.2. Tab selection
-                                   #--------------------
-                                   selectInput("SI_TabSelect", "Tab selection",
-                                               choices = c(""),
+                                   
+                                   # II.2. Domaine selection
+                                   #------------------------
+                                   selectInput("si_domaine", "Domaine",
+                                               choices = c("Choice" ="",dmn),
                                                selected = c(""))
                             ),
                             column(4,
-                                   # II.3. Save statistics into Excel report
-                                   #----------------------------------------
-                                   downloadButton(outputId = "DL_StatReport","Download report")
-                                   )
+                                   # II.3. Categorie selection
+                                   #--------------------------
+                                   selectInput("si_categorie", "Catégorie",
+                                               choices = c("Choice" =""),
+                                               selected = c(""))
+                            )
                           ),
-
+                          
                           hr(), # Line between buttons and plot
-
+                          
                           # II.4. Table visualisation
                           #--------------------------
                           textOutput("TO_titleTab"),
                           tags$head(tags$style("#TO_titleTab{font-size: 30px;font-style: bold;}")),
                           DT::dataTableOutput("table")
-                          
-                          # # Sidebar layout with input and output definitions ----
-                          # sidebarLayout(
-                          #   
-                          #   # Sidebar panel for inputs ----
-                          #   sidebarPanel(width = 3,
-                          #     
-                          #     # II.1. Zone selection
-                          #     #---------------------
-                          #     selectInput("SI_ZoneSelect", "Zone selection",
-                          #                 choices = c("Commune","Departement","HorsZone","Zone"),
-                          #                 selected = c("Zone")),
-                          #     
-                          #     # II.2. Tab selection
-                          #     #--------------------
-                          #     selectInput("SI_TabSelect", "Tab selection",
-                          #                 choices = c(""),
-                          #                 selected = c("")),
-                          #     
-                          #     # Button
-                          #     downloadButton(outputId = "DL_StatReport","Download report")
-                          #     
-                          #   ),
-                          #   
-                          #   # Main panel for displaying outputs ----
-                          #   mainPanel(width = 9,
-                          #             textOutput("TO_titleTab"),
-                          #             tags$head(tags$style("#TO_titleTab{font-size: 30px;
-                          #        font-style: bold;
-                          #        }"
-                          #             )
-                          #             ), # Title text style
-                          #             
-                          #             DT::dataTableOutput("table")
-                          #             #tableOutput("table")
-                          #   )
-                          #   
-                          # )
-                          
                           
                           ),
                  
@@ -250,7 +226,42 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                  #-------------------------------------------------------------------------------------------------------------                 
                  tabPanel("Qualité",value="vis",
                           titlePanel("Qualité de la population estimée par le recensement de la population dans la zone"),
-                          DT::dataTableOutput("qualityTable")
+                          
+                          fluidRow(
+                            column(4,
+                                   # II.1. Zone selection
+                                   #---------------------
+                                   selectInput("si_select_qual", "Zone selection",
+                                               choices = c("Par Zone","Par Variable","Tout Selectionner"),
+                                               selected = c("Par Zone"))
+                            ),
+                            column(4,
+                                   # II.3. Categorie selection
+                                   #--------------------------
+                                   selectInput("si_variable_qual", "Variable",
+                                               choices = c("Choice" ="",dmn),
+                                               selected = c(""))
+                            ),   
+                            column(4,
+                                   # II.3. Categorie selection
+                                   #--------------------------
+                                   selectInput("si_zone_qual", "Zone",
+                                               choices = c("Choice" ="",dmn),
+                                               selected = c(""))
+                            )
+                          ),
+                          
+                          
+                          hr(), # Line between buttons and plot
+                          
+                          # II.4. Table visualisation
+                          #--------------------------
+                          textOutput("TO_titleTab_qual"),
+                          tags$head(tags$style("#TO_titleTab_qual{font-size: 30px;font-style: bold;}")),
+                          DT::dataTableOutput("dt_qualite")
+                          
+                          # DT::dataTableOutput("qualityTable")
+        
                  ),                       
                           
                   # III. Documentation
@@ -258,8 +269,11 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                   navbarMenu("Documentation",
 
                              tabPanel("Amelioration",
-                                      includeHTML("Html pages/AmeliorationAppli/Amelioration.html")
+                                      includeHTML("Other programs/3 Documentation/1 Agate documentation/AmeliorationAppli/Amelioration.html")
                              ),
+                             # tabPanel("Qualité de l'appariement RIL-RP",
+                             #          includeHTML("Other programs/3 Documentation/1 Agate documentation/1 Qualite appariement RIL RP/AgateRIlRP.html")
+                             # ),
                              # tabPanel("Maintenance Agate",
                              #          includeHTML("Html pages/Maintenance/MaintenanceAgate.html")
                              # ),
@@ -273,7 +287,7 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                              #          includeHTML("Html pages/Qualite du RP/QualiteRp.html")
                              # ),
                              tabPanel("Remerciements",
-                                      includeHTML("Html pages/Remerciements/Remerciements.html")
+                                      includeHTML("Other programs/3 Documentation/1 Agate documentation/Remerciements/Remerciements.html")
                              )
                              
                              

@@ -172,38 +172,246 @@ statistics_zone <- function(group_var,zone,rpi,rpl,filo,sourceRpi,sourceRpl,sour
   #-----------------------------------------------------------------------------------------------------------------------------------------------
   domaine <- 6
   
-  # VI.1. Part de logements selon la categorie de logement ( A faire : modifier libelle CATL)
+  # VI.1. Part de logements selon la categorie de logement
   #-------------------------------------------------------
   indicateur_stat <- rpl %>%
-    mutate(indicateur = catLog) %>% 
+    mutate(indicateur = log_cat) %>% 
     statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
                  domaine = domaine,categorie = 1,source = sourceRpl)
   
-  # VI.2. Part des locataires
-  #--------------------------
+  # VI.2. Type de logement (MAJ 22.03.209)
+  #-----------------------
   indicateur_stat <- rpl %>%
-    mutate(indicateur = locataire) %>% 
+    mutate(indicateur = log_type) %>% 
     statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
                  domaine = domaine,categorie = 2,source = sourceRpl)
   
-  # VI.3. Part des locatairesHlm
-  #-----------------------------
+  # VI.3. Période d'achèvement de la construction (MAJ 22.03.209)
+  #----------------------------------------------
   indicateur_stat <- rpl %>%
-    mutate(indicateur = locataireHlm) %>% 
+    mutate(indicateur = log_ach_constru) %>% 
     statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
                  domaine = domaine,categorie = 3,source = sourceRpl)
   
-  
-  # VI.4. Part des appartements
-  #----------------------------
+  # VI.4. Aspect du bâti (MAJ 22.03.209)
+  #---------------------
   indicateur_stat <- rpl %>%
-    mutate(indicateur = appartement) %>% 
+    mutate(indicateur = log_bati) %>% 
     statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
                  domaine = domaine,categorie = 4,source = sourceRpl)
+  
+  # VI.5. Superficie du logement (MAJ 22.03.209)
+  #-----------------------------
+  indicateur_stat <- rpl %>%
+    mutate(indicateur = log_surface) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 5,source = sourceRpl)
+  
+  # VI.6. Année d'emménagement (MAJ 22.03.209)
+  #---------------------------
+  indicateur_stat <- rpl %>%
+    mutate(indicateur = log_emm) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 6,source = sourceRpl)
+  
+  # VI.7. Nombre de pièces (MAJ 22.03.209)
+  #-----------------------
+  indicateur_stat <- rpl %>%
+    mutate(indicateur = log_nbPiece) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 7,source = sourceRpl)
+  
+  # VI.8. Appartenance à un organisme HLM (MAJ 22.03.209)
+  #--------------------------------------
+  indicateur_stat <- rpl %>%
+    mutate(indicateur = log_hlm) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 8,source = sourceRpl)
+
   
   # VII. Residences principales
   #-----------------------------------------------------------------------------------------------------------------------------------------------
   domaine <- 7
+  
+  # VII.1. Type de résidence principale (MAJ 22.03.209)
+  #------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = res_type) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 1,source = sourceRpl)
+  
+  # VII.2. Période d'achèvement de la construction (MAJ 22.03.209)
+  #-----------------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = log_ach_constru) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 2,source = sourceRpl)
+  
+  
+  # VII.3. Aspect du bâti (MAJ 22.03.209)
+  #----------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = log_bati) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 3,source = sourceRpl)
+  
+  # VII.4. Superficie du logement (MAJ 22.03.209)
+  #------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = log_surface) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 4,source = sourceRpl)
+  
+  # VII.5. Nombre de pièces (MAJ 22.03.209)
+  #------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = log_nbPiece) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 5,source = sourceRpl)
+  
+  # VII.6. Appartenance à un organisme HLM (MAJ 22.03.209)
+  #--------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = log_hlm) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 6,source = sourceRpl)
+  
+  # VII.7. Eau potable à l'intérieur du logement (MAJ 22.03.209)
+  #---------------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = res_eau) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 7,source = sourceRpl)
+  
+  # VII.8. Electricité dans le logement (MAJ 22.03.209)
+  #------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = res_elec) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 8,source = sourceRpl)
+  
+  # VII.9. WC (MAJ 22.03.209)
+  #----------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = res_wc) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 9,source = sourceRpl)
+  
+  # VII.10. WC (MAJ 22.03.209)
+  #-----------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = res_bain) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 10,source = sourceRpl)
+  
+  # VII.11. Cuisine intérieure avec évier (MAJ 22.03.209)
+  #--------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = res_cuis) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 11,source = sourceRpl)
+  
+  # VII.12. Evacuation des eaux usées (MAJ 22.03.209)
+  #----------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = res_egout) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 12,source = sourceRpl)
+  
+  # VII.13. Garage-box-parking du logement (MAJ 22.03.209)
+  #---------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = res_garage) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 13,source = sourceRpl)
+  
+  # VII.14. Presence d'une climatisation (MAJ 22.03.209)
+  #-------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = res_clim) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 14,source = sourceRpl)
+  
+  # VII.15. Chauffe-eau solaire  (MAJ 22.03.209)
+  #----------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = res_chaufeau) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 15,source = sourceRpl)
+  
+  
+  # VIII. Ménages
+  #-----------------------------------------------------------------------------------------------------------------------------------------------
+  domaine <- 8
+  
+  # VIII.1. Statut d'occupation de la residence principale (MAJ 22.03.209)
+  #-------------------------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = men_statOcc) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 1,source = sourceRpl)
+  
+  # VIII.2. Statut d'occupation HLM de la residence principale (MAJ 22.03.209)
+  #-----------------------------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = men_statOcc_detail) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 2,source = sourceRpl)
+  
+  # VIII.3. Nombre de personne du logement (MAJ 22.03.209)
+  #---------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = men_npers) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 3,source = sourceRpl)
+  
+  # VIII.4. Ménage possedant une voiture (MAJ 22.03.209)
+  #-------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = men_voiture) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 4,source = sourceRpl)
+  
+  # VIII.5. Ménage possedant un deux-roues (MAJ 22.03.209)
+  #---------------------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = men_derou) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 5,source = sourceRpl)
+    
+  
+  # VII.1. Statut d'occupation
+  #---------------------------
+  indicateur_stat <- rpl %>%
+    filter(CATL == "1") %>% 
+    mutate(indicateur = hlm) %>% 
+    statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = rpl.weight,
+                 domaine = domaine,categorie = 1,source = sourceRpl)
+  
+  
+
+  
+  
   
   # VII.1. Part des residences principales en HLM
   #----------------------------------------------

@@ -1,0 +1,169 @@
+---
+title: "Agate - Qualite appariement RIL-RP"
+author: "Nicolas Kempf"
+date: "19 mars 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(DT)
+
+# Chargement des données
+load("../../../../Data/Rp/QualiteRilRp.RData")
+
+# Palette couleur
+colorWarning <- c("white",'#fee8c8', '#fdbb84','#e34a33')
+
+```
+
+Le programme R permettant de générer les chiffres de ce document se nomme `Agate - Qualité appariement RIL-RP.R` et est disponible sous AUS à l'adresse suivante : `V:\DIRAG\B_SED_DESS\1 Outils\1 AppliShiny\Agate\Programmes\Maintenance\2 Rp`. 
+
+
+## Résumé
+
+Le recensement de la population géolocalisé est la principale source de données de l'application Agate. La géolocalisation s'obtient par l'appariement de cette source avec les données de l'enquête cartographique réalisée chaque année aux Antilles-Guyane. L'appariement n'étant pas parfait, ce document discute de la qualité de cette appariement.
+
+Notre analyse montre que l'appariement est meilleur en utilisant le ril millesimé et la table de passage fourni par le CRIEM. La diffusion des données sur Saint-Barthélémy n'est possible qu'avec le recensement 2015. La qualité de l'appariement étant trop faible pour les millésimes précédents. 
+
+**Principales recommandations**
+
+* Guyane : utiliser en priorité RP2013 (qualité de l'appariement est meilleure). Les communes de l'intérieure sont non-diffusables. La qualité de l'appariement est trop mauvaise. 
+* Saint-Barthélemy : utiliser RP2015. Il n'y a pas d'appariement en 2014 et 2013
+* Saint-Martin : qualité de l'appariement est faible : 25 % des logements non appariés
+
+**Solutions techniques mise en oeuvre**
+
+* Les communes dont le taux de logements non-appariés est supérieur à 30 % sont exclues de l'analyse dans Agate. Cela concerne les communes de l'intérieure de Guyane et Saint-barthélemy certaines années de RP.
+* Pour les autres communes, on effectue un calage au niveau adresse sur le nombre de logement et d'individu. Le but est de prendre en compte les logements non-appariés dans les poids du RP. 
+
+
+## Introduction
+
+Agate vise à simplifier l'usage des données géolocalisées dans les Antilles-Guyane. La source principale d'Agate est le recensement de la population géolocalisé. Les données du recensement de la population ne sont pas géolocalisées par défaut. Pour obtenir la géolocalisation des données du RP, il faut apparier cette source avec l'enquête cartographique.  
+
+L'enquête cartographique (ril) aux Antilles-Guyane est réalisée chaque année dans le but de fournir une base fiable d'adresse. Elle est ensuite utilisée comme base de tirage du recensement de la population (RP).Il est donc théoriquement possible d'obtenir la géolocalisation précise des logements et des individus du recensement à des fins d'études. Toutefois, ces deux bases présentes des différences notables liées principalement à la collecte du recensement. Du coup, l'appariement de ces deux bases n'est malheureusement pas parfait : certains logements du RP ne sont pas retrouvés dans les données du ril. L'expertise ci-dessous présente les principales forces et faiblesses de cet appariement. 
+
+## Les bases de données à disposition
+
+### RIL
+
+Le Répertoire d'Immeuble de Logement (RIL) provient des données de l'enquête cartographique réalisée chaque année aux Antilles-Guyane. Nous avons notre disposition deux bases de données : 
+
+* le RIL habitation millésime 2015
+* le ril millesimé : transmis depuis peu par P. Dorelon. Il s'agit d'une compilation de RIL sur plusieurs années permettant d'avoir un meilleur appariement avec le recensement.
+
+### Table de passage CRIEM
+
+Lors de la collecte du recensement, l'agent recenseur peut détecter des informations contradictoires entre les informations du ril dont il dispose et la réalité du terrain. Par exemple, le ril indique que le logement est de type individuel alors que l'agent recenseur constate que le logement est de type collectif. La réalité du terrain prévalent sur les données du ril ce qui aboutit à une modification du numéro de rang de l'immeuble dans le recensement. Le numéro de rang étant indispensable à l'appariement entre le ril et le rp, une modification de celui-ci implique une rupture de l'appariement. Autrement dit, en cas de modification du numéro de rang d'un logement dans le RP , on perd la possibilité de l'apparier avec le RIL. 
+
+Pour résoudre ce probleme de compatibilité entre le RIL et le RP, le CRIEM nous a fournit une table de passage pour tous les logements du RP qui auraient eu des modifications de numéro. Cette table permet d'améliorer la qualité de l'appariement.
+Cette table ne contient pas de logement à Saint-Martin et Saint-Barthélemy. 
+
+
+### Recensement de la population cumulée
+
+Dans Agate, nous utilisons les données des recensements de la population cumulés. Il s'agit pour chaque millesime d'une compilation de 5 enquêtes annuelles de recensement. Cela implique que pour chaque fichier, nous disposons d'informations pouvant dater de 5 années ou moins. Cette temporalité est à prendre en compte pour l'appariement avec le RIL. 
+
+
+## Qualité de l'appariement
+
+Nous comparons ci-dessous pour chaque millesime du RP l'appariement RIL-RP dans les cas suivant : 
+
+* Ril habitation 2015 + RP avec et sans utilisation de la table de passage du CRIEM
+* RIL millesimé + RP avec et sans utilisation de la table de passage du CRIEM
+
+
+### Recensement de la population 2015
+
+```{r,echo=FALSE}
+datatable(stat.rilMillesime.rp15, caption = "Ril millesimé",options = list(dom = 't'),rownames = FALSE) %>% 
+    formatStyle(
+    'nbLog.nonRil.pct.pont',
+    fontWeight = styleInterval(10, c('normal', 'bold')),
+    backgroundColor = styleInterval(c(5,10,20), colorWarning)
+  ) %>% 
+  formatStyle(
+    'nbLog.nonRil.pct.sspont',
+    fontWeight = styleInterval(10, c('normal', 'bold')),
+    backgroundColor = styleInterval(c(5,10,20), colorWarning)
+  )
+```
+
+La table de passage du CRIEM a un impact positif sur la qualité de l'appariement. Le calcul d'indicateurs statistiques à Saint-Barthélemy est possible. Dans ce territoire, l'appariement est meilleur qu'en Guyane. 
+
+### Recensement de la population 2014
+
+```{r,echo=FALSE}
+datatable(stat.rilMillesime.rp14, caption = "Ril millesimé",options = list(dom = 't'),rownames = FALSE) %>% 
+    formatStyle(
+    'nbLog.nonRil.pct.pont',
+    fontWeight = styleInterval(10, c('normal', 'bold')),
+    backgroundColor = styleInterval(c(5,10,20), colorWarning)
+  ) %>% 
+  formatStyle(
+    'nbLog.nonRil.pct.sspont',
+    fontWeight = styleInterval(10, c('normal', 'bold')),
+    backgroundColor = styleInterval(c(5,10,20), colorWarning)
+  )
+```
+
+La table de passage du CRIEM a un impact positif sur la qualité de l'appariement. Il ne faut pas calculer de statistiques sur Saint-Barthélemy car pas d'appariement.
+
+### Recensement de la population 2013
+
+```{r,echo=FALSE}
+datatable(stat.rilClassique.rp13, caption = "Ril habitation 2015",options = list(dom = 't'),rownames = FALSE) %>% 
+    formatStyle(
+    'nbLog.nonRil.pct.pont',
+    fontWeight = styleInterval(10, c('normal', 'bold')),
+    backgroundColor = styleInterval(c(5,10,20), colorWarning)
+  ) %>% 
+  formatStyle(
+    'nbLog.nonRil.pct.sspont',
+    fontWeight = styleInterval(10, c('normal', 'bold')),
+    backgroundColor = styleInterval(c(5,10,20), colorWarning)
+  )
+```
+
+```{r,echo=FALSE}
+datatable(stat.rilMillesime.rp13, caption = "Ril millesimé",options = list(dom = 't'),rownames = FALSE) %>% 
+    formatStyle(
+    'nbLog.nonRil.pct.pont',
+    fontWeight = styleInterval(10, c('normal', 'bold')),
+    backgroundColor = styleInterval(c(5,10,20), colorWarning)
+  ) %>% 
+  formatStyle(
+    'nbLog.nonRil.pct.sspont',
+    fontWeight = styleInterval(10, c('normal', 'bold')),
+    backgroundColor = styleInterval(c(5,10,20), colorWarning)
+  )
+```
+
+Le Ril millesimé améliore la qualité de l'appariement surtout en Guyane. De plus, la table de passage du CRIEM améliore aussi l'appariement. Il ne faut pas calculer de statistiques sur Saint-Barthélemy car pas d'appariement.
+
+### Appariement dans les communes
+
+```{r,echo=FALSE}
+datatable(stat.comRP %>% select(-region,-com), caption = "Ril millesimé",rownames = FALSE) %>% 
+    formatStyle(
+    'nbLog.nonRil.pct.15',
+    fontWeight = styleInterval(10, c('normal', 'bold')),
+    backgroundColor = styleInterval(c(5,10,20), colorWarning)
+  ) %>% 
+  formatStyle(
+    'nbLog.nonRil.pct.14',
+    fontWeight = styleInterval(10, c('normal', 'bold')),
+    backgroundColor = styleInterval(c(5,10,20), colorWarning)
+  )%>% 
+  formatStyle(
+    'nbLog.nonRil.pct.13',
+    fontWeight = styleInterval(10, c('normal', 'bold')),
+    backgroundColor = styleInterval(c(5,10,20), colorWarning)
+  )
+
+```
+
+En guyane, la qualité de l'appariement est optimale en 2013. Elle se dégrade ensuite en 2014 puis fortement en 2015. 

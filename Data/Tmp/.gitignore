@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ptsHeat.RData
 FakeDataImproveCalcul.RData
 leafLetDraw.RData
@@ -5,3 +6,9 @@ leafLetDraw2.RData
 polyTmp.RData
 qpv_stat_tmp.RData
 test.csv
+=======
+FakeDataImproveCalcul.RData
+qpv_stat_tmp.RData
+rpa.fst
+StatZoneCompare.RData
+>>>>>>> b982978ec44c51a769a6be78984ae9e8c7b1d19c
