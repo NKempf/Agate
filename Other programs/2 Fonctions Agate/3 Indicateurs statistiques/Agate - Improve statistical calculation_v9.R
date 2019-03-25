@@ -34,7 +34,7 @@ load("Data/Liste indicateurs statistiques/lstIndicateur.RData")
 #---------------------------------------------------------------
 
 # RP
-rp.an <- "14"
+rp.an <- "13"
 rpi.path.string <- paste0("Data/Rp/rpi",rp.an,".fst")
 rpl.path.string <- paste0("Data/Rp/rpl",rp.an,".fst")
 rpa.path.string <- paste0("Data/Rp/rpa",rp.an,".fst")

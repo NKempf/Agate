@@ -81,11 +81,11 @@ com.label <- com.dom@data %>%
 # write.xlsx(test,"Data/Liste indicateurs statistiques/test.xlsx")
 
 
-test <- lstIndicateur %>% 
+lstIndicateur <- lstIndicateur %>% 
   # left_join(lstCategorie %>% 
   #             select(idDomaine,idCategorie,nomVariable),by=c("idDomaine","idCategorie")) %>% 
-  mutate(qualiteIndicateur2 = paste0(nomVariable,nomIndicateur,"/",qualiteIndicateurDenom))
-write.xlsx(test,"Data/Liste indicateurs statistiques/test.xlsx")
+  mutate(qualiteIndicateur = ifelse(Source == "rp",paste0(nomVariable,nomIndicateur,"/",qualiteIndicateurDenom),NA))
+write.xlsx(lstIndicateur,"Data/Liste indicateurs statistiques/test.xlsx")
 
 # II. Enregistrement
 #------------------------------------------------------------------------------------------------------------------------------
