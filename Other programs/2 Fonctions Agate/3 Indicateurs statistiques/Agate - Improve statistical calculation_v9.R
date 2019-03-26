@@ -2,7 +2,7 @@
 #                                   Agata - Statistical calculation improvement                                        #
 #----------------------------------------------------------------------------------------------------------------------#
 
-# 21.03.2019
+# 26.03.2019
 
 # Improve statistical calculation of indicators and display them into cool datatable (package DT)
 # Ajout des travaux de Baptiste Raimbaud
@@ -32,7 +32,7 @@ load("Data/Liste indicateurs statistiques/lstIndicateur.RData")
 
 # O. Selection des bases de travail (donnees reelles ou fausses)
 #---------------------------------------------------------------
-
+t1 <- Sys.time()
 # RP
 rp.an <- "13"
 rpi.path.string <- paste0("Data/Rp/rpi",rp.an,".fst")
@@ -165,6 +165,19 @@ source <- unique(df.zone$source)
 #----------------------------------------------------------
 incProgress(amount = 0.5,message = "Qualité des données du rp")
 
+ril <- read_fst("Data/Ril/ril_leger.fst") %>% 
+  select(idx,x,y,nb_logn) %>% 
+  mutate(com = substr(idx,1,5)) %>%
+  filter(com %in% com.dom.select)
+coordinates(ril) <- ~x+y
+ril@proj4string <- CRS("+init=epsg:3857")
+ril.geo <- ril[!duplicated(ril@data$idx),]
+ril.geo <- zonaPts(pts.sp = ril.geo,zonage = zonage)
+ril <- ril@data %>% 
+  left_join(ril.geo@data %>% select(idx,idZonage),by="idx") %>% 
+  mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage))
+
+
 # VII.1. Chargement de la base adresses (MAJ : 26.03.2019)
 rpa.qualite <- rpa %>% 
   left_join(pts.df %>% select(C_IMM,idZonage,idZonage.name), by = c("C_IMM")) %>% 
@@ -172,17 +185,15 @@ rpa.qualite <- rpa %>%
   mutate(IPOND = IPOND.cal)
 
 # VII.2. Liste des variables à calculer
-group_var.qualite <- lstIndicateur$qualiteIndicateur[substr(lstIndicateur$source,1,2) == "rp" & 
-                                                       paste0(lstIndicateur$nomVariable,lstIndicateur$nomIndicateur) %in% colnames(rpa)]
+group_var.qualite <- c("INPER",lstIndicateur$qualiteIndicateur[paste0(lstIndicateur$nomVariable,lstIndicateur$nomIndicateur) %in% colnames(rpa.qualite)])
 
 # VII.3. Estimation de la qualité
-t1 <- Sys.time()
 seuil_diffusion <- 5 # Seuil de diffusion de la valeur du coefficient de variation
-qualityZone <- Qlfinal(rpa.qualite,group_var.qualite,ril = rpa.qualite %>% rename(nb_logn = nb_logn.ril)) %>% 
-  mutate(val_diff = ifelse(CoefVariation <= seuil_diffusion & !is.nan(CoefVariation),EstVariable,IntervalConf.)) # Valeur diffusable ?
+qualityZone <- Qlfinal(rpa.qualite,group_var.qualite,ril = ril) %>% 
+  mutate(val.qualite = ifelse(CoefVariation <= seuil_diffusion & !is.nan(CoefVariation),EstVariable,IntervalConf.)) 
 Sys.time() - t1
 
-# VII.4. Transformation table
+# VII.4. Ajout des données à la table finale
 df.zone <- qualityZone %>% 
   rename(idZonage = zonage,
          qualiteIndicateur = Variable) %>% 
@@ -211,7 +222,6 @@ df.zone.secret <- df.zone %>%
 var.secret <- lstCategorie$nomVariable[lstCategorie$typeVar == "pct" & substr(lstCategorie$source,1,2) == "rp"]
 
 # VIII.3. Secret statistique
-t1 <- Sys.time()
 indicateur.secret <- bind_rows(lapply(var.secret,secret_stat,df.zone.secret = df.zone.secret,seuil_secret_stat = seuil_secret_stat))
 Sys.time() - t1
 
@@ -223,37 +233,16 @@ df.zone <- df.zone.secret %>%
   select(-diff.secret) %>% 
   bind_rows(df.zone)
 
+Sys.time() - t1
 
 # VIII.5 Valeur diffusable
-test <- df.zone %>% 
-  filter(type.indicateur %in% c("val_diff","secret_stat")) %>% 
+df.zone <- df.zone %>% 
+  filter(type.indicateur %in% c("val.qualite","secret_stat")) %>% 
   spread(key = type.indicateur, value = value) %>% 
   mutate(secret_stat = ifelse(is.na(secret_stat),"n_diffusable",secret_stat),
-         valeur.diffusable = ifelse(secret_stat == "diffusable",val_diff,"c")) %>%  # c : données confidencielles
-  gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source)
-
-
-
-
-
-
-
-test <- lstIndicateur %>% 
-  rename(domaine = idDomaine,
-         categorie = idCategorie,
-         indicateur = nomIndicateur,
-         type.indicateur = typeIndicateurDiffusable) %>% 
-  select(-labelIndicateur,-qualiteIndicateur,-idIndicateur) %>% 
-  left_join(df.zone,by=c("domaine","categorie","indicateur","type.indicateur"))
-
-
-colnames(test)
-
-df.zone %>% 
-  filter(type.indicateur %in% c('secret_stat',"val_diff")) %>% 
-  spread(key = type.indicateur, value = value) %>% 
-  select(-source,-idZonage.name)
-
+         valeur.diffusable = ifelse(secret_stat == "diffusable",val.qualite,"c")) %>%  # c : données confidencielles
+  gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
+  bind_rows(df.zone)
 
 # IX. Enregistrement temporaire pour test
 #----------------------------------------
