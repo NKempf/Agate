@@ -49,13 +49,13 @@ Qlrtio <- function (Y,zone,rpa,constante=0.4){
   Y<-strsplit(Y," / ",fixed = TRUE)
   r1<-Y[[1]][1]
   r2<-Y[[1]][2]
-  oppose<-FALSE
-  if(grepl("- ",r1,fixed=TRUE)){
-    r1<-substr(r1,3,100)
-    oppose<-TRUE
-  }
+  #oppose<-FALSE
+  #if(grepl("- ",r1,fixed=TRUE)){
+  #  r1<-substr(r1,3,100)
+  #  oppose<-TRUE
+  #}
   
-  rpaR <- rpa %>% mutate(Id=(idZonage==zone),join=1) %>% mutate(Rz1=Id*!!parse_quosure(r1),Rz2=Id*!!parse_quosure(r2))
+  rpaR <- rpa %>% select(C_ANNEE_COL,com,idZonage,!!parse_quosure(r1),!!parse_quosure(r2),X,IPOND)%>% mutate(Id=(idZonage==zone),join=1)  %>% mutate(Rz1=Id*!!parse_quosure(r1),Rz2=Id*!!parse_quosure(r2)) 
   
   T_R <- rpaR %>% group_by(join) %>% summarise(TR1=sum(Rz1*IPOND),TR2=sum(Rz2*IPOND))
   
@@ -69,10 +69,10 @@ Qlrtio <- function (Y,zone,rpa,constante=0.4){
   Vf <- (1-constante)/(constante^2)*sum(rpaU$U2)
   ec <- Vf^0.5*100
   TtZ<- sum(T_R$TR1/T_R$TR2)
-  if (oppose){
-    TtZ <- 1 - TtZ
-    r1<-paste0("- ",r1)
-  }
+  #if (oppose){
+  #  TtZ <- 1 - TtZ
+  #  r1<-paste0("- ",r1)
+  #}
   cv <- ec/(0.5-abs(TtZ-0.5))
   TtZ <- 100*TtZ
   if(ceiling(TtZ+1.96*ec)<=10 & floor(TtZ-1.96*ec)<3){
