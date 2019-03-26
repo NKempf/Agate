@@ -185,9 +185,11 @@ rpa.qualite <- rpa %>%
   mutate(IPOND = IPOND.cal)
 
 # VII.2. Liste des variables à calculer
-group_var.qualite <- c("INPER",lstIndicateur$qualiteIndicateur[paste0(lstIndicateur$nomVariable,lstIndicateur$nomIndicateur) %in% colnames(rpa.qualite)])
+group_var.qualite <- c("INPER",lstIndicateur$qualiteIndicateur[paste0(lstIndicateur$nomVariable,lstIndicateur$nomIndicateur) %in% colnames(rpa.qualite) & 
+                         lstIndicateur$calculQualite == 1])
 
 # VII.3. Estimation de la qualité
+t1 <- Sys.time()
 seuil_diffusion <- 5 # Seuil de diffusion de la valeur du coefficient de variation
 qualityZone <- Qlfinal(rpa.qualite,group_var.qualite,ril = ril) %>% 
   mutate(val.qualite = ifelse(CoefVariation <= seuil_diffusion & !is.nan(CoefVariation),EstVariable,IntervalConf.)) 
