@@ -22,7 +22,7 @@ library(easySdcTable) # Statistical disclosure
 
 # Fonction necessaire
 source("Other programs/2 Fonctions Agate/2 Cartographie/Agate - Cartographie fct.R",encoding = "UTF-8")
-source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v6.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v8.R",encoding = "UTF-8")
 # source("Other programs/2 Fonctions Agate/6 Census Quality/Agate - Census infra quality.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/6 Census Quality/Agate - Qualite du RP.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/7 Statistical disclosure/Agate - statistiscal disclosure.R",encoding = "UTF-8")
@@ -42,9 +42,9 @@ rpiPath <- ifelse(file.exists(rpi.path.string),rpi.path.string,"Data/Rp/FakeRpi.
 rplPath <- ifelse(file.exists(rpl.path.string),rpl.path.string,"Data/Rp/FakeRpl.fst")
 rpaPath <- ifelse(file.exists(rpa.path.string),rpa.path.string,NA)
 # Filosofi
-filo.an <- "14"
-filo.path.string <- paste0("Data/Filosofi/filo",filo.an,".fst")
-filoPath <- ifelse(file.exists(filo.path.string),filo.path.string,"Data/Filosofi/FakeFilo.fst")
+# filo.an <- "14"
+# filo.path.string <- paste0("Data/Filosofi/filo",filo.an,".fst")
+# filoPath <- ifelse(file.exists(filo.path.string),filo.path.string,"Data/Filosofi/FakeFilo.fst")
 
 # I. Preparation du zonage
 #-------------------------
@@ -123,27 +123,27 @@ zonage.com <- rpl %>%
 # V. Ajout de la zone aux données fiscales
 #------------------------------------------
 
-# V.1. Chargement des données fiscales filtrées selon les communes d'intérêts
-incProgress(amount = 0.3,message = "Ajout des données fiscales")
-filo <- read_fst(filoPath) %>% 
-  filter(com %in% com.dom.select)
-
-# V.2. Transformation des données en objet spatial
-filo.sp <- SpatialPointsDataFrame(coords = filo[,c("x","y")],data = filo,proj4string = CRS("+init=epsg:3857"))
-
-# V.3. Zone dans laquelle chaque foyer fiscal se situe
-filo.sp <- zonaPts(pts.sp = filo.sp,zonage = zonage)
-
-# V.4. Ajout de la zone aux données fiscales
-typmen.label <- c("famille monoparentale","couple sans enfant","couple avec enfant(s)","menage complexe",
-                  "femme seule","homme seul")
-
-filo <- filo.sp@data %>% 
-  left_join(data.frame(unique(rpl[,c("com","com.lib")])),"com") %>% 
-  mutate(dep = substr(com,1,3),
-         idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage),
-         typmenR.lib = factor(typmenR,labels = typmen.label)) 
-rm(filo.sp)
+# # V.1. Chargement des données fiscales filtrées selon les communes d'intérêts
+# incProgress(amount = 0.3,message = "Ajout des données fiscales")
+# filo <- read_fst(filoPath) %>% 
+#   filter(com %in% com.dom.select)
+# 
+# # V.2. Transformation des données en objet spatial
+# filo.sp <- SpatialPointsDataFrame(coords = filo[,c("x","y")],data = filo,proj4string = CRS("+init=epsg:3857"))
+# 
+# # V.3. Zone dans laquelle chaque foyer fiscal se situe
+# filo.sp <- zonaPts(pts.sp = filo.sp,zonage = zonage)
+# 
+# # V.4. Ajout de la zone aux données fiscales
+# typmen.label <- c("famille monoparentale","couple sans enfant","couple avec enfant(s)","menage complexe",
+#                   "femme seule","homme seul")
+# 
+# filo <- filo.sp@data %>% 
+#   left_join(data.frame(unique(rpl[,c("com","com.lib")])),"com") %>% 
+#   mutate(dep = substr(com,1,3),
+#          idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage),
+#          typmenR.lib = factor(typmenR,labels = typmen.label)) 
+# rm(filo.sp)
 
 # VI. Calcul des indicateurs statistiques
 #---------------------------------------
@@ -151,13 +151,11 @@ incProgress(amount = 0.4,message = "Calcul des statistiques")
 
 # VI.1. Statistiques dans la zone
 group_var <- c("idZonage","idZonage.name") # Attention utilisé plusieurs fois
-statZone <- statistics_zone(group_var = group_var,zone = zonage,rpi = rpi,rpl = rpl, filo = filo,
-                               sourceRpi = paste0("rpi",rp.an),
-                               sourceRpl = paste0("rpl",rp.an),
-                               sourceFilo = paste0("filo",filo.an),
-                               rpi.weight = "IPONDI.cal",
-                               rpl.weight = "IPONDL.cal",
-                               filo.weight = "nbpersm")
+statZone <- statistics_zone(group_var = group_var,zone = zonage,rpi = rpi,rpl = rpl, 
+                            lstCategorie = lstCategorie,
+                            sourceRp = rp.an,
+                            rpi.weight = "IPONDI.cal",
+                            rpl.weight = "IPONDL.cal")
 
 # VI.2. Objets pour page "statistiques"
 df.zone <- statZone$indicateur_stat
@@ -167,38 +165,35 @@ source <- unique(df.zone$source)
 #----------------------------------------------------------
 incProgress(amount = 0.5,message = "Qualité des données du rp")
 
-# VII.1. Chargement de la base adresses (MAJ : 19.03.2019)
+# VII.1. Chargement de la base adresses (MAJ : 26.03.2019)
 rpa.qualite <- rpa %>% 
   left_join(pts.df %>% select(C_IMM,idZonage,idZonage.name), by = c("C_IMM")) %>% 
   filter(ril.millesime == 1) %>% 
   mutate(IPOND = IPOND.cal)
 
 # VII.2. Liste des variables à calculer
-group_var.qualite <- lstIndicateur$qualiteIndicateur[!is.na(lstIndicateur$qualiteIndicateur)]
+group_var.qualite <- lstIndicateur$qualiteIndicateur[substr(lstIndicateur$source,1,2) == "rp" & 
+                                                       paste0(lstIndicateur$nomVariable,lstIndicateur$nomIndicateur) %in% colnames(rpa)]
 
 # VII.3. Estimation de la qualité
+t1 <- Sys.time()
 seuil_diffusion <- 5 # Seuil de diffusion de la valeur du coefficient de variation
 qualityZone <- Qlfinal(rpa.qualite,group_var.qualite,ril = rpa.qualite %>% rename(nb_logn = nb_logn.ril)) %>% 
   mutate(val_diff = ifelse(CoefVariation <= seuil_diffusion & !is.nan(CoefVariation),EstVariable,IntervalConf.)) # Valeur diffusable ?
+Sys.time() - t1
 
 # VII.4. Transformation table
 df.zone <- qualityZone %>% 
   rename(idZonage = zonage,
          qualiteIndicateur = Variable) %>% 
   left_join(lstIndicateur %>% 
-              rename(domaine = idDomaine,
-                     categorie = idCategorie,
-                     indicateur = nomIndicateur) %>% 
-              select(domaine, categorie,indicateur, qualiteIndicateur),
+              select(domaine,categorie,nomVariable,nomIndicateur,qualiteIndicateur,source),
             by = "qualiteIndicateur") %>% # Ajout de variables
-  left_join(df.zone %>% 
-              group_by(!!! syms(group_var),indicateur,source) %>% 
-              summarise(count = n()) %>% 
-              ungroup() %>% 
-              select(-count),
-            by=c("idZonage","indicateur")) %>% # Ajout de variables
+  left_join(zonage@data %>% 
+              select(idZonage,idZonage.name)) %>% 
+  mutate(source = paste0(source,rp.an)) %>% 
   select(-qualiteIndicateur) %>% 
-  gather("type.indicateur","value",-group_var,-"indicateur",-domaine,-categorie,-source) %>% # Transformation de la base
+  gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% # Transformation de la base
   bind_rows(df.zone %>% mutate(value = as.character(value))) # Ajout des données sur la qualité dans un format simple a exploiter
 
 # VIII. Secret statistique
@@ -210,26 +205,38 @@ seuil_secret_stat <- 11
 
 # VIII.1. Table de travail pour le secret statistique
 df.zone.secret <- df.zone %>% 
-  mutate(cat.secret = paste(domaine,categorie,sep = "_")) %>% 
   filter(type.indicateur %in% c("freq","n"))
 
 # VIII.2. Catégorie à secretiser
-lstCategorie.secret <- unique(df.zone.secret$cat.secret[!df.zone.secret$cat.secret %in% c("2_1","1_1")])
+var.secret <- lstCategorie$nomVariable[lstCategorie$typeVar == "pct" & substr(lstCategorie$source,1,2) == "rp"]
 
 # VIII.3. Secret statistique
 t1 <- Sys.time()
-indicateur.secret <- bind_rows(lapply(lstCategorie.secret,secret_stat,df.zone.secret = df.zone.secret,seuil_secret_stat = seuil_secret_stat))
+indicateur.secret <- bind_rows(lapply(var.secret,secret_stat,df.zone.secret = df.zone.secret,seuil_secret_stat = seuil_secret_stat))
 Sys.time() - t1
 
-# VIII. Ajout du secret aux indicateurs calculés
+# VIII.4. Ajout du secret aux indicateurs calculés
 df.zone <- df.zone.secret %>% 
-  left_join(indicateur.secret,by = c("domaine","categorie","idZonage","indicateur")) %>% # Ajout de la variable diffusable
-  mutate(value = ifelse(is.na(diff.secret),"Diffusable",diff.secret),
+  left_join(indicateur.secret,by = c("idZonage","nomVariable","nomIndicateur")) %>% # Ajout de la variable diffusable
+  mutate(value = ifelse(is.na(diff.secret),"diffusable",diff.secret),
          type.indicateur = "secret_stat") %>% 
-  select(-cat.secret,-diff.secret) %>% 
+  select(-diff.secret) %>% 
   bind_rows(df.zone)
 
-# VIII. Valeur diffusable
+
+# VIII.5 Valeur diffusable
+test <- df.zone %>% 
+  filter(type.indicateur %in% c("val_diff","secret_stat")) %>% 
+  spread(key = type.indicateur, value = value) %>% 
+  mutate(secret_stat = ifelse(is.na(secret_stat),"n_diffusable",secret_stat),
+         valeur.diffusable = ifelse(secret_stat == "diffusable",val_diff,"c")) %>%  # c : données confidencielles
+  gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source)
+
+
+
+
+
+
 
 test <- lstIndicateur %>% 
   rename(domaine = idDomaine,
