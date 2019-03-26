@@ -62,8 +62,8 @@ shinyApp(
     load("Data/Tmp/qpv_stat_tmp.RData")
     
     observe({
-      rv$df.zone <- indStat$indicateur_stat
-      rv$source <- unique(indStat$indicateur_stat$source)
+      rv$df.zone <- df.zone
+      rv$source <- unique(df.zone$source)
       
       print(rv$df.zone)
       
@@ -77,7 +77,7 @@ shinyApp(
         if(input$si_zoneSelect == 4){
           # Selection des données
           df <- rv$df.zone %>% 
-            select(source,domaine,categorie,com,idZonage,idZonage.name,indicateur,type.indicateur,value) %>%
+            select(source,domaine,categorie,idZonage,idZonage.name,indicateur,type.indicateur,value) %>%
             filter(type.indicateur != "part_np") %>% 
             filter(domaine == input$si_domaine & categorie == input$si_categorie)
         }else{

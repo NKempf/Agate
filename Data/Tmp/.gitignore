@@ -1,4 +1,5 @@
 FakeDataImproveCalcul.RData
+<<<<<<< HEAD
 Qualite.RData
 Qualite2.RData
 Qualite4.RData
@@ -8,3 +9,8 @@ QualiteRatiof.RData
 QualiteRatiofinal.RData
 qpv_stat_tmp.RData
 rpa.fst
+=======
+qpv_stat_tmp.RData
+rpa.fst
+StatZoneCompare.RData
+>>>>>>> dbb9c6142c17400a543635e18b69617eb35f9ca9
