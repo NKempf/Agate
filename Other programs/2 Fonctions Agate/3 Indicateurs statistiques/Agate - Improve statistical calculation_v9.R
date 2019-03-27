@@ -189,7 +189,7 @@ group_var.qualite <- c("INPER",lstIndicateur$qualiteIndicateur[paste0(lstIndicat
                          lstIndicateur$calculQualite == 1])
 
 # VII.3. Estimation de la qualité
-t1 <- Sys.time()
+
 seuil_diffusion <- 5 # Seuil de diffusion de la valeur du coefficient de variation
 qualityZone <- Qlfinal(rpa.qualite,group_var.qualite,ril = ril) %>% 
   mutate(val.qualite = ifelse(CoefVariation <= seuil_diffusion & !is.nan(CoefVariation),EstVariable,IntervalConf.)) 
@@ -243,6 +243,7 @@ df.zone <- df.zone %>%
   spread(key = type.indicateur, value = value) %>% 
   mutate(secret_stat = ifelse(is.na(secret_stat),"n_diffusable",secret_stat),
          valeur.diffusable = ifelse(secret_stat == "diffusable",val.qualite,"c")) %>%  # c : données confidencielles
+  select(-secret_stat,-val.qualite) %>% 
   gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
   bind_rows(df.zone)
 

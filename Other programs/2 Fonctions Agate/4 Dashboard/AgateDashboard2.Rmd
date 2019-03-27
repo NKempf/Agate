@@ -1,0 +1,143 @@
+---
+title: "Agate dashboard version 2"
+output: 
+  flexdashboard::flex_dashboard:
+    css: flexNk.css
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard) # Widget for dashboard
+library(tidyverse) # Data transformation
+library(DT) # Interactive table
+library(plotly) # Interactive graph
+
+# Chargement des données
+load("../../../Data/Tmp/dashboard_tmp.RData")
+
+```
+
+Démographie {data-orientation=rows}
+=====================================  
+    
+Row
+-------------------------------------
+
+### Féminité
+
+```{r}
+valueBox(vb.dem.fem, 
+         icon = "fas fa-female")
+```
+
+### Population
+
+```{r}
+valueBox(vb.dem.pop, 
+         icon = "fas fa-users")
+```
+
+### Superficie
+
+```{r}
+valueBox("TODO", 
+         icon = "fas fa-tree")
+```
+
+Row 
+-------------------------------------
+   
+### Individus
+
+```{r}
+datatable(df.dem.tab.hg, colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```   
+    
+### Ménages
+
+```{r}
+datatable(df.dem.tab.hd,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```
+
+Row 
+-------------------------------------
+   
+### Pyramide des ages
+
+```{r}
+ggplotly(g.dem.pyramide) 
+```   
+
+### Immigration
+
+```{r}
+datatable(df.dem.tab.bd,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't')) 
+```   
+
+
+Emploi {data-orientation=rows}
+=====================================  
+    
+Row
+-------------------------------------
+
+### Population en âge de travailler
+
+```{r}
+valueBox(vb.emp.popTrav, 
+         icon = "fas fa-user-cog")
+```
+
+### Taux de chômage
+
+```{r}
+valueBox(vb.emp.chom, 
+         icon = "fas fa-people-carry",
+         caption = "au sens du recensement de la population")
+```
+
+### Inactifs
+
+```{r}
+valueBox(vb.emp.inact, 
+         icon = "far fa-user")
+```
+
+
+Row 
+-------------------------------------
+   
+### Marché de l'emploi
+
+```{r}
+datatable(df.emp.tab.hg,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```   
+    
+### Chômage
+
+```{r}
+datatable(df.emp.tab.hd,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```
+
+Row 
+-------------------------------------
+   
+### Type d'activité
+
+```{r}
+
+```   
+
+### Travail
+
+```{r}
+datatable(df.emp.tab.bd,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```   
+
+
+
