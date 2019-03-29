@@ -114,38 +114,44 @@ body {
 /**************************************** Objet du dashboard ************************************************************/
 
 /* ValueBox */
-#feminite, #population-en-age-de-travailler{
+#feminite, #population-en-age-de-travailler,#population-en-age-detre-scolarisee,#nombre-de-logements,#res_princ{
 	background-color: #A16E83; 
 	
 }
 
-#population, #taux-de-chomage{
+#population, #part-de-chomeur-au-sens-du-rp,#jeunes-inscrit-dans-un-etablissement-scolaire,#hlm, #logements-collectifs{
 	background-color: #CEBC81; 
 	
 }
 
-#superficie, #inactifs{
+#superficie, #inactifs,#taux-de-decrocheur,#maison,#todo{
 	background-color: #479761; 
 	
 }
-#feminite,#population,#superficie,,#population-en-age-de-travailler,#taux-de-chomage,#inactifs {
+#feminite,#population,#superficie,,#population-en-age-de-travailler,#part-de-chomeur-au-sens-du-rp,#inactifs,#population-en-age-detre-scolarisee,#jeunes-inscrit-dans-un-etablissement-scolaire,#taux-de-decrocheur,
+#nombre-de-logements,#hlm,#maison,#res_princ,#logements-collectifs {
 	color: #FEFFFF; 
 }
 
 
 
 /* Datatables */
-#individus,#menages,#pyramide-des-ages,#immigration, #marche-de-lemploi, #chomage, #type-dactivite, #travail{
+#individus,#menages,#pyramide-des-ages,#immigration, #marche-de-lemploi, #chomage, #type-dactivite, #travail,#jeunes-scolarises, #jeunes, #niveau-de-diplome,#jeunes-non-scolarises,
+#caracteristiques-des-logements,#categorie-de-logement,#annee-dachevement,#aspect-du-bati,
+#caracteristiques-des-residences-principales,#nombre-de-pieces,#surface,#equipements {
 	border-color: #8e8e8e;
 	/*background-color: transparent;*/
 	
 }
 
 #individus .chart-title,#menages .chart-title,#pyramide-des-ages .chart-title,#immigration .chart-title,
-#marche-de-lemploi .chart-title, #chomage .chart-title, #type-dactivite .chart-title, #travail .chart-title{
+#marche-de-lemploi .chart-title, #chomage .chart-title, #type-dactivite .chart-title, #travail .chart-title,
+#jeunes-scolarises .chart-title, #jeunes .chart-title, #niveau-de-diplome .chart-title,#jeunes-non-scolarises .chart-title,
+#caracteristiques-des-logements .chart-title,#categorie-de-logement .chart-title,#annee-dachevement .chart-title,#aspect-du-bati .chart-title,
+#caracteristiques-des-residences-principales .chart-title,#nombre-de-pieces .chart-title,#surface .chart-title,#equipements .chart-title{
 	background-color: #8e8e8e;
 	font-size: 1.1em;
-	text-transform: capitalize;	
+	/*text-transform: capitalize;	*/
 	color: #FEFFFF;
 	text-align: center;
 }

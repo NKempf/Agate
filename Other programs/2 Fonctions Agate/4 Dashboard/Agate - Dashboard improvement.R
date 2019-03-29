@@ -13,6 +13,7 @@
 #---------------------
 library(tidyverse)
 library(plotly)
+library(DT)
 
 # Fonctions  particulières
 source("Other programs/2 Fonctions Agate/4 Dashboard/Agate - Dashboard fct.R",encoding = "UTF-8")
@@ -38,8 +39,6 @@ df.etude <- df.zone %>%
   filter(idZonage == zone.etude & type.indicateur == "valeur.diffusable") %>% 
   mutate(dashboard = "zone.etude1")
 
-table(df.etude$nomIndicateur)
-
 # Source utilisée pour les indicateurs de l'étude
 source.etude <- unique(df.etude$source)
 
@@ -60,7 +59,7 @@ names(dash.label) <- c(" ",
                        unique(df.compare$idZonage.name[df.compare$idZonage == zone.compare]))
 
 
-# II. Thème Territoire
+# II. Thème Synthèse
 #-------------------------------------------------------------------------------------------------------------------------
 
 
@@ -144,6 +143,7 @@ datatable(df.dem.tab.bd,colnames = dash.label,
 pyramide <- statZone$pyramide_tr %>% 
   select(-type.indicateur,-nomVariable)
 g.dem.pyramide <- pyramide_Agate(pyramide = pyramide, zone.etude = zone.etude, zone.compare = zone.compare, lstIndicateur = lstIndicateur)
+g.dem.pyramide
 ggplotly(g.dem.pyramide) 
 
 
@@ -185,7 +185,6 @@ df.emp.tab.hg
 datatable(df.emp.tab.hg,colnames = dash.label,
           rownames = FALSE, options = list(dom = 't'))
 
-
 # III.5. tableau haut droit : Chômage
 #------------------------------------
 df.emp.tab.hd <- df.dashboard %>% 
@@ -216,34 +215,206 @@ datatable(df.emp.tab.bd,colnames = dash.label,
 
 # III.7. graphique bas gauche : Type d'activité
 #----------------------------------------------
-# TODO
-# df.dashboard %>% 
-#   filter(idZonage %in% zone.etude & indicateur == "population" & type.indicateur == "superficie") %>% 
-#   select(value)
+g.emp.typeAct <- barChart_agate(df = df.zone,var.barChart = "emp_typeActivite",
+                                zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
+# Affichage
+ggplotly(g.emp.typeAct)
+
+# IV. Thème Scolarisation
+#-------------------------------------------------------------------------------------------------------------------------
+
+# IV.1. Population en âge d'être scolarisée
+#------------------------------------------
+vb.sco.popSco <- df.dashboard %>% 
+  filter(idZonage %in% zone.etude & nomIndicateur == "a_popSco") %>% 
+  select(value)
+vb.sco.popSco
+
+# IV.2. Jeunes en études
+#-----------------------
+vb.sco.etud <- df.dashboard %>% 
+  filter(idZonage %in% zone.etude & nomVariable == "sco_etude" & nomIndicateur == "a_etud") %>% 
+  select(value)
+vb.sco.etud 
+
+# IV.3. Taux de décrocheur
+#-------------------------
+vb.sco.decrocheur <- df.dashboard %>% 
+  filter(idZonage %in% zone.etude & nomVariable == "sco_decrocheur" & nomIndicateur == "a_decrocheur") %>% 
+  select(value)
+vb.sco.decrocheur 
+
+# IV.4. tableau haut gauche : Jeunes scolarisés
+#----------------------------------------------
+df.sco.tab.hg <- df.dashboard %>% 
+  filter(nomVariable %in% c("sco_popSco","sco_etude","sco_lieuEtude") & 
+           nomIndicateur %in% c("a_popSco","a_etud","a_communeResid","b_autreComDep")) %>% 
+  select(-domaine,-categorie,-nomVariable,-type.indicateur,-source,-idZonage,-idZonage.name,-nomIndicateur) %>% 
+  spread(key = dashboard,value = value) 
+df.sco.tab.hg <- df.sco.tab.hg[c(3,4,2,1),]
+df.sco.tab.hg
+
+# Affichage
+datatable(df.sco.tab.hg,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+
+# IV.5. graphique haut droit : Population scolarisée
+#---------------------------------------------------
+g.sco.pop <- barChart_agate(df = df.zone,var.barChart = "sco_popSco2",
+                            zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
+# Affichage
+ggplotly(g.sco.pop)
+
+# IV.6. graphique bas gauche : Dîplome
+#-------------------------------------
+g.sco.diplome <- barChart_agate(df = df.zone,var.barChart = "sco_diplome",
+                                zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
+# Affichage
+ggplotly(g.sco.diplome)
+
+# IV.7. tableau bas droit : Jeunes non scolarisés
+#------------------------------------------------
+df.sco.tab.bd <- df.dashboard %>% 
+  filter(nomVariable %in% c("sco_decrocheur","sco_scolarisation2a5","sco_scolarisation6a15","sco_scolarisation16a24") & 
+           nomIndicateur %in% c("a_decrocheur","b_n_scolarise2a5","b_n_scolarise6a15","b_n_scolarise16a24")) %>% 
+  select(-domaine,-categorie,-nomVariable,-type.indicateur,-source,-idZonage,-idZonage.name,-nomIndicateur) %>% 
+  spread(key = dashboard,value = value) 
+df.sco.tab.bd <- df.sco.tab.bd[c(1,3,4,2),]
+df.sco.tab.bd
+
+# Affichage
+datatable(df.sco.tab.hg,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
 
 
+# V. Thème Logement
+#-------------------------------------------------------------------------------------------------------------------------
+
+# V.1. Nombre de logements
+#--------------------------
+#TODO (Revoir le calcul)
+
+# V.2. HLM
+#----------
+vb.log.hlm <- df.dashboard %>% 
+  filter(idZonage %in% zone.etude & nomVariable == "log_hlm" & nomIndicateur == "a_hlm") %>% 
+  select(value)
+vb.log.hlm 
+
+# V.3. Maisons
+#--------------
+vb.log.maison <- df.dashboard %>% 
+  filter(idZonage %in% zone.etude & nomVariable == "log_type" & nomIndicateur == "a_maison") %>% 
+  select(value)
+vb.log.maison 
+
+# V.4. tableau haut gauche : 
+#----------------------------------------------
+#TODO
+df.log.tab.hg <- df.dashboard %>% 
+  filter(nomVariable %in% c("log_hlm","log_type","log_emm") & 
+           nomIndicateur %in% c("a_hlm","b_appart","b_av60","e_ap99")) %>% 
+  select(-domaine,-categorie,-nomVariable,-type.indicateur,-source,-idZonage,-idZonage.name,-nomIndicateur) %>% 
+  spread(key = dashboard,value = value) 
+df.log.tab.hg <- df.log.tab.hg[c(4,1,3,2),]
+df.log.tab.hg
+
+# Affichage
+datatable(df.sco.tab.hg,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+
+# V.5. graphique haut droit : Categorie de logement
+#--------------------------------------------------
+g.log.cat <- barChart_agate(df = df.zone,var.barChart = "log_cat",
+                            zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
+# Affichage
+ggplotly(g.log.cat)
+
+# V.6. graphique bas gauche : Année d'achevement
+#-----------------------------------------------
+g.log.ach <- barChart_agate(df = df.zone,var.barChart = "log_ach_constru",
+                                zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
+# Affichage
+ggplotly(g.log.ach)
+
+# V.7. graphique bas droit : Aspect du bati
+#-------------------------------------------
+g.log.bati <- barChart_agate(df = df.zone,var.barChart = "log_bati",
+                            zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
+# Affichage
+ggplotly(g.log.bati)
 
 
+# VI. Thème Résidences principales
+#-------------------------------------------------------------------------------------------------------------------------
 
+# VI.1. Part des résidences principales
+#--------------------------------------
+vb.res.part <- df.dashboard %>% 
+  filter(idZonage %in% zone.etude & nomVariable == "log_cat" & nomIndicateur == "a_res_princ") %>% 
+  select(value)
+vb.res.part
 
+# VI.2. Logements collectifs
+#--------------------------
+vb.res.collectif <- df.dashboard %>% 
+  filter(idZonage %in% zone.etude & nomVariable == "res_type" & nomIndicateur == "b_collectif") %>% 
+  select(value)
+vb.res.collectif 
 
+# VI.3. TODO
+#--------------
+#TODO (Revoir le calcul)
 
+# VI.4. tableau haut gauche : Caractéristiques des résidences
+#-----------------------------------------------------------
+df.res.tab.hg <- df.dashboard %>% 
+  filter(nomVariable %in% c("log_cat","res_type","res_eau","res_wc") & 
+           nomIndicateur %in% c("a_res_princ","b_collectif","a_eauFroide","a_wc")) %>% 
+  select(-domaine,-categorie,-nomVariable,-type.indicateur,-source,-idZonage,-idZonage.name,-nomIndicateur) %>% 
+  spread(key = dashboard,value = value) 
+df.res.tab.hg
+df.res.tab.hg <- df.res.tab.hg[c(4,1,2,3),]
+df.res.tab.hg
 
+# Affichage
+datatable(df.res.tab.hg,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
 
+# VI.5. graphique haut droit : Nombre de pièces
+#---------------------------------------------
+g.res.nbp <- barChart_agate(df = df.zone,var.barChart = "res_nbPiece",
+                            zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
+# Affichage
+ggplotly(g.res.nbp)
 
+# VI.6. graphique bas gauche : Surface
+#------------------------------------
+g.res.surf <- barChart_agate(df = df.zone,var.barChart = "res_surface",
+                            zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
+# Affichage
+ggplotly(g.res.surf)
 
+# VI.7. tableau bas droit : Équipements
+#--------------------------------------
+df.res.tab.bd <- df.dashboard %>% 
+  filter(nomVariable %in% c("res_bain","res_cuis","res_clim","res_garage") & 
+           nomIndicateur %in% c("b_n_bain","b_n_cuis","a_clim","a_garage")) %>% 
+  select(-domaine,-categorie,-nomVariable,-type.indicateur,-source,-idZonage,-idZonage.name,-nomIndicateur) %>% 
+  spread(key = dashboard,value = value) 
+df.res.tab.bd
 
-
-
-
-
-
+# Affichage
+datatable(df.res.tab.bd,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
 
 # Enregistrement
 save(df.dashboard,titreDash,dash.label,
      vb.dem.fem,vb.dem.pop,df.dem.tab.hg,df.dem.tab.hd,df.dem.tab.bd,g.dem.pyramide,
-     vb.emp.popTrav,vb.emp.chom,vb.emp.inact,df.emp.tab.hg,df.emp.tab.hd,df.emp.tab.bd,
-     
+     vb.emp.popTrav,vb.emp.chom,vb.emp.inact,df.emp.tab.hg,df.emp.tab.hd,df.emp.tab.bd,g.emp.typeAct,
+     vb.sco.popSco,vb.sco.etud,vb.sco.decrocheur,df.sco.tab.hg,df.sco.tab.bd,g.sco.pop,g.sco.diplome,
+     vb.log.hlm,vb.log.maison,df.log.tab.hg,g.log.cat,g.log.ach,g.log.bati,
+     vb.res.part,vb.res.collectif,df.res.tab.hg,g.res.nbp,g.res.surf,df.res.tab.bd,
      file = "Data/Tmp/dashboard_tmp.RData")
 
 
