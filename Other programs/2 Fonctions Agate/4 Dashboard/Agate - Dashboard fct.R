@@ -61,7 +61,7 @@ barChart_agate <- function(df,var.barChart,zone.etude,zone.compare,lstIndicateur
 #----------------------------------------------------------------------------------------------------------------------------------------
 # Statistiques pour le dashboard d'Agate
 
-stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur){
+stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyramide_tr){
   
   # Label des colonnes 
   dash.label <- c("labelIndicateur",zone.etude,zone.compare)
@@ -138,7 +138,7 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur){
   
   # II.7. Graphique bas gauche : pyramide des âges
   #-----------------------------------------------
-  pyramide <- statZone$pyramide_tr %>% 
+  pyramide <- pyramide_tr %>% 
     select(-type.indicateur,-nomVariable)
   g.dem.pyramide <- pyramide_Agate(pyramide = pyramide, zone.etude = zone.etude, zone.compare = zone.compare, lstIndicateur = lstIndicateur)
   
@@ -191,7 +191,7 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur){
   
   # III.7. graphique bas gauche : Type d'activité
   #----------------------------------------------
-  g.emp.typeAct <- barChart_agate(df = df.zone,var.barChart = "emp_typeActivite",
+  g.emp.typeAct <- barChart_agate(df = df,var.barChart = "emp_typeActivite",
                                   zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # IV. Thème Scolarisation
@@ -226,12 +226,12 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur){
   
   # IV.5. graphique haut droit : Population scolarisée
   #---------------------------------------------------
-  g.sco.pop <- barChart_agate(df = df.zone,var.barChart = "sco_popSco2",
+  g.sco.pop <- barChart_agate(df = df,var.barChart = "sco_popSco2",
                               zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # IV.6. graphique bas gauche : Dîplome
   #-------------------------------------
-  g.sco.diplome <- barChart_agate(df = df.zone,var.barChart = "sco_diplome",
+  g.sco.diplome <- barChart_agate(df = df,var.barChart = "sco_diplome",
                                   zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # IV.7. tableau bas droit : Jeunes non scolarisés
@@ -274,17 +274,17 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur){
   
   # V.5. graphique haut droit : Categorie de logement
   #--------------------------------------------------
-  g.log.cat <- barChart_agate(df = df.zone,var.barChart = "log_cat",
+  g.log.cat <- barChart_agate(df = df,var.barChart = "log_cat",
                               zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # V.6. graphique bas gauche : Année d'achevement
   #-----------------------------------------------
-  g.log.ach <- barChart_agate(df = df.zone,var.barChart = "log_ach_constru",
+  g.log.ach <- barChart_agate(df = df,var.barChart = "log_ach_constru",
                               zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # V.7. graphique bas droit : Aspect du bati
   #-------------------------------------------
-  g.log.bati <- barChart_agate(df = df.zone,var.barChart = "log_bati",
+  g.log.bati <- barChart_agate(df = df,var.barChart = "log_bati",
                                zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # VI. Thème Résidences principales
@@ -317,12 +317,12 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur){
   
   # VI.5. graphique haut droit : Nombre de pièces
   #---------------------------------------------
-  g.res.nbp <- barChart_agate(df = df.zone,var.barChart = "res_nbPiece",
+  g.res.nbp <- barChart_agate(df = df,var.barChart = "res_nbPiece",
                               zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # VI.6. graphique bas gauche : Surface
   #------------------------------------
-  g.res.surf <- barChart_agate(df = df.zone,var.barChart = "res_surface",
+  g.res.surf <- barChart_agate(df = df,var.barChart = "res_surface",
                                zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # VI.7. tableau bas droit : Équipements

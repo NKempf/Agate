@@ -33,9 +33,6 @@ load("Data/Liste indicateurs statistiques/lstIndicateur.RData")
 #------------------
 load("Data/Tmp/qpv_stat_tmp.RData") # Indicateurs statistiques sur deux QPV
 
-
-
-
 # II. Lancement
 #--------------------------------------------------------------------------------------------------------------------------------
 dash.indicateur <- stat.dashboard_agate(df = df.zone,zone.etude = zone.etude, zone.compare = zone.compare, lstIndicateur = lstIndicateur)
