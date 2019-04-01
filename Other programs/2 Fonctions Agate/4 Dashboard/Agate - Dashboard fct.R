@@ -64,15 +64,20 @@ barChart_agate <- function(df,var.barChart,zone.etude,zone.compare,lstIndicateur
 stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyramide_tr){
   
   # Label des colonnes 
-  dash.label <- c("labelIndicateur",zone.etude,zone.compare)
+  dash.label <- c("labelIndicateur","zone1.etude","zone2.compare")
   names(dash.label) <- c(" ",
                          unique(df$idZonage.name[df$idZonage == zone.etude]),
                          unique(df$idZonage.name[df$idZonage == zone.compare]))
   
   df.dashboard <- df %>% 
-    filter(idZonage %in% c(zone.etude,zone.compare) & type.indicateur == "valeur.diffusable") %>% 
-    mutate(dashboard = ifelse(idZonage == zone.etude,zone.etude,zone.compare)) %>% 
+    filter(idZonage %in% c(zone.etude,zone.compare) & type.indicateur %in% c("valeur.diffusable")) %>% 
+    mutate(dashboard = ifelse(idZonage == zone.etude,"zone1.etude","zone2.compare")) %>% 
     left_join(lstIndicateur %>% select(nomVariable,nomIndicateur,labelIndicateur),by = c("nomVariable","nomIndicateur"))
+  
+  # Nom de la zone d'étude
+  #-----------------------
+  titreDash <- unique(df$idZonage.name[df$idZonage == zone.etude])
+  source.an <- unique(substr(df$source,4,5))
   
   # II. Thème Synthèse
   #-------------------------------------------------------------------------------------------------------------------------
@@ -81,10 +86,6 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   
   # III. Thème Démographie
   #-------------------------------------------------------------------------------------------------------------------------
-  
-  # II.0. Nom de la zone
-  #---------------------
-  titreDash <- unique(df$idZonage.name[df$idZonage == zone.etude])
   
   # II.1. Part des femmes
   #----------------------
@@ -103,7 +104,11 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   
   # II.3. Superficie 
   #-----------------
-  # TODO
+  vb.dem.super <- df.dashboard %>% 
+    filter(idZonage %in% zone.etude & nomIndicateur == "a_superficie") %>% 
+    select(value) %>% 
+    mutate(value = paste0(as.character(value)," km²") )
+  vb.dem.super
   
   # II.4. Tableau haut gauche : Démographie
   #----------------------------------------
@@ -113,7 +118,6 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
     select(-domaine,-categorie,-nomVariable,-type.indicateur,-source,-idZonage,-idZonage.name,-nomIndicateur) %>% 
     spread(key = dashboard,value = value) 
   df.dem.tab.hg <- df.dem.tab.hg[c(4,1,2,3),]
-  
   
   # II.5. Tableau haut droit : Ménages
   #-----------------------------------
@@ -154,8 +158,9 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   # III.2. Taux de chômage
   #-----------------------
   vb.emp.chom <- df.dashboard %>% 
-    filter(idZonage %in% zone.etude & nomIndicateur == "b_chomeur") %>% 
+    filter(idZonage %in% zone.etude & nomVariable == "emp_chomage" &nomIndicateur == "b_chomeur") %>% 
     select(value)
+  vb.emp.chom
   
   # III.3. Taux d'inactif 
   #----------------------
@@ -166,28 +171,32 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   # III.4. tableau haut gauche : Marché de l'emploi
   #------------------------------------------------
   df.emp.tab.hg <- df.dashboard %>% 
-    filter(nomVariable %in% c("emp_popTrav","emp_popActive","emp_typeActivite") & 
-             nomIndicateur %in% c("a_de15a64","b_autreInactif","a_actifocc","c_retraite")) %>% 
+    filter(nomVariable %in% c("emp_popTrav","emp_popActive","emp_positionActuelle") & 
+             nomIndicateur %in% c("a_de15a64","b_autreInactif","c_professionInter","d_cadreEmplo")) %>% 
     select(-domaine,-categorie,-nomVariable,-type.indicateur,-source,-idZonage,-idZonage.name,-nomIndicateur) %>% 
     spread(key = dashboard,value = value) 
-  df.emp.tab.hg <- df.emp.tab.hg[c(2,3,1,4),]
+  df.emp.tab.hg <- df.emp.tab.hg[c(3,4,2,1),]
   
   # III.5. tableau haut droit : Chômage
   #------------------------------------
   df.emp.tab.hd <- df.dashboard %>% 
     filter(nomVariable %in% c("emp_typeActivite","emp_ancienRech","emp_tempsPartiel") & 
-             nomIndicateur %in% c("b_chomeur","c_plus1","b_tempsPartiel")) %>% 
+             nomIndicateur %in% c("a_actifocc","b_chomeur","c_plus1","b_tempsPartiel")) %>% 
+    bind_rows(df.dashboard %>% 
+                filter(nomVariable %in% c("emp_chomage") & 
+                         nomIndicateur %in% c("b_chomeur"))) %>% 
     select(-domaine,-categorie,-nomVariable,-type.indicateur,-source,-idZonage,-idZonage.name,-nomIndicateur) %>% 
     spread(key = dashboard,value = value) 
+  df.emp.tab.hd
   
   # III.6. tableau bas droit : Travail
   #-----------------------------------
   df.emp.tab.bd <- df.dashboard %>% 
-    filter(nomVariable %in% c("emp_statPro","emp_positionActuelle","emp_lieuTravail","emp_modeTransport") & 
-             nomIndicateur %in% c("a_salarie","d_cadreEmplo","a_communeResid","b_autreComDep","d_vehicule","e_transportCommun")) %>% 
+    filter(nomVariable %in% c("emp_statPro","emp_lieuTravail","emp_modeTransport") & 
+             nomIndicateur %in% c("a_salarie","b_autreComDep","d_vehicule","e_transportCommun")) %>% 
     select(-domaine,-categorie,-nomVariable,-type.indicateur,-source,-idZonage,-idZonage.name,-nomIndicateur) %>% 
     spread(key = dashboard,value = value) 
-  df.emp.tab.bd <- df.emp.tab.bd[c(4,3,2,1,6,5),]
+  df.emp.tab.bd <- df.emp.tab.bd[c(2,1,4,3),]
   
   # III.7. graphique bas gauche : Type d'activité
   #----------------------------------------------
@@ -248,8 +257,12 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   
   # V.1. Nombre de logements
   #--------------------------
-  #TODO (Revoir le calcul)
-  
+  vb.log.tot <- df.dashboard %>% 
+    filter(idZonage %in% zone.etude & nomVariable == "log_tot") %>% 
+    select(value)
+  vb.log.tot <- format(round(as.numeric(vb.log.tot),digits = 0),digits = 9,decimal.mark=",", big.mark=" ")
+  vb.log.tot
+
   # V.2. HLM
   #----------
   vb.log.hlm <- df.dashboard %>% 
@@ -264,13 +277,12 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   
   # V.4. tableau haut gauche : 
   #----------------------------------------------
-  #TODO
   df.log.tab.hg <- df.dashboard %>% 
-    filter(nomVariable %in% c("log_hlm","log_type","log_emm") & 
-             nomIndicateur %in% c("a_hlm","b_appart","b_av60","e_ap99")) %>% 
+    filter(nomVariable %in% c("log_tot","log_hlm","log_type","log_emm") & 
+             nomIndicateur %in% c("a_log_tot","a_hlm","b_appart","b_av60","e_ap99")) %>% 
     select(-domaine,-categorie,-nomVariable,-type.indicateur,-source,-idZonage,-idZonage.name,-nomIndicateur) %>% 
     spread(key = dashboard,value = value) 
-  df.log.tab.hg <- df.log.tab.hg[c(4,1,3,2),]
+  df.log.tab.hg <- df.log.tab.hg[c(5,4,1,2,3),]
   
   # V.5. graphique haut droit : Categorie de logement
   #--------------------------------------------------
@@ -337,17 +349,17 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   #-------------------------------------------------------------------------------------------------------------------------
   # Enregistrement
   save(df.dashboard,titreDash,dash.label,
-       vb.dem.fem,vb.dem.pop,df.dem.tab.hg,df.dem.tab.hd,df.dem.tab.bd,g.dem.pyramide,
+       vb.dem.fem,vb.dem.pop,vb.dem.super,df.dem.tab.hg,df.dem.tab.hd,df.dem.tab.bd,g.dem.pyramide,
        vb.emp.popTrav,vb.emp.chom,vb.emp.inact,df.emp.tab.hg,df.emp.tab.hd,df.emp.tab.bd,g.emp.typeAct,
        vb.sco.popSco,vb.sco.etud,vb.sco.decrocheur,df.sco.tab.hg,df.sco.tab.bd,g.sco.pop,g.sco.diplome,
-       vb.log.hlm,vb.log.maison,df.log.tab.hg,g.log.cat,g.log.ach,g.log.bati,
+       vb.log.tot,vb.log.hlm,vb.log.maison,df.log.tab.hg,g.log.cat,g.log.ach,g.log.bati,
        vb.res.part,vb.res.collectif,df.res.tab.hg,g.res.nbp,g.res.surf,df.res.tab.bd,
        file = "Data/Tmp/dashboard_tmp.RData")
   
   
-  lst_dash <- list(df.dashboard = df.dashboard,titreDash = titreDash,dash.label = dash.label,
+  lst_dash <- list(df.dashboard = df.dashboard,titreDash = titreDash,dash.label = dash.label,source.an = source.an,
                    # Demographie
-                   vb.dem.fem = vb.dem.fem, vb.dem.pop = vb.dem.pop, 
+                   vb.dem.fem = vb.dem.fem, vb.dem.pop = vb.dem.pop, vb.dem.super = vb.dem.super,
                    df.dem.tab.hg = df.dem.tab.hg, df.dem.tab.hd = df.dem.tab.hd,df.dem.tab.bd = df.dem.tab.bd,
                    g.dem.pyramide = g.dem.pyramide,
                    # Emploi
@@ -359,7 +371,7 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
                    df.sco.tab.hg = df.sco.tab.hg,df.sco.tab.bd = df.sco.tab.bd,
                    g.sco.pop = g.sco.pop,g.sco.diplome = g.sco.diplome,
                    # Logement
-                   vb.log.hlm = vb.log.hlm,vb.log.maison = vb.log.maison,
+                   vb.log.tot = vb.log.tot,vb.log.hlm = vb.log.hlm,vb.log.maison = vb.log.maison,
                    df.log.tab.hg = df.log.tab.hg,
                    g.log.cat = g.log.cat,g.log.ach = g.log.ach,g.log.bati = g.log.bati,
                    # Résidences principales

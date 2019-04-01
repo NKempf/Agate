@@ -2,7 +2,7 @@
 #                                   Agata - Statistical calculation improvement                                        #
 #----------------------------------------------------------------------------------------------------------------------#
 
-# 26.03.2019
+# 01.04.2019
 
 # Improve statistical calculation of indicators and display them into cool datatable (package DT)
 # Ajout des travaux de Baptiste Raimbaud
@@ -23,7 +23,6 @@ library(easySdcTable) # Statistical disclosure
 # Fonction necessaire
 source("Other programs/2 Fonctions Agate/2 Cartographie/Agate - Cartographie fct.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v8.R",encoding = "UTF-8")
-# source("Other programs/2 Fonctions Agate/6 Census Quality/Agate - Census infra quality.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/6 Census Quality/Agate - Qualite du RP.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/7 Statistical disclosure/Agate - statistiscal disclosure.R",encoding = "UTF-8")
 
@@ -41,10 +40,6 @@ rpa.path.string <- paste0("Data/Rp/rpa",rp.an,".fst")
 rpiPath <- ifelse(file.exists(rpi.path.string),rpi.path.string,"Data/Rp/FakeRpi.fst")
 rplPath <- ifelse(file.exists(rpl.path.string),rpl.path.string,"Data/Rp/FakeRpl.fst")
 rpaPath <- ifelse(file.exists(rpa.path.string),rpa.path.string,NA)
-# Filosofi
-# filo.an <- "14"
-# filo.path.string <- paste0("Data/Filosofi/filo",filo.an,".fst")
-# filoPath <- ifelse(file.exists(filo.path.string),filo.path.string,"Data/Filosofi/FakeFilo.fst")
 
 # I. Preparation du zonage
 #-------------------------
@@ -96,13 +91,16 @@ incProgress(amount = 0.2,message = "Ajout de la zone aux données du RP")
 
 rpi <- read_fst(rpiPath) %>% 
   filter(C_IMM %in% unique(pts.df$C_IMM)) %>% 
-  left_join(pts.df, by = c("C_IMM"))
+  left_join(pts.df, by = c("C_IMM")) %>% 
+  mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage),
+         idZonage.name = ifelse(is.na(idZonage.name) & substr(idZonage,1,7) == "horsZon",paste0(com.lib," (hors zone)"),idZonage.name))
 
 # III.3. Ajout de la zone aux données du rp logement (MAJ : 19.03.2019)
 rpl <- read_fst(rplPath) %>% 
   filter(C_IMM %in% unique(pts.df$C_IMM)) %>% 
   left_join(pts.df, by = c("C_IMM")) %>% 
-  mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage))
+  mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage),
+         idZonage.name = ifelse(is.na(idZonage.name) & substr(idZonage,1,7) == "horsZon",paste0(com.lib," (hors zone)"),idZonage.name))
 
 # IV. Table multicommunes + bridage lié à la qualité de l'appariement
 #-----------------------------------------------------------------------
@@ -122,28 +120,6 @@ zonage.com <- rpl %>%
 
 # V. Ajout de la zone aux données fiscales
 #------------------------------------------
-
-# # V.1. Chargement des données fiscales filtrées selon les communes d'intérêts
-# incProgress(amount = 0.3,message = "Ajout des données fiscales")
-# filo <- read_fst(filoPath) %>% 
-#   filter(com %in% com.dom.select)
-# 
-# # V.2. Transformation des données en objet spatial
-# filo.sp <- SpatialPointsDataFrame(coords = filo[,c("x","y")],data = filo,proj4string = CRS("+init=epsg:3857"))
-# 
-# # V.3. Zone dans laquelle chaque foyer fiscal se situe
-# filo.sp <- zonaPts(pts.sp = filo.sp,zonage = zonage)
-# 
-# # V.4. Ajout de la zone aux données fiscales
-# typmen.label <- c("famille monoparentale","couple sans enfant","couple avec enfant(s)","menage complexe",
-#                   "femme seule","homme seul")
-# 
-# filo <- filo.sp@data %>% 
-#   left_join(data.frame(unique(rpl[,c("com","com.lib")])),"com") %>% 
-#   mutate(dep = substr(com,1,3),
-#          idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage),
-#          typmenR.lib = factor(typmenR,labels = typmen.label)) 
-# rm(filo.sp)
 
 # VI. Calcul des indicateurs statistiques
 #---------------------------------------
@@ -177,10 +153,11 @@ ril <- ril@data %>%
   left_join(ril.geo@data %>% select(idx,idZonage),by="idx") %>% 
   mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage))
 
-
 # VII.1. Chargement de la base adresses (MAJ : 26.03.2019)
 rpa.qualite <- rpa %>% 
-  left_join(pts.df %>% select(C_IMM,idZonage,idZonage.name), by = c("C_IMM")) %>% 
+  left_join(rpl %>% 
+              filter(!duplicated(C_IMM)) %>%
+            select(C_IMM,idZonage,idZonage.name), by = c("C_IMM")) %>% 
   filter(ril.millesime == 1) %>% 
   mutate(IPOND = IPOND.cal)
 
@@ -199,11 +176,11 @@ Sys.time() - t1
 df.zone <- qualityZone %>% 
   rename(idZonage = zonage,
          qualiteIndicateur = Variable) %>% 
+  left_join(rpl %>% filter(!duplicated(idZonage)) %>% 
+              select(idZonage,idZonage.name),by="idZonage") %>% 
   left_join(lstIndicateur %>% 
               select(domaine,categorie,nomVariable,nomIndicateur,qualiteIndicateur,source),
             by = "qualiteIndicateur") %>% # Ajout de variables
-  left_join(zonage@data %>% 
-              select(idZonage,idZonage.name)) %>% 
   mutate(source = paste0(source,rp.an)) %>% 
   select(-qualiteIndicateur) %>% 
   gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% # Transformation de la base
@@ -239,11 +216,16 @@ Sys.time() - t1
 
 # VIII.5 Valeur diffusable
 df.zone <- df.zone %>% 
-  filter(type.indicateur %in% c("val.qualite","secret_stat")) %>% 
+  filter(type.indicateur %in% c("freq_p","superficie","val.qualite","secret_stat")) %>% 
   spread(key = type.indicateur, value = value) %>% 
-  mutate(secret_stat = ifelse(is.na(secret_stat),"n_diffusable",secret_stat),
-         valeur.diffusable = ifelse(secret_stat == "diffusable",val.qualite,"c")) %>%  # c : données confidencielles
-  select(-secret_stat,-val.qualite) %>% 
+  mutate(secret_stat = case_when(is.na(secret_stat) & nomVariable == "superficie" ~ "diffusable",
+                                 is.na(secret_stat) & nomVariable != "superficie" ~ "n_diffusable",
+                                 TRUE ~ secret_stat),
+         valeur.diffusable = case_when(secret_stat == "diffusable" & !is.na(val.qualite) ~ val.qualite,
+                                       secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("log_tot") ~ freq_p,
+                                       secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("superficie") ~ superficie,
+                                       TRUE ~ "c")) %>%  # c : données confidencielles
+  select(-secret_stat,-val.qualite,-freq_p,-superficie) %>% 
   gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
   bind_rows(df.zone)
 

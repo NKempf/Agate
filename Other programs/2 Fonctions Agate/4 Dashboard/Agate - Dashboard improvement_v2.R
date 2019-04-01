@@ -2,7 +2,7 @@
 #                                   Agate - Dashboard Improvement                                                      #
 #----------------------------------------------------------------------------------------------------------------------#
 
-# 27.03.2019
+# 01.04.2019
 
 # Amélioration du tableau de bord en trois parties 
 # 1) Affichage de chaque widget indépendemment 
@@ -35,7 +35,8 @@ load("Data/Tmp/qpv_stat_tmp.RData") # Indicateurs statistiques sur deux QPV
 
 # II. Lancement
 #--------------------------------------------------------------------------------------------------------------------------------
-dash.indicateur <- stat.dashboard_agate(df = df.zone,zone.etude = zone.etude, zone.compare = zone.compare, lstIndicateur = lstIndicateur)
+dash.indicateur <- stat.dashboard_agate(df = df.zone,zone.etude = zone.etude, zone.compare = zone.compare, lstIndicateur = lstIndicateur,
+                                        pyramide_tr = statZone$pyramide_tr)
 
 save(dash.indicateur,file = "Data/Tmp/dashboard_tmp.RData")
 

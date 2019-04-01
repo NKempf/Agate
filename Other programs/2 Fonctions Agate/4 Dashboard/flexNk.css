@@ -119,7 +119,7 @@ body {
 	
 }
 
-#population, #part-de-chomeur-au-sens-du-rp,#jeunes-inscrit-dans-un-etablissement-scolaire,#hlm, #logements-collectifs{
+#population, #taux-de-chomage-au-sens-du-rp,#jeunes-inscrit-dans-un-etablissement-scolaire,#hlm, #logements-collectifs{
 	background-color: #CEBC81; 
 	
 }
@@ -128,7 +128,7 @@ body {
 	background-color: #479761; 
 	
 }
-#feminite,#population,#superficie,,#population-en-age-de-travailler,#part-de-chomeur-au-sens-du-rp,#inactifs,#population-en-age-detre-scolarisee,#jeunes-inscrit-dans-un-etablissement-scolaire,#taux-de-decrocheur,
+#feminite,#population,#superficie,,#population-en-age-de-travailler,#taux-de-chomage-au-sens-du-rp,#inactifs,#population-en-age-detre-scolarisee,#jeunes-inscrit-dans-un-etablissement-scolaire,#taux-de-decrocheur,
 #nombre-de-logements,#hlm,#maison,#res_princ,#logements-collectifs {
 	color: #FEFFFF; 
 }

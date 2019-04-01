@@ -10,7 +10,7 @@ server <- function(input, output,session) {
 #----------------------------------------------------------------------------------------------------------------------------
   rv <- reactiveValues(AgateMap=NULL,
                        statZone=NULL,
-                       statHZone=NULL,
+                       # statHZone=NULL,
                        qualityZone=NULL,
                        source = NULL, # Page Statistiques
                        df.zone=NULL) # Page Statistiques
@@ -27,11 +27,6 @@ server <- function(input, output,session) {
                  # intensity = ~nivviem,
                  blur = 60, radius = 30) %>% 
       hideGroup("heatpts")
-    # %>%
-    #   addPolygons(data=qpv_stat,opacity = 3,
-    #               color = "green", stroke = TRUE, weight = 2,
-    #               fill = TRUE, fillOpacity = 0.2,popup = ~paste(NOM_QP),layerId = ~paste(CODE_QP))
-    
   })
 
   # I.2. Update leaflet with user map
@@ -158,181 +153,192 @@ server <- function(input, output,session) {
     
     withProgress(message = "Creation de l'identifiant",style = "notification", value = 0, {
       
-    # 0. Selection des bases de travail (donnees reelles ou fausses)
-    #---------------------------------------------------------------
-      # Utilise les valeurs saisies par l'utilisateur
-      # Ril
-      ril.an <- "15"
-      ril.path.string <- paste0("Data/Ril/ril",ril.an,".fst")
-      # ril.path.string <- "Data/Ril/ril_leger.fst"
-      rilPath <- ifelse(file.exists(ril.path.string),ril.path.string,"Data/Ril/FakeRil.fst")
       # RP
-      rp.an <- substr(input$SI_Rp,3,4)
-      rpi.path.string <- paste0("Data/Rp/rp",rp.an,"i.fst")
-      rpl.path.string <- paste0("Data/Rp/rp",rp.an,"l.fst")
+      rp.an <- "13"
+      rpi.path.string <- paste0("Data/Rp/rpi",rp.an,".fst")
+      rpl.path.string <- paste0("Data/Rp/rpl",rp.an,".fst")
+      rpa.path.string <- paste0("Data/Rp/rpa",rp.an,".fst")
       rpiPath <- ifelse(file.exists(rpi.path.string),rpi.path.string,"Data/Rp/FakeRpi.fst")
       rplPath <- ifelse(file.exists(rpl.path.string),rpl.path.string,"Data/Rp/FakeRpl.fst")
-      # Filosofi
-      filo.an <- substr(input$SI_filo,3,4)
-      filo.path.string <- paste0("Data/Filosofi/filo",filo.an,".fst")
-      filoPath <- ifelse(file.exists(filo.path.string),filo.path.string,"Data/Filosofi/FakeFilo.fst")
-    
-    # I. Preparation du zonage
-    #-------------------------
-      # I.1. Creation de la variable zonage
+      rpaPath <- ifelse(file.exists(rpa.path.string),rpa.path.string,NA)
+      
+      # I. Preparation du zonage
+      #-------------------------
       zonage <- rv$AgateMap
       zonage <- spTransform(zonage, "+init=epsg:3857")
       
-      # I.2. Creation de l'identifiant idZonage
-      # zonage@data$idZonage <- zonage@data$idZonage
-      
-    # II. Logements géolocalisés du RIL 
-    #----------------------------------
-    
-    # II.1 Communes dans lesquelles se trouvent une ou plusieurs zones
-    zoneInter <- gIntersects(zonage,com.dom,byid = TRUE)
+      # II. Adresses géolocalisées
+      #---------------------------
+
+      # II.1 Communes dans lesquelles se trouvent une ou plusieurs zones
+      zoneInter <- gIntersects(zonage,com.dom,byid = TRUE)
       test <- apply(zoneInter, 1, function(x){
         test <- sum(x)
         return(ifelse(test>0,TRUE,FALSE))}) 
-    com.dom.select <- com.dom@data$Codgeo[test]
-    
-    # II.2. Chargement des logements du RIL dans les communes d'interets
-    ril <- read_fst(rilPath) %>% 
-      select(idx,nb_logn,x,y) %>% 
-      mutate(com = substr(idx,1,5)) %>%
-      filter(com %in% com.dom.select)
-    
-    # II.3. Transformation du ril en objet spatial
-    coordinates(ril) <- ~x+y
-    ril@proj4string <- CRS("+init=epsg:3857")
+      com.dom.select <- com.dom@data$Codgeo[test]
       
-    # III. Ajout de la zone aux données du recensement
-    #-------------------------------------------------
-    
-    # III.1. Zone dans laquelle chaque logement se situe
-    incProgress(amount = 0.1,message = "Zone dans laquelle chaque logement se situe")
-    pts.sp <- zonaPts(pts.sp = ril,zonage = zonage)
+      # II.2. Adresses géolocalisées
+      rpa <- read_fst(rpaPath) %>%
+        filter(com %in% com.dom.select)
       
-    # III.2. Ajout de la zone aux données du rp individu
-    # Note : pour des raisons de performances, les données du RP sont préalablement filtrées selon les communes étudiées
-    incProgress(amount = 0.2,message = "Ajout de la zone aux données du RP")
-    
-    rpi <- read_fst(rpiPath) %>% 
-      filter(idx %in% ril@data$idx) %>% 
-      left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
-      mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage)) %>% 
-      left_join(zonage@data %>% select(idZonage,idZonage.name),"idZonage")
-    
-    # III.3. Ajout de la zone aux données du rp logement
-    rpl <- read_fst(rplPath) %>% 
-      filter(idx %in% ril@data$idx) %>% 
-      left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
-      mutate(idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage)) %>% 
-      left_join(zonage@data %>% select(idZonage,idZonage.name),"idZonage")
-    
-    # III.4. Table multicommunes
-    zonage.com <- rpl %>% 
-      group_by(dep,com,com.lib,idZonage,idZonage.name) %>% 
-      summarise(freq=n())
-    
-    # IV. Ajout de la zone aux données fiscales
-    #------------------------------------------
-    
-    # IV.1. Chargement des données fiscales filtrées selon les communes d'intérêts
-    incProgress(amount = 0.3,message = "Ajout des données fiscales")
-    filo <- read_fst(filoPath) %>% 
-      filter(com %in% com.dom.select)
-    
-    # IV.2. Transformation des données en objet spatial
-    filo.sp <- SpatialPointsDataFrame(coords = filo[,c("x","y")],data = filo,proj4string = CRS("+init=epsg:3857"))
-    
-    # IV.3. Zone dans laquelle chaque foyer fiscal se situe
-    filo.sp <- zonaPts(pts.sp = filo.sp,zonage = zonage)
-    
-    # IV.4. Ajout de la zone aux données fiscales
-    typmen.label <- c("famille monoparentale","couple sans enfant","couple avec enfant(s)","menage complexe",
-                      "femme seule","homme seul")
-    
-    filo <- filo.sp@data %>% 
-      left_join(data.frame(unique(rpl[,c("com","com.lib")])),"com") %>% 
-      mutate(dep = substr(com,1,3),
-             idZonage = ifelse(is.na(idZonage),"Hors zonage", idZonage),
-             typmenR.lib = factor(typmenR,labels = typmen.label))
-    rm(filo.sp)
-    
-    str(filo)
-    
-    # V. Calcul des indicateurs statistiques
-    #---------------------------------------
-    incProgress(amount = 0.4,message = "Calcul des statistiques")
-    
-    # V.1. Statistiques dans la zone
-    rv$statZone <- statistics_zone(group_var = c("com","idZonage","idZonage.name"),zone = zonage,rpi = rpi,rpl = rpl, filo = filo,
-                               sourceRpi = paste0("rpi",rp.an),
-                               sourceRpl = paste0("rpl",rp.an),
-                               sourceFilo = paste0("filo",filo.an),
-                               rpi.weight = "IPONDI",
-                               rpl.weight = "IPONDL",
-                               filo.weight = "nbpersm")
-    
-    # V.2. Objets pour page "statistiques"
-    rv$df.zone <- rv$statZone$indicateur_stat
-    rv$source <- unique(rv$df.zone$source)
-    
-    # VI. Qualité des données du RP
-    #------------------------------
-    incProgress(amount = 0.5,message = "Qualité des données du rp")
-    
-    ###### MAJ 20.02.2019 : Ajout des travaux de Baptiste Raimbaud
-    # VI.1. Chargement de la base adresses
-    rpa <- read_fst("Data/Tmp/rpa.fst") %>% 
-      filter(idx %in% ril@data$idx) %>% 
-      left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
-      mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage","horsZon", idZonage)) %>%
-      mutate(idZonage = ifelse(idZonage=="horsZon",paste0(idZonage,com),idZonage))
-    
-    rilqualite <- pts.sp@data %>% mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage","horsZon", idZonage)) %>%
-      mutate(idZonage = ifelse(idZonage=="horsZon",paste0(idZonage,com),idZonage))
-    
-    # VI.2. Liste des variables à calculer
-    group_var.qualite <- c("INPER","NbFemme / INPER","NbHomme / INPER","NbJeune / INPER","NbMoyen / INPER","NbVieux / INPER", #Territoire
-                           "NbVieux2 / INPER","NbMoyen2 / INPER","NbVieux3 / INPER",
-                           "ACTIF / NbAgeTravaille","- ACTIF / NbAgeTravaille","INPCM / ACTIF","- INPCM / ACTIF","HommeActif / NbHomme", # Emploi
-                           "- HommeActif / NbHomme","FemmeActif / NbFemme","- FemmeActif / NbFemme","NbCadre / NbAgeTravaille","- NbCadre / NbAgeTravaille",
-                           "NbEtudian1825 / INPER","NbEtudian0206 / INPER","NbEtudian0614 / Nb0614","NbDecrocheur / Nb1625","NbScole_15plus / NbScole", #Scolarité
-                           "- NbEtudian1825 / INPER","- NbEtudian0206 / INPER","- NbEtudian0614 / Nb0614","- NbDecrocheur / Nb1625","- NbScole_15plus / NbScole",
-                           "NbImmigre / INPER","- NbImmigre / INPER","NbEtranger / INPER","- NbEtranger / INPER", # Immigration
-                           "CATL1 / X","CATL2 / X","CATL3 / X","CATL4 / X","NbLocataire / X","- NbLocataire / X","NblocHLM / X", #Logement
-                           "- NblocHLM / X","NbAppartement / X","- NbAppartement / X",
-                           "NbHLM / CATL1","Surface / CATL1","- Surface / CATL1","NbBain / CATL1","NbEAU / CATL1","NbEGOUL / CATL1", # Residence principal
-                           "- NbHLM / CATL1","- NbBain / CATL1","- NbEAU / CATL1","- NbEGOUL / CATL1"
-    )
-    TablePassage <- data.frame(group_var.qualite)
-    TablePassage$LibVar <- c("population","femme","homme","[0,20)" ,"[20,65)","[65,120]","[75,120]","[20,60)","[60,75)", #Territoire
-                             "actif","inactif","chomeur","actifocc","actif homme","inactif homme","actif femme","inactif femme","cadre_prof_inter","autre", #Emploi
-                             "etudi[18,25)","etudi[2,6)","etudi","decrocheur","nScola_15plus","n_etudi[18,25)","n_etudi[2,6)","n_etudi","n_decrocheur","autre", #Scolarité
-                             "immigre","non_immigre","etranger","francais", #Immigration
-                             "CATL_1","CATL_2","CATL_3","CATL_4","locataire","autre","locataireHlm","autre","appartement","autre", #Logement
-                             "hlm","surf100etplus","surf100moins","bain_douche","Eau_chaude","tout_egout","n_hlm","N_bain_douche","N_eau_chaude","N_tout_egout") # Residence principal
-    TablePassage$Domaine <-   c(1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,5,5,5,5,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7)
-    TablePassage$Categorie <- c(1,2,2,3,3,3,3,3,3,1,1,1,1,2,2,2,2,3,3,1,1,2,3,4,1,1,2,3,4,1,1,2,2,1,1,1,1,2,2,3,3,4,4,1,2,2,3,4,5,1,3,4,5)
-    
-    # VI.3. Estimation de la qualité
-    rv$qualityZone <- Qlfinal(rpa,group_var.qualite,ril = rilqualite)
-    
-    # # VI.1. Chargement de la base adresses
-    # rpa <- read_fst("Data/Rp/rpa13.fst") %>% 
-    #   filter(idx %in% ril@data$idx) %>% 
-    #   left_join(pts.sp@data[,c("idx","idZonage")], "idx") %>% 
-    #   mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage","horsZon", idZonage))
-    # 
-    # # VI.2. Base sondage (special calage)
-    # sondage <- sondageZon(rpa = rpa)
-    # 
-    # # VI.3. Calcul de la precision analytique sans calage
-    # rv$qualityZone <- precision_analytique_nc(rpa = rpa,Y = INPER,zonage = zonage,idZonage = "idZonage",sondage = sondage) # Nombre de personne
+      rpa.geo <- rpa %>% 
+        filter(!is.na(ril.millesime)) %>% 
+        mutate(idx = C_IMM) %>% 
+        select(idx,C_IMM,com,x,y,nb_logn.ril)
       
-    }) # Fermeture du withprogress
+      # II.3. Transformation du ril en objet spatial
+      coordinates(rpa.geo) <- ~x+y
+      rpa.geo@proj4string <- CRS("+init=epsg:3857")
+      
+      # III. Données du recensement + identification de la zone
+      #--------------------------------------------------------
+      
+      # III.1. Zone dans laquelle chaque logement se situe (MAJ : 19.03.2019)
+      incProgress(amount = 0.1,message = "Zone dans laquelle chaque logement se situe")
+      # rpa.geo <- rpa.geo[duplicated(rpa.geo@data$idx)==F,]
+      pts.sp <- zonaPts(pts.sp = rpa.geo,zonage = zonage)
+      pts.df <- pts.sp@data %>% 
+        mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage)) %>%   
+        select(-idx,-com)
+      
+      # III.2. Ajout de la zone aux données du rp individu (MAJ : 19.03.2019)
+      # Note : pour des raisons de performances, les données du RP sont préalablement filtrées selon les communes étudiées
+      incProgress(amount = 0.2,message = "Ajout de la zone aux données du RP")
+      
+      rpi <- read_fst(rpiPath) %>% 
+        filter(C_IMM %in% unique(pts.df$C_IMM)) %>% 
+        left_join(pts.df, by = c("C_IMM")) %>% 
+        mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage),
+               idZonage.name = ifelse(is.na(idZonage.name) & substr(idZonage,1,7) == "horsZon",paste0(com.lib," (hors zone)"),idZonage.name))
+      
+      # III.3. Ajout de la zone aux données du rp logement (MAJ : 19.03.2019)
+      rpl <- read_fst(rplPath) %>% 
+        filter(C_IMM %in% unique(pts.df$C_IMM)) %>% 
+        left_join(pts.df, by = c("C_IMM")) %>% 
+        mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage),
+               idZonage.name = ifelse(is.na(idZonage.name) & substr(idZonage,1,7) == "horsZon",paste0(com.lib," (hors zone)"),idZonage.name))
+      
+      # IV. Table multicommunes + bridage lié à la qualité de l'appariement
+      #-----------------------------------------------------------------------
+      seuil_qualite_appariement <- 30
+      
+      qualiteAppariement <- read_fst("Data/Rp/appariementRil_Rp.fst") %>% 
+        filter(com %in% com.dom.select & an == rp.an) %>% 
+        mutate(appariement_diff = ifelse(nonApparie.pct < seuil_qualite_appariement,TRUE,FALSE))
+      
+      zonage.com <- rpl %>% 
+        group_by(dep,com,com.lib,idZonage,idZonage.name) %>% 
+        summarise(freq=n()) %>% 
+        ungroup() %>% 
+        mutate(dep = substr(com,1,3)) %>% 
+        left_join(qualiteAppariement,by="com")
+      
+      # VI. Calcul des indicateurs statistiques
+      #---------------------------------------
+      incProgress(amount = 0.4,message = "Calcul des statistiques")
+      
+      # VI.1. Statistiques dans la zone
+      group_var <- c("idZonage","idZonage.name") # Attention utilisé plusieurs fois
+      statZone <- statistics_zone(group_var = group_var,zone = zonage,rpi = rpi,rpl = rpl, 
+                                  lstCategorie = lstCategorie,
+                                  sourceRp = rp.an,
+                                  rpi.weight = "IPONDI.cal",
+                                  rpl.weight = "IPONDL.cal")
+      
+      # VI.2. Objets pour page "statistiques"
+      df.zone <- statZone$indicateur_stat
+      source <- unique(df.zone$source)
+      
+      # VII. Qualité des données du RP (Travaux Baptiste Raimbaud)
+      #----------------------------------------------------------
+      incProgress(amount = 0.5,message = "Qualité des données du rp")
+      
+      ril <- read_fst("Data/Ril/ril_leger.fst") %>% 
+        select(idx,x,y,nb_logn) %>% 
+        mutate(com = substr(idx,1,5)) %>%
+        filter(com %in% com.dom.select)
+      coordinates(ril) <- ~x+y
+      ril@proj4string <- CRS("+init=epsg:3857")
+      ril.geo <- ril[!duplicated(ril@data$idx),]
+      ril.geo <- zonaPts(pts.sp = ril.geo,zonage = zonage)
+      ril <- ril@data %>% 
+        left_join(ril.geo@data %>% select(idx,idZonage),by="idx") %>% 
+        mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage))
+      
+      
+      # VII.1. Chargement de la base adresses (MAJ : 26.03.2019)
+      rpa.qualite <- rpa %>% 
+        left_join(pts.df %>% select(C_IMM,idZonage,idZonage.name), by = c("C_IMM")) %>% 
+        filter(ril.millesime == 1) %>% 
+        mutate(IPOND = IPOND.cal)
+      
+      # VII.2. Liste des variables à calculer
+      group_var.qualite <- c("INPER",lstIndicateur$qualiteIndicateur[paste0(lstIndicateur$nomVariable,lstIndicateur$nomIndicateur) %in% colnames(rpa.qualite) & 
+                                                                       lstIndicateur$calculQualite == 1])
+      
+      # VII.3. Estimation de la qualité
+      seuil_diffusion <- 5 # Seuil de diffusion de la valeur du coefficient de variation
+      qualityZone <- Qlfinal(rpa.qualite,group_var.qualite,ril = ril) %>% 
+        mutate(val.qualite = ifelse(CoefVariation <= seuil_diffusion & !is.nan(CoefVariation),EstVariable,IntervalConf.)) 
+      Sys.time() - t1
+      
+      # VII.4. Ajout des données à la table finale
+      df.zone <- qualityZone %>% 
+        rename(idZonage = zonage,
+               qualiteIndicateur = Variable) %>% 
+        left_join(lstIndicateur %>% 
+                    select(domaine,categorie,nomVariable,nomIndicateur,qualiteIndicateur,source),
+                  by = "qualiteIndicateur") %>% # Ajout de variables
+        left_join(zonage@data %>% 
+                    select(idZonage,idZonage.name)) %>% 
+        mutate(source = paste0(source,rp.an)) %>% 
+        select(-qualiteIndicateur) %>% 
+        gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% # Transformation de la base
+        bind_rows(df.zone %>% mutate(value = as.character(value))) # Ajout des données sur la qualité dans un format simple a exploiter
+      
+      # VIII. Secret statistique
+      #-------------------------
+      incProgress(amount = 0.8,message = "Secret statistique")
+      
+      # Utiliser la règle des 11 observations minimum par case.
+      seuil_secret_stat <- 11
+      
+      # VIII.1. Table de travail pour le secret statistique
+      df.zone.secret <- df.zone %>% 
+        filter(type.indicateur %in% c("freq","n"))
+      
+      # VIII.2. Catégorie à secretiser
+      var.secret <- lstCategorie$nomVariable[lstCategorie$typeVar == "pct" & substr(lstCategorie$source,1,2) == "rp"]
+      
+      # VIII.3. Secret statistique
+      indicateur.secret <- bind_rows(lapply(var.secret,secret_stat,df.zone.secret = df.zone.secret,seuil_secret_stat = seuil_secret_stat))
+      Sys.time() - t1
+      
+      # VIII.4. Ajout du secret aux indicateurs calculés
+      df.zone <- df.zone.secret %>% 
+        left_join(indicateur.secret,by = c("idZonage","nomVariable","nomIndicateur")) %>% # Ajout de la variable diffusable
+        mutate(value = ifelse(is.na(diff.secret),"diffusable",diff.secret),
+               type.indicateur = "secret_stat") %>% 
+        select(-diff.secret) %>% 
+        bind_rows(df.zone)
+      
+      Sys.time() - t1
+      
+      # VIII.5 Valeur diffusable
+      df.zone <- df.zone %>% 
+        filter(type.indicateur %in% c("val.qualite","secret_stat")) %>% 
+        spread(key = type.indicateur, value = value) %>% 
+        mutate(secret_stat = ifelse(is.na(secret_stat),"n_diffusable",secret_stat),
+               valeur.diffusable = ifelse(secret_stat == "diffusable",val.qualite,"c")) %>%  # c : données confidencielles
+        select(-secret_stat,-val.qualite) %>% 
+        gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
+        bind_rows(df.zone)
+      
+      # Paramètres Agate
+      rv$df.zone <- df.zone
+      rv$statZone <- statZone
+      rv$source <- source
+  })
 
     # VII. Nettoyage
     #--------------
@@ -349,6 +355,7 @@ server <- function(input, output,session) {
         title = "Terminé !", text = paste("Le calcul a été effectué en ",temps," secondes"), type = "success"
       )
     }
+
   }) # Close observeEvent
   
 # IV. Reactive Dashboard
@@ -466,62 +473,62 @@ server <- function(input, output,session) {
   
   # V.2. MAJ liste des catégories
   #------------------------------
-  observeEvent(input$si_domaine,{
-    cat <- lstCategorie$idCategorie[lstCategorie$idDomaine == input$si_domaine]
-    names(cat) <- lstCategorie$labelCategorie[lstCategorie$idDomaine == input$si_domaine]
-    updateSelectInput(session, "si_categorie",
-                      choices = cat)
-  })
-  
-  # V.3. Reactive data table
-  #-------------------------
-  observeEvent(c(input$si_categorie,input$si_domaine,input$si_zoneSelect),{
+  # observeEvent(input$si_domaine,{
+  #   cat <- lstCategorie$idCategorie[lstCategorie$idDomaine == input$si_domaine]
+  #   names(cat) <- lstCategorie$labelCategorie[lstCategorie$idDomaine == input$si_domaine]
+  #   updateSelectInput(session, "si_categorie",
+  #                     choices = cat)
+  # })
+  # 
+  # # V.3. Reactive data table
+  # #-------------------------
+  # observeEvent(c(input$si_categorie,input$si_domaine,input$si_zoneSelect),{
+  #   
+  #   if(input$si_categorie != ""){
+  #     # V.3.1. Selection de la base de données
+  #     if(input$si_zoneSelect == 4){
+  #       df <- rv$df.zone %>% 
+  #         select(source,domaine,categorie,com,idZonage,idZonage.name,indicateur,type.indicateur,value) %>%
+  #         filter(type.indicateur != "part_np") %>% 
+  #         filter(domaine == input$si_domaine & categorie == input$si_categorie)
+  #     }else{
+  #       df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>% 
+  #         filter(zone.predefine == input$si_zoneSelect & domaine == input$si_domaine & 
+  #                  categorie == input$si_categorie & source %in% rv$source) %>%
+  #         filter(type.indicateur != "part_np") %>% 
+  #         select(source,domaine,categorie,idZonage,idZonage.name,indicateur,type.indicateur,value)
+  #     }
+  #     
+  #     # V.3.2. Libelles de colonnes du tableau
+  #     type.ind <- typInd[typInd %in% c("idZonage","idZonage.name",unique(df$type.indicateur))]
+  #     
+  #     # V.3.3. Construction tableau
+  #     df <- df %>%
+  #       spread(key = type.indicateur, value = value) %>%
+  #       left_join(lstIndicateur %>% select(nomIndicateur,labelIndicateur),c("indicateur" = "nomIndicateur")) %>% 
+  #       mutate(indicateur = labelIndicateur) %>% 
+  #       select(-domaine,-categorie,-labelIndicateur)
+  #     
+  #     # V.3.4. Titre du tableau
+  #     output$TO_titleTab <- renderText({lstCategorie$titreTab[lstCategorie$idDomaine == input$si_domaine &
+  #                                                               lstCategorie$idCategorie == input$si_categorie]})
+  #     # V.3.5. Affichage du tableau
+  #     output$table = renderDT(
+  #       datatable(df,
+  #                 colnames = type.ind,
+  #                 extensions = 'Buttons',
+  #                 options = list(
+  #                   scrollX = TRUE,
+  #                   # fixedColumns = TRUE,
+  #                   # autoWidth = TRUE,
+  #                   ordering = FALSE,
+  #                   dom = 'lBfrtip',
+  #                   buttons = c(I('colvis'),'excel')),
+  #                 rownames= FALSE)
+  #     )
+  #   } # end if
     
-    if(input$si_categorie != ""){
-      # V.3.1. Selection de la base de données
-      if(input$si_zoneSelect == 4){
-        df <- rv$df.zone %>% 
-          select(source,domaine,categorie,com,idZonage,idZonage.name,indicateur,type.indicateur,value) %>%
-          filter(type.indicateur != "part_np") %>% 
-          filter(domaine == input$si_domaine & categorie == input$si_categorie)
-      }else{
-        df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>% 
-          filter(zone.predefine == input$si_zoneSelect & domaine == input$si_domaine & 
-                   categorie == input$si_categorie & source %in% rv$source) %>%
-          filter(type.indicateur != "part_np") %>% 
-          select(source,domaine,categorie,idZonage,idZonage.name,indicateur,type.indicateur,value)
-      }
-      
-      # V.3.2. Libelles de colonnes du tableau
-      type.ind <- typInd[typInd %in% c("idZonage","idZonage.name",unique(df$type.indicateur))]
-      
-      # V.3.3. Construction tableau
-      df <- df %>%
-        spread(key = type.indicateur, value = value) %>%
-        left_join(lstIndicateur %>% select(nomIndicateur,labelIndicateur),c("indicateur" = "nomIndicateur")) %>% 
-        mutate(indicateur = labelIndicateur) %>% 
-        select(-domaine,-categorie,-labelIndicateur)
-      
-      # V.3.4. Titre du tableau
-      output$TO_titleTab <- renderText({lstCategorie$titreTab[lstCategorie$idDomaine == input$si_domaine &
-                                                                lstCategorie$idCategorie == input$si_categorie]})
-      # V.3.5. Affichage du tableau
-      output$table = renderDT(
-        datatable(df,
-                  colnames = type.ind,
-                  extensions = 'Buttons',
-                  options = list(
-                    scrollX = TRUE,
-                    # fixedColumns = TRUE,
-                    # autoWidth = TRUE,
-                    ordering = FALSE,
-                    dom = 'lBfrtip',
-                    buttons = c(I('colvis'),'excel')),
-                  rownames= FALSE)
-      )
-    } # end if
-    
-  })
+  # })
   
 
 

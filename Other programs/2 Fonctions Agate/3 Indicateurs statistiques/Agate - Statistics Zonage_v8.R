@@ -22,8 +22,11 @@ statistics_zone <- function(group_var,zone,rpi,rpl,lstCategorie,sourceRp,rpi.wei
   #-----------------------------------------
   
   # Superficie en km²
-  # zone@data$superficie <- round(gArea(zone,byid = T)/1000000,1)
-  # zone <- zone@data
+  zone@data$value <- round(gArea(zone,byid = T)/1000000,1)
+  zone <- zone@data %>% 
+    mutate(type.indicateur = "superficie",
+           nomVariable = "superficie",
+           nomIndicateur = "a_superficie")
 
   # II. Individu
   #-----------------------------------------------------------------------------------------------------------------------------------------------
@@ -36,7 +39,8 @@ statistics_zone <- function(group_var,zone,rpi,rpl,lstCategorie,sourceRp,rpi.wei
               freq_p = round(sum(!!! syms(rpi.weight),na.rm = TRUE),0)) %>% 
     gather("type.indicateur","value",-group_var) %>% 
     mutate(nomVariable = "population",
-           nomIndicateur = "a_population")
+           nomIndicateur = "a_population") %>% 
+    bind_rows(zone)
   
   # II.2. Champ : population totale
   #--------------------------------
@@ -65,32 +69,42 @@ statistics_zone <- function(group_var,zone,rpi,rpl,lstCategorie,sourceRp,rpi.wei
   # III. Logements
   #-----------------------------------------------------------------------------------------------------------------------------------------------
   
-  # III.1. Champ : Logements
-  #-------------------------
-  # III.1.1. Selection des variables
-  lst_var <- lstCategorie$nomVariable[lstCategorie$variableChamp %in% "X"]
+  # III.1. population totale
+  #------------------------
+  rpl.popTot <- rpl %>%
+    group_by(!!! syms(group_var)) %>% 
+    summarise(freq = n(),
+              freq_p = round(sum(!!! syms(rpl.weight),na.rm = TRUE),0)) %>% 
+    gather("type.indicateur","value",-group_var) %>% 
+    mutate(nomVariable = "log_tot",
+           nomIndicateur = "a_log_tot")
   
-  # III.1.2. Calcul indicateurs
+  # III.2. Champ : Logements
+  #-------------------------
+  # III.2.1. Selection des variables
+  lst_var <- lstCategorie$nomVariable[lstCategorie$variableChamp %in% "X" & lstCategorie$typeVar == "pct" & lstCategorie$ssChamp == 0]
+  
+  # III.2.2. Calcul indicateurs
   rpl.log.champ <- bind_rows(lapply(lst_var, agate_qualitative,df = rpl,group_var = group_var, poids = rpl.weight))
   
-  # II.2. Sous-champs
+  # III.3. Sous-champs
   #------------------
   
-  # II.2.1. Informations sur les champs
+  # III.3.1. Informations sur les champs
   df_ssChamp <- lstCategorie %>% 
     filter(source == "rpl" & !is.na(modaliteChamp)) %>% 
     select(nomVariable,variableChamp,modaliteChamp) %>% 
     mutate(varmod.champ = paste0(variableChamp,modaliteChamp))
   
-  # II.2.2. Liste des sous-champs à calculer
+  # III.3.2. Liste des sous-champs à calculer
   lst_champ <- unique(df_ssChamp$varmod.champ)
   
-  # II.2.3. Calcul des indicateurs
+  # III.3.3. Calcul des indicateurs
   rpl.sschamp <- bind_rows(lapply(lst_champ, agate_qualitative.ssChamp,df_ssChamp = df_ssChamp,rp = rpl, poids = rpl.weight))
   
   # IV. Ajout à la table finale
   #-----------------------------------------------------------------------------------------------------------------------------------------------
-  indicateur_stat <- bind_rows(rpi.popTot,rpi.popTot.champ,rpi.sschamp,rpl.log.champ,rpl.sschamp) %>% 
+  indicateur_stat <- bind_rows(rpi.popTot,rpi.popTot.champ,rpi.sschamp,rpl.popTot,rpl.log.champ,rpl.sschamp) %>% 
     left_join(lstCategorie %>% select(nomVariable,domaine,categorie,source),by="nomVariable") %>% 
     mutate(source = paste0(source,sourceRp),
            value = as.character(value))

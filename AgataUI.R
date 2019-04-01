@@ -5,7 +5,7 @@
 # Options statistiques
 #---------------------
 load("Data/Liste indicateurs statistiques/lstIndicateur.RData")
-dmn <- lstDomaine$idDomaine
+dmn <- lstDomaine$domaine
 names(dmn) <- lstDomaine$labelDomaine
 
 ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,

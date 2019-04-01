@@ -40,7 +40,7 @@ valueBox(dash.indicateur$vb.dem.pop,
 ### Superficie
 
 ```{r}
-valueBox("TODO", 
+valueBox(dash.indicateur$vb.dem.super, 
          icon = "fas fa-tree")
 ```
 
@@ -91,7 +91,7 @@ valueBox(dash.indicateur$vb.emp.popTrav,
          icon = "fas fa-user-cog")
 ```
 
-### Part de chômeur (au sens du RP)
+### Taux de chômage (au sens du RP)
 
 ```{r}
 valueBox(dash.indicateur$vb.emp.chom, 
@@ -210,7 +210,7 @@ Row
 ### Nombre de logements
 
 ```{r}
-valueBox("TODO", 
+valueBox(dash.indicateur$vb.log.tot, 
          icon = "fas fa-child")
 ```
 

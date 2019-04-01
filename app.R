@@ -39,15 +39,13 @@ library(rlang) # Non Standard evaluation
 #----------------
 source ("Other programs/2 Fonctions Agate/1 Fake data/Agate - Fake data fct.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/2 Cartographie/Agate - Cartographie fct.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v8.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/6 Census Quality/Agate - Qualite du RP.R",encoding = "UTF-8")
-source("Other programs/2 Fonctions Agate/5 Export Report/Agate - Export Excel fct.R",encoding = "UTF-8")
-source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v6.R",encoding = "UTF-8")
-source("Other programs/0 A implementer/4 Plotly/Agate - plotly graphes fonctions_v3.R",encoding = "UTF-8")
-# source("Other programs/Export Report/Agate - excel report.R")
+source("Other programs/2 Fonctions Agate/7 Statistical disclosure/Agate - statistiscal disclosure.R",encoding = "UTF-8")
 
-# II.3. Maps
-#----------------
-load("Data/Maps/Cities/cities.RData") # Cities map
+# II.2. Maps
+#-----------
+load("Data/Maps/Cities/cities.RData") 
 load("Data/Maps/HeatPoint/heatpoints.Rdata") # heat points
 
 # III. Graphic web interface
