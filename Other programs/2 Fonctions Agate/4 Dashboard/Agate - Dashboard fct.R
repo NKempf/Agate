@@ -50,7 +50,7 @@ barChart_agate <- function(df,var.barChart,zone.etude,zone.compare,lstIndicateur
     mutate(value = as.numeric(value),
            nomIndicateur = factor(nomIndicateur,labels = tab.label))
   
-  g <- ggplot(df,aes(x = reorder(nomIndicateur, value), y = value,fill=idZonage.name)) +
+  g <- ggplot(df,aes(x = reorder(nomIndicateur, value), y = value,fill=idZonage.name, label = idZonage.name,label2 = value)) +
     geom_bar(stat = "identity",position = "dodge") +
     coord_flip() +
     scale_fill_manual(values=c("#CEBC81","#A16E83"),name=" ") +

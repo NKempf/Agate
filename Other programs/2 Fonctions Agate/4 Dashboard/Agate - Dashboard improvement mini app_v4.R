@@ -322,8 +322,8 @@ server = function(input, output, session) {
     })
     
     output$ib_emp_chomeur <- renderInfoBox({
-      infoBox(title = "Taux de chômages (au sens du RP)", value = rv$dash.indicateur$vb.emp.chom,
-              icon = icon("fa-people-carry"),fill=TRUE)
+      infoBox(title = "Taux de chômage", value = rv$dash.indicateur$vb.emp.chom,
+              icon = icon("fa-people-carry"),fill=TRUE,subtitle = "selon le recensement de la population")
     })
     
     output$ib_emp_inactif <- renderInfoBox({
@@ -342,7 +342,7 @@ server = function(input, output, session) {
     )
     
     output$g_emp_bg = renderPlotly({
-      ggplotly(rv$dash.indicateur$g.emp.typeAct)
+      hide_legend(ggplotly(rv$dash.indicateur$g.emp.typeAct,tooltip = c("label","label2")))
     })
     
     output$dt_emp_bd = renderDT(
@@ -373,11 +373,11 @@ server = function(input, output, session) {
     )
     
     output$g_sco_hd = renderPlotly({
-      ggplotly(rv$dash.indicateur$g.sco.pop)
+      hide_legend(ggplotly(rv$dash.indicateur$g.sco.pop,tooltip = c("label","label2")))
     })
     
     output$g_sco_bg = renderPlotly({
-      ggplotly(rv$dash.indicateur$g.sco.diplome)
+      hide_legend(ggplotly(rv$dash.indicateur$g.sco.diplome,tooltip = c("label","label2")))
     })
     
     output$dt_sco_bd = renderDT(
@@ -408,15 +408,15 @@ server = function(input, output, session) {
     )
     
     output$g_log_hd = renderPlotly({
-      ggplotly(rv$dash.indicateur$g.log.cat)
+      hide_legend(ggplotly(rv$dash.indicateur$g.log.cat,tooltip = c("label","label2")))
     })
     
     output$g_log_bg = renderPlotly({
-      ggplotly(rv$dash.indicateur$g.log.ach)
+      hide_legend(ggplotly(rv$dash.indicateur$g.log.ach,tooltip = c("label","label2")))
     })
     
     output$g_log_bd = renderPlotly({
-      ggplotly(rv$dash.indicateur$g.log.bati)
+      hide_legend(ggplotly(rv$dash.indicateur$g.log.bati,tooltip = c("label","label2")))
     })
     
     # Theme Résidences principales
@@ -442,11 +442,11 @@ server = function(input, output, session) {
     )
     
     output$g_res_hd = renderPlotly({
-      ggplotly(rv$dash.indicateur$g.res.nbp)
+      hide_legend(ggplotly(rv$dash.indicateur$g.res.nbp,tooltip = c("label","label2")))
     })
     
     output$g_res_bg = renderPlotly({
-      ggplotly(rv$dash.indicateur$g.res.surf)
+      hide_legend(ggplotly(rv$dash.indicateur$g.res.surf,tooltip = c("label","label2")))
     })
     
     output$dt_res_bd = renderDT(
