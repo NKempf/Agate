@@ -15,7 +15,7 @@ pyramide_Agate <- function(pyramide,zone.etude,zone.compare,lstIndicateur){
     filter(idZonage %in% c(zone.etude,zone.compare))
   
   g <- ggplot(df %>% filter(sexe == "b_femme" & idZonage == zone.compare), 
-              aes(x = age, y = pop)) +
+              aes(x = age, y = pop,label = idZonage.name, label2 = sexe, label3 = age, label4 = abs(pop))) +
     geom_bar(data = df %>% filter(idZonage == zone.etude) %>% mutate(sexe = ifelse(sexe=="a_homme","a_homme.etude","b_femme.etude")), 
              aes(fill = sexe), stat = "identity") +
     geom_point(aes(colour = sexe)) +
@@ -158,7 +158,7 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   # III.2. Taux de chômage
   #-----------------------
   vb.emp.chom <- df.dashboard %>% 
-    filter(idZonage %in% zone.etude & nomVariable == "emp_chomage" &nomIndicateur == "b_chomeur") %>% 
+    filter(idZonage %in% zone.etude & nomVariable == "emp_chomage" & nomIndicateur == "b_chomeur") %>% 
     select(value)
   vb.emp.chom
   

@@ -4,6 +4,43 @@
   float: right;
   
   }
+  
+  
+#to_titleDash .navbar-brand{
+	font-family: verdana;
+	font-size: 1.2em;
+}
+
+/* Infobox */
+
+.info-box-content{
+	background-color: #A16E83; 
+}
+
+#ib_dem_population{
+	background-color: #CEBC81; 
+}
+
+#ib_dem_superficie{
+	background-color: #479761; 
+}
+
+/* Datatables */
+.col-sm-6{
+	border-color: #8e8e8e;
+	/*background-color: transparent;*/
+	
+}
+
+.col-sm-6 .box-header{
+	background-color: #8e8e8e;
+	font-size: 1.1em;
+	/*text-transform: capitalize;	*/
+	color: #FEFFFF;
+	text-align: center;
+}
+
+
 
 
 

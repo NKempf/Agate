@@ -37,7 +37,6 @@ navbarPageWithInputs <- function(..., inputs) {
   navbar
 }
 
-
 ui <- shinyUI(
   fluidPage(
     navbarPage("title",
@@ -73,7 +72,7 @@ ui <- shinyUI(
                                             infoBoxOutput(outputId = "ib_dem_superficie")
                                           ),
                                           fluidRow(
-                                            box(title = "Individus", solidHeader = TRUE,
+                                            box(id="b_test",title = "Individus", solidHeader = TRUE,
                                                 collapsible = TRUE,
                                                 DT::dataTableOutput("dt_dem_hg")
                                             ),
@@ -292,7 +291,7 @@ server = function(input, output, session) {
     })
     
     output$ib_dem_superficie <- renderInfoBox({
-      infoBox(title = "Superficie", value = "TODO",
+      infoBox(title = "Superficie", value = rv$dash.indicateur$vb.dem.super,
               icon = icon("tree"),fill=TRUE)
     })
     
@@ -307,7 +306,7 @@ server = function(input, output, session) {
     )
     
     output$g_dem_bg = renderPlotly({
-      ggplotly(rv$dash.indicateur$g.dem.pyramide)
+      hide_legend(ggplotly(rv$dash.indicateur$g.dem.pyramide,tooltip = c("label","label2","label3","label4")))
     })
     
     output$dt_dem_bd = renderDT(
@@ -323,7 +322,7 @@ server = function(input, output, session) {
     })
     
     output$ib_emp_chomeur <- renderInfoBox({
-      infoBox(title = "Part de chômeur (au sens du RP)", value = rv$dash.indicateur$vb.emp.chom,
+      infoBox(title = "Taux de chômages (au sens du RP)", value = rv$dash.indicateur$vb.emp.chom,
               icon = icon("fa-people-carry"),fill=TRUE)
     })
     
@@ -389,7 +388,7 @@ server = function(input, output, session) {
     # Theme Logement
     #---------------
     output$ib_log_pop <- renderInfoBox({
-      infoBox(title = "Nombre de logements", value = "TODO",
+      infoBox(title = "Nombre de logements", value = rv$dash.indicateur$vb.log.tot,
               icon = icon("child"),fill=TRUE)
     })
     
@@ -423,7 +422,7 @@ server = function(input, output, session) {
     # Theme Résidences principales
     #-----------------------------
     output$ib_res_pop <- renderInfoBox({
-      infoBox(title = "Nombre de logements", value = rv$dash.indicateur$vb.res.part,
+      infoBox(title = "Résidences principales", value = rv$dash.indicateur$vb.res.part,
               icon = icon("child"),fill=TRUE)
     })
     
@@ -454,10 +453,6 @@ server = function(input, output, session) {
       datatable(rv$dash.indicateur$df.res.tab.bd, colnames = rv$dash.indicateur$dash.label,
                 rownames = FALSE, options = list(dom = 't'))
     )
-    
-
-    
-    
   })
   
   observeEvent(c(input$si_typeZone),{

@@ -93,6 +93,9 @@ rpi <- read_fst(rpiPath) %>%
   filter(C_IMM %in% unique(pts.df$C_IMM)) %>% 
   left_join(pts.df, by = c("C_IMM")) %>% 
   mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage),
+         emp_chomage = case_when(emp_typeActivite == "a_actifocc" & emp_popActive == "a_de15a64Actif" ~ "a_actifOcc",
+                                 emp_typeActivite == "b_chomeur" & emp_popActive == "a_de15a64Actif" ~ "b_chomeur",
+                                 TRUE ~ "c_sansObjet"),
          idZonage.name = ifelse(is.na(idZonage.name) & substr(idZonage,1,7) == "horsZon",paste0(com.lib," (hors zone)"),idZonage.name))
 
 # III.3. Ajout de la zone aux données du rp logement (MAJ : 19.03.2019)
