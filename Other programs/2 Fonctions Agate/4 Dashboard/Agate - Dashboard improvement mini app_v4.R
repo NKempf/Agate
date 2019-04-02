@@ -242,8 +242,7 @@ ui <- shinyUI(
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 server = function(input, output, session) {
-  
-  # load("Data/Tmp/dashboard_tmp.RData")
+
   load("Data/Tmp/qpv_stat_tmp.RData")
   
   observeEvent(input$ab_modal,{
@@ -256,15 +255,55 @@ server = function(input, output, session) {
                        zone.compare = NULL,
                        df.zone=df.zone,
                        dash.indicateur = NULL,
-                       statZone = statZone)
+                       pyramide = pyramide,
+                       source.an = "13",
+                       zonage.com = zonage.com)
+  
+  
+  observeEvent(c(input$si_typeZone),{
+    
+    if(input$si_typeZone != 4){
+      test <- lstZonePreType$zone.pred == input$si_typeZone & lstZonePreType$dep == unique(rv$zonage.com$dep)
+      cat <- lstZonePreType$idZonage[test]
+      names(cat) <- lstZonePreType$idZonage.name[test] 
+      print(cat)
+    }else{
+      test <- !rv$df.zone$idZonage %in% rv$zone.etude
+      cat <- unique(rv$df.zone$idZonage[test])
+      names(cat) <- unique(rv$df.zone$idZonage.name[test]) 
+    }
+    updateSelectInput(session, "si_zone",
+                      choices = cat
+    )
+  })
+  
+  
   
   # Indicateur dashboard
   #-----------------------------------------------------------------------------------------------------------------------------
   observeEvent(c(input$si_typeZone,input$si_zone),{
-    rv$zone.compare <- input$si_zone
-    rv$dash.indicateur <- stat.dashboard_agate(df = rv$df.zone,zone.etude = rv$zone.etude,
-                                               zone.compare = rv$zone.compare, lstIndicateur = lstIndicateur,
-                                               pyramide_tr = rv$statZone$pyramide_tr)
+    
+    if(input$si_typeZone != 4){
+      df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>% 
+        filter(zone.pred == input$si_typeZone & idZonage == input$si_zone & substr(source,4,5) == rv$source.an) 
+      
+      df2 <- df %>% 
+        filter(nomVariable %in% c("emp_typeActivite","sco_popSco2","sco_diplome","log_cat","log_ach_constru",
+                                  "log_bati","res_nbPiece","res_surface")) %>% 
+        mutate(type.indicateur = "part_p")
+      df <- bind_rows(df,df2,rv$df.zone %>% filter(idZonage == rv$zone.etude))
+      
+      pyr <- read_fst("Data/Stats/Prefine aera/Real/fst/pyramide.fst") %>% 
+        filter(zone.pred == input$si_typeZone & idZonage == input$si_zone & substr(source,4,5) == rv$source.an) %>% 
+        bind_rows(rv$pyramide %>% filter(idZonage == rv$zone.etude))
+    }else{
+      df <- rv$df.zone %>% filter(idZonage %in% c(rv$zone.etude,input$si_zone))
+      pyr <- rv$pyramide %>% filter(idZonage %in% c(rv$zone.etude,input$si_zone))
+    }
+    
+    rv$dash.indicateur <- stat.dashboard_agate(df = df,zone.etude = rv$zone.etude,
+                                               zone.compare = input$si_zone, lstIndicateur = lstIndicateur,
+                                               pyramide_tr = pyr)
     
     # Titre dashboard
     output$to_titleDash = renderText({
@@ -455,14 +494,7 @@ server = function(input, output, session) {
     )
   })
   
-  observeEvent(c(input$si_typeZone),{
-    test <- !rv$df.zone$idZonage %in% rv$zone.etude
-    cat <- unique(rv$df.zone$idZonage[test])
-    # names(cat) <- unique(rv$df.zone$idZonage.name[test])
-    updateSelectInput(session, "si_zone",
-                      choices = cat
-    )
-  })
+
   
 } # End server
 

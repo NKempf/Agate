@@ -110,101 +110,11 @@ statistics_zone <- function(group_var,zone,rpi,rpl,lstCategorie,sourceRp,rpi.wei
            value = as.character(value))
     
   #----------------------------------------------------------------------------------------------------------------------------------------------#
-  #                                             B. Filosofi : Fichiers fiscaux                                                                   #
-  #----------------------------------------------------------------------------------------------------------------------------------------------#
-  
-  # TODO : A revoir 26.03.2019
-  
-  # # I. Statistiques du niveau de vie
-  # #-----------------------------------------------------------------------------------------------------------------------------------------------
-  # domaine <- 2
-  # # I.1. Distribution du niveau de vie selon le zonage
-  # #---------------------------------------------------
-  # indicateur_stat <- filo %>%
-  #   group_by(!!! syms(group_var)) %>% 
-  #   income_distrib("nivviem") %>% 
-  #   mutate(indicateur = "nivviem") %>% 
-  #   majDf(indicateur_stat,group_var = group_var,domaine = domaine,source = sourceFilo,categorie = 1) 
-  # 
-  # 
-  # # I.2. Distribution du niveau de vie selon le type de menage et le zonage
-  # #------------------------------------------------------------------------
-  # indicateur_stat <- filo %>% 
-  #   mutate(indicateur = paste("nivviem",typmenR.lib,sep="_")) %>% 
-  #   group_by(!!! syms(group_var),indicateur) %>% 
-  #   income_distrib("nivviem") %>% 
-  #   majDf(indicateur_stat,group_var = group_var,domaine = domaine,source = sourceFilo,categorie = 4) 
-  # 
-  # 
-  # # I.3. Part des menages selon le type de menage et le zonage
-  # #-----------------------------------------------------------
-  # indicateur_stat <- filo %>%
-  #   rename(indicateur = typmenR.lib) %>% 
-  #   statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = filo.weight,
-  #                domaine = 1,categorie = 4,source = sourceFilo)
-  # 
-  # # I.4. Part des menages selon le decile de niveau de vie metro et le zonage
-  # #--------------------------------------------------------------------------
-  # indicateur_stat <- filo %>%
-  #   mutate(indicateur = paste0("D_",decile_nivvie)) %>% 
-  #   statRp_agate(df_final = indicateur_stat,group_var = group_var,poids = filo.weight,
-  #                domaine = domaine,categorie = 2,source = sourceFilo)
-  # 
-  # # I.5 Taux de pauvrete selon le seuil metropolitain et departemental
-  # #--------------------------------------------------------------------
-  # seuil_pauv.dfa <- filo %>%
-  #   group_by(dep) %>% 
-  #   summarise(seuil_pauv.dfa = median(nivviem))
-  # 
-  # indicateur_stat <- filo %>%
-  #   left_join(seuil_pauv.dfa,by = "dep") %>% 
-  #   group_by(!!! syms(group_var)) %>% 
-  #   mutate(i_pauvre60.dfa = ifelse(nivviem <= 0.6 * seuil_pauv.dfa,1,0),
-  #          i_pauvre50.dfa = ifelse(nivviem <= 0.5 * seuil_pauv.dfa,1,0),
-  #          i_pauvre40.dfa = ifelse(nivviem <= 0.4 * seuil_pauv.dfa,1,0)) %>% 
-  #   summarise(freq.ind = round(sum(nbpersm ,na.rm = TRUE),0),
-  #             freq.pauv60.ind.metro = round(sum(i_pauvre60 * nbpersm,na.rm = TRUE),0),
-  #             # freq.pauv60.ind.dfa = round(sum(i_pauvre60.dfa * nbpersm,na.rm = TRUE),0),
-  #             freq.pauv50.ind.metro = round(sum(i_pauvre50 * nbpersm,na.rm = TRUE),0),
-  #             # freq.pauv50.ind.dfa = round(sum(i_pauvre50.dfa * nbpersm,na.rm = TRUE),0),
-  #             freq.pauv40.ind.metro = round(sum(i_pauvre40 * nbpersm,na.rm = TRUE),0)) %>% 
-  #             # freq.pauv40.ind.dfa = round(sum(i_pauvre40.dfa * nbpersm,na.rm = TRUE),0)) %>% 
-  #   mutate(tx_pauv60.ind.metro = round(100 * freq.pauv60.ind.metro / freq.ind,2),
-  #          # tx_pauv60.ind.dfa = round(100 * freq.pauv60.ind.dfa / freq.ind,2),
-  #          tx_pauv50.ind.metro = round(100 * freq.pauv50.ind.metro / freq.ind,2),
-  #          # tx_pauv50.ind.dfa = round(100 * freq.pauv50.ind.dfa / freq.ind,2),
-  #          tx_pauv40.ind.metro = round(100 * freq.pauv40.ind.metro / freq.ind,2),
-  #          # tx_pauv40.ind.dfa = round(100 * freq.pauv40.ind.dfa / freq.ind,2),
-  #          indicateur = "pauvrete") %>% 
-  #   majDf(indicateur_stat,group_var = group_var,domaine = domaine,source = sourceFilo,categorie = 3)
-  
-  
-  #----------------------------------------------------------------------------------------------------------------------------------------------#
-  #                                             III. Statistiques issues de FIDELI                                                               #
+  #                                             B.  Objets speciaux                                                                              #
   #----------------------------------------------------------------------------------------------------------------------------------------------#  
-  
-  #----------------------------------------------------------------------------------------------------------------------------------------------#
-  #                                             IV. Statistiques issues de BPE                                                                   #
-  #----------------------------------------------------------------------------------------------------------------------------------------------#    
-  
-  #----------------------------------------------------------------------------------------------------------------------------------------------#
-  #                                             V. Statistiques issues de la CAF                                                                 #
-  #----------------------------------------------------------------------------------------------------------------------------------------------# 
-  
-  
-  #----------------------------------------------------------------------------------------------------------------------------------------------#
-  #                                             VI. Objets speciaux                                                                              #
-  #----------------------------------------------------------------------------------------------------------------------------------------------#  
-  
-  # VI.1. Pyramide des ages par sexe et par zonage
-  #-----------------------------------------------
-  pyramide_detail <- rpi %>%
-    group_by(!!! syms(group_var),SEXE,AGEREV) %>%
-    weighted_frequency(rpi.weight) %>% 
-    mutate(source = paste0("rpi",sourceRp))
-  
-  # VI.2. Pyramide par sexe, zonage et tranche d'age (MAJ : 27.03.2019) 
-  #--------------------------------------------------------------------
+
+  # 1. Pyramide par sexe, zonage et tranche d'age (MAJ : 27.03.2019) 
+  #----------------------------------------------------------------
   pyramide_tr <- bind_rows(lapply(c("a_homme","b_femme"),function(mod.sexe){
     rpi %>% 
       filter(dem_sexe == mod.sexe) %>% 
@@ -219,20 +129,10 @@ statistics_zone <- function(group_var,zone,rpi,rpl,lstCategorie,sourceRp,rpi.wei
            sexe = dem_sexe,
            pop = value)
   
-  # II.2 Courbe de lorenz
-  #----------------------
-  # prob <- seq(0,1,by = 0.01)
-  # 
-  # c_lorenz <- filo %>% 
-  #   group_by(!!! syms(group_var)) %>% 
-  #   do(data.frame(Q=prob, stat=quantile(.$nivviem, probs=prob))) %>%
-  #   mutate(stat = ifelse(stat<0,0,stat),
-  #          source = sourceFilo) 
-  
   #----------------------------------------------------------------------------------------------------------------------------------------------#
   #                                             VII. Listes de tableaux finaux                                                                   #
   #----------------------------------------------------------------------------------------------------------------------------------------------#
-  list_tab <- list(indicateur_stat = indicateur_stat,pyramide_detail = pyramide_detail, pyramide_tr = pyramide_tr)
+  list_tab <- list(indicateur_stat = indicateur_stat,pyramide_tr = pyramide_tr)
   
   return(list_tab)  
 } 
@@ -271,7 +171,6 @@ agate_qualitative.ssChamp <- function(champ,df_ssChamp,rp, poids){
                    df = rp %>% filter_at(vars(var.filtre), all_vars(. %in% modalite.filtre)),
                    group_var = group_var, poids = poids))
 }
-
 
 
 

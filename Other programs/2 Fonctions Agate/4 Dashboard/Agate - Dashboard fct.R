@@ -45,12 +45,12 @@ barChart_agate <- function(df,var.barChart,zone.etude,zone.compare,lstIndicateur
   tab.label <- lstIndicateur$labelIndicateur[lstIndicateur$nomVariable %in% var.barChart & 
                                                !lstIndicateur$nomIndicateur %in% c("g_moins14","e_log_metro","g_sansObjet","d_sansObjet")]
   
-  df <- df %>% 
+  df2 <- df %>% 
     filter(idZonage %in% c(zone.etude,zone.compare) & nomVariable == var.barChart & type.indicateur == "part_p") %>% 
     mutate(value = as.numeric(value),
            nomIndicateur = factor(nomIndicateur,labels = tab.label))
   
-  g <- ggplot(df,aes(x = reorder(nomIndicateur, value), y = value,fill=idZonage.name, label = idZonage.name,label2 = value)) +
+  g <- ggplot(df2,aes(x = reorder(nomIndicateur, value), y = value,fill=idZonage.name, label = idZonage.name,label2 = value)) +
     geom_bar(stat = "identity",position = "dodge") +
     coord_flip() +
     scale_fill_manual(values=c("#CEBC81","#A16E83"),name=" ") +
@@ -68,6 +68,9 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   names(dash.label) <- c(" ",
                          unique(df$idZonage.name[df$idZonage == zone.etude]),
                          unique(df$idZonage.name[df$idZonage == zone.compare]))
+
+  df <- df %>% 
+    select(-zone.pred)
   
   df.dashboard <- df %>% 
     filter(idZonage %in% c(zone.etude,zone.compare) & type.indicateur %in% c("valeur.diffusable")) %>% 
@@ -143,7 +146,7 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   # II.7. Graphique bas gauche : pyramide des âges
   #-----------------------------------------------
   pyramide <- pyramide_tr %>% 
-    select(-type.indicateur,-nomVariable)
+    select(-type.indicateur,-nomVariable,-zone.pred)
   g.dem.pyramide <- pyramide_Agate(pyramide = pyramide, zone.etude = zone.etude, zone.compare = zone.compare, lstIndicateur = lstIndicateur)
   
   # III. Thème Emploi
