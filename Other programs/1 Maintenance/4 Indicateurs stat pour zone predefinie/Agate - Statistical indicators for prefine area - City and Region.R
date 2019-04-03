@@ -65,10 +65,19 @@ qpv <- lapply(an, agate_statRp,
        com.dom = com.dom,rpi.weight = "IPONDI.cal",rpl.weight = "IPONDL.cal")
 Sys.time() - t1
 
+save(region,city,qpv,file = "Data/Tmp/predStat_tmp.RData")
+
 # III.Tables finales
 #--------------------------------------------------------------------------------------------------------------------------
-df.zone <- bind_rows(lapply(c(1,2,3), function(x) bind_rows(region[[x]][[1]],city[[x]][[1]],
-                                                            qpv[[x]][[1]] %>% filter(type.indicateur == "valeur.diffusable"))))
+df.zone <- bind_rows(
+  lapply(c(1,2,3), function(x) 
+    bind_rows(region[[x]][[1]],city[[x]][[1]],
+              qpv[[x]][[1]] %>% 
+                filter(type.indicateur == "part_p" & 
+                                         nomVariable %in% c("emp_typeActivite","sco_popSco2","sco_diplome","log_cat","log_ach_constru",
+                                                            "log_bati","res_nbPiece","res_surface")) %>% 
+                bind_rows(qpv[[x]][[1]] %>% filter(type.indicateur == "valeur.diffusable"))
+    )))
 pyramide <- bind_rows(lapply(c(1,2,3), function(x) bind_rows(region[[x]][[2]],city[[x]][[2]],qpv[[x]][[2]])))
 
 save(df.zone,pyramide,file="data/Stats/Prefine aera/Real/RData/predefineStat.RData")

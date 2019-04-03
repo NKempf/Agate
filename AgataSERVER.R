@@ -2,18 +2,26 @@
 #                                             Agate - Server                                                                #
 #---------------------------------------------------------------------------------------------------------------------------#
 
-source(file = "AgataSERVER_dashboard.R",encoding = "UTF-8")
+# source(file = "AgataSERVER_dashboard.R",encoding = "UTF-8")
 
 
 server <- function(input, output,session) {
 # 0. Reactive Values
 #----------------------------------------------------------------------------------------------------------------------------
   rv <- reactiveValues(AgateMap=NULL,
-                       statZone=NULL,
-                       # statHZone=NULL,
-                       qualityZone=NULL,
-                       source = NULL, # Page Statistiques
-                       df.zone=NULL) # Page Statistiques
+                       df.zone=NULL,
+                       source.an = "13"
+                       # statZone=NULL,
+                       # qualityZone=NULL,
+                       # source = NULL, # Page Statistiques
+                       # zone.etude = "QP971002",
+                       # zone.compare = NULL,
+                       # df.zone=NULL,
+                       # pyramide = NULL,
+                       # zonage.com = NULL,
+                       # dash.indicateur = NULL,
+
+                       ) # Page Statistiques
   
 # I. Interactive web map
 #----------------------------------------------------------------------------------------------------------------------------
@@ -47,7 +55,7 @@ server <- function(input, output,session) {
   # I.3. Open reactive dashboard on click
   #--------------------------------------
   observeEvent(input$mymap_shape_click,{
-    if(!is.null(rv$statZone)){
+    if(!is.null(rv$df.zone)){
       toggleModal(session, "boxPopUp1", toggle = "toggle")
     }
   })
@@ -149,209 +157,31 @@ server <- function(input, output,session) {
 # III. InfraCity statistical computation 
 #-----------------------------------------------------------------------------------------------------------------------------------
   observeEvent(input$b_calcul, {
-    t1 <- Sys.time()
-    
-    withProgress(message = "Creation de l'identifiant",style = "notification", value = 0, {
-      
-      # RP
-      rp.an <- "13"
-      rpi.path.string <- paste0("Data/Rp/rpi",rp.an,".fst")
-      rpl.path.string <- paste0("Data/Rp/rpl",rp.an,".fst")
-      rpa.path.string <- paste0("Data/Rp/rpa",rp.an,".fst")
-      rpiPath <- ifelse(file.exists(rpi.path.string),rpi.path.string,"Data/Rp/FakeRpi.fst")
-      rplPath <- ifelse(file.exists(rpl.path.string),rpl.path.string,"Data/Rp/FakeRpl.fst")
-      rpaPath <- ifelse(file.exists(rpa.path.string),rpa.path.string,NA)
-      
-      # I. Preparation du zonage
-      #-------------------------
-      zonage <- rv$AgateMap
-      zonage <- spTransform(zonage, "+init=epsg:3857")
-      
-      # II. Adresses géolocalisées
-      #---------------------------
 
-      # II.1 Communes dans lesquelles se trouvent une ou plusieurs zones
-      zoneInter <- gIntersects(zonage,com.dom,byid = TRUE)
-      test <- apply(zoneInter, 1, function(x){
-        test <- sum(x)
-        return(ifelse(test>0,TRUE,FALSE))}) 
-      com.dom.select <- com.dom@data$Codgeo[test]
-      
-      # II.2. Adresses géolocalisées
-      rpa <- read_fst(rpaPath) %>%
-        filter(com %in% com.dom.select)
-      
-      rpa.geo <- rpa %>% 
-        filter(!is.na(ril.millesime)) %>% 
-        mutate(idx = C_IMM) %>% 
-        select(idx,C_IMM,com,x,y,nb_logn.ril)
-      
-      # II.3. Transformation du ril en objet spatial
-      coordinates(rpa.geo) <- ~x+y
-      rpa.geo@proj4string <- CRS("+init=epsg:3857")
-      
-      # III. Données du recensement + identification de la zone
-      #--------------------------------------------------------
-      
-      # III.1. Zone dans laquelle chaque logement se situe (MAJ : 19.03.2019)
-      incProgress(amount = 0.1,message = "Zone dans laquelle chaque logement se situe")
-      # rpa.geo <- rpa.geo[duplicated(rpa.geo@data$idx)==F,]
-      pts.sp <- zonaPts(pts.sp = rpa.geo,zonage = zonage)
-      pts.df <- pts.sp@data %>% 
-        mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage)) %>%   
-        select(-idx,-com)
-      
-      # III.2. Ajout de la zone aux données du rp individu (MAJ : 19.03.2019)
-      # Note : pour des raisons de performances, les données du RP sont préalablement filtrées selon les communes étudiées
-      incProgress(amount = 0.2,message = "Ajout de la zone aux données du RP")
-      
-      rpi <- read_fst(rpiPath) %>% 
-        filter(C_IMM %in% unique(pts.df$C_IMM)) %>% 
-        left_join(pts.df, by = c("C_IMM")) %>% 
-        mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage),
-               idZonage.name = ifelse(is.na(idZonage.name) & substr(idZonage,1,7) == "horsZon",paste0(com.lib," (hors zone)"),idZonage.name))
-      
-      # III.3. Ajout de la zone aux données du rp logement (MAJ : 19.03.2019)
-      rpl <- read_fst(rplPath) %>% 
-        filter(C_IMM %in% unique(pts.df$C_IMM)) %>% 
-        left_join(pts.df, by = c("C_IMM")) %>% 
-        mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage),
-               idZonage.name = ifelse(is.na(idZonage.name) & substr(idZonage,1,7) == "horsZon",paste0(com.lib," (hors zone)"),idZonage.name))
-      
-      # IV. Table multicommunes + bridage lié à la qualité de l'appariement
-      #-----------------------------------------------------------------------
-      seuil_qualite_appariement <- 30
-      
-      qualiteAppariement <- read_fst("Data/Rp/appariementRil_Rp.fst") %>% 
-        filter(com %in% com.dom.select & an == rp.an) %>% 
-        mutate(appariement_diff = ifelse(nonApparie.pct < seuil_qualite_appariement,TRUE,FALSE))
-      
-      zonage.com <- rpl %>% 
-        group_by(dep,com,com.lib,idZonage,idZonage.name) %>% 
-        summarise(freq=n()) %>% 
-        ungroup() %>% 
-        mutate(dep = substr(com,1,3)) %>% 
-        left_join(qualiteAppariement,by="com")
-      
-      # VI. Calcul des indicateurs statistiques
-      #---------------------------------------
+    withProgress(message = "Creation de l'identifiant",style = "notification", value = 0, {
+
       incProgress(amount = 0.4,message = "Calcul des statistiques")
-      
-      # VI.1. Statistiques dans la zone
-      group_var <- c("idZonage","idZonage.name") # Attention utilisé plusieurs fois
-      statZone <- statistics_zone(group_var = group_var,zone = zonage,rpi = rpi,rpl = rpl, 
-                                  lstCategorie = lstCategorie,
-                                  sourceRp = rp.an,
-                                  rpi.weight = "IPONDI.cal",
-                                  rpl.weight = "IPONDL.cal")
-      
-      # VI.2. Objets pour page "statistiques"
-      df.zone <- statZone$indicateur_stat
-      source <- unique(df.zone$source)
-      
-      # VII. Qualité des données du RP (Travaux Baptiste Raimbaud)
-      #----------------------------------------------------------
-      incProgress(amount = 0.5,message = "Qualité des données du rp")
-      
-      ril <- read_fst("Data/Ril/ril_leger.fst") %>% 
-        select(idx,x,y,nb_logn) %>% 
-        mutate(com = substr(idx,1,5)) %>%
-        filter(com %in% com.dom.select)
-      coordinates(ril) <- ~x+y
-      ril@proj4string <- CRS("+init=epsg:3857")
-      ril.geo <- ril[!duplicated(ril@data$idx),]
-      ril.geo <- zonaPts(pts.sp = ril.geo,zonage = zonage)
-      ril <- ril@data %>% 
-        left_join(ril.geo@data %>% select(idx,idZonage),by="idx") %>% 
-        mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com), idZonage))
-      
-      
-      # VII.1. Chargement de la base adresses (MAJ : 26.03.2019)
-      rpa.qualite <- rpa %>% 
-        left_join(pts.df %>% select(C_IMM,idZonage,idZonage.name), by = c("C_IMM")) %>% 
-        filter(ril.millesime == 1) %>% 
-        mutate(IPOND = IPOND.cal)
-      
-      # VII.2. Liste des variables à calculer
-      group_var.qualite <- c("INPER",lstIndicateur$qualiteIndicateur[paste0(lstIndicateur$nomVariable,lstIndicateur$nomIndicateur) %in% colnames(rpa.qualite) & 
-                                                                       lstIndicateur$calculQualite == 1])
-      
-      # VII.3. Estimation de la qualité
-      seuil_diffusion <- 5 # Seuil de diffusion de la valeur du coefficient de variation
-      qualityZone <- Qlfinal(rpa.qualite,group_var.qualite,ril = ril) %>% 
-        mutate(val.qualite = ifelse(CoefVariation <= seuil_diffusion & !is.nan(CoefVariation),EstVariable,IntervalConf.)) 
-      Sys.time() - t1
-      
-      # VII.4. Ajout des données à la table finale
-      df.zone <- qualityZone %>% 
-        rename(idZonage = zonage,
-               qualiteIndicateur = Variable) %>% 
-        left_join(lstIndicateur %>% 
-                    select(domaine,categorie,nomVariable,nomIndicateur,qualiteIndicateur,source),
-                  by = "qualiteIndicateur") %>% # Ajout de variables
-        left_join(zonage@data %>% 
-                    select(idZonage,idZonage.name)) %>% 
-        mutate(source = paste0(source,rp.an)) %>% 
-        select(-qualiteIndicateur) %>% 
-        gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% # Transformation de la base
-        bind_rows(df.zone %>% mutate(value = as.character(value))) # Ajout des données sur la qualité dans un format simple a exploiter
-      
-      # VIII. Secret statistique
-      #-------------------------
-      incProgress(amount = 0.8,message = "Secret statistique")
-      
-      # Utiliser la règle des 11 observations minimum par case.
-      seuil_secret_stat <- 11
-      
-      # VIII.1. Table de travail pour le secret statistique
-      df.zone.secret <- df.zone %>% 
-        filter(type.indicateur %in% c("freq","n"))
-      
-      # VIII.2. Catégorie à secretiser
-      var.secret <- lstCategorie$nomVariable[lstCategorie$typeVar == "pct" & substr(lstCategorie$source,1,2) == "rp"]
-      
-      # VIII.3. Secret statistique
-      indicateur.secret <- bind_rows(lapply(var.secret,secret_stat,df.zone.secret = df.zone.secret,seuil_secret_stat = seuil_secret_stat))
-      Sys.time() - t1
-      
-      # VIII.4. Ajout du secret aux indicateurs calculés
-      df.zone <- df.zone.secret %>% 
-        left_join(indicateur.secret,by = c("idZonage","nomVariable","nomIndicateur")) %>% # Ajout de la variable diffusable
-        mutate(value = ifelse(is.na(diff.secret),"diffusable",diff.secret),
-               type.indicateur = "secret_stat") %>% 
-        select(-diff.secret) %>% 
-        bind_rows(df.zone)
-      
-      Sys.time() - t1
-      
-      # VIII.5 Valeur diffusable
-      df.zone <- df.zone %>% 
-        filter(type.indicateur %in% c("val.qualite","secret_stat")) %>% 
-        spread(key = type.indicateur, value = value) %>% 
-        mutate(secret_stat = ifelse(is.na(secret_stat),"n_diffusable",secret_stat),
-               valeur.diffusable = ifelse(secret_stat == "diffusable",val.qualite,"c")) %>%  # c : données confidencielles
-        select(-secret_stat,-val.qualite) %>% 
-        gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
-        bind_rows(df.zone)
-      
+      agate.stat <- agate_statRp(rp.an = rv$source.an,zone.pred = 4,zoneType = "ZU",zonage = zonage,group_var = c("idZonage","idZonage.name"),
+                                 com.dom = com.dom,rpi.weight = "IPONDI.cal",rpl.weight = "IPONDL.cal")
+
       # Paramètres Agate
-      rv$df.zone <- df.zone
-      rv$statZone <- statZone
-      rv$source <- source
+      rv$df.zone <- agate.stat$df.zone
+      # rv$pyramide <- agate.stat$pyramide
+      # rv$source <- source
   })
 
     # VII. Nettoyage
     #--------------
-    
+
     # VII.1. Closing modal
-    toggleModal(session, modalId = "bs_optad", toggle = "close")    
-    
+    toggleModal(session, modalId = "bs_optad", toggle = "close")
+
     # VII.2. Pop-up indiquant la fin du calcul
     temps <- as.character(round(abs(difftime(t1,Sys.time(), units="secs")),2))
-    
-    if(!is.null(rv$statZone)){
+
+    if(!is.null(rv$df.zone)){
       shinyWidgets::sendSweetAlert(
-        session = session, 
+        session = session,
         title = "Terminé !", text = paste("Le calcul a été effectué en ",temps," secondes"), type = "success"
       )
     }
@@ -363,73 +193,73 @@ server <- function(input, output,session) {
   
   # IV.0.1 Filtered userdata
   #-------------------------
-  zone_filtre <- eventReactive(input$mymap_shape_click,{
-    # print(input$mymap_shape_click)
-
-    if(is.null(rv$AgateMap)) return(NULL)
-    df <- rv$AgateMap@data[rv$AgateMap@data$idZonage == input$mymap_shape_click$id,]
-    # df <- qpv_stat@data[qpv_stat@data$CODE_QP == input$mymap_shape_click$id,]
-    return(df)
-  })
-  
-  # IV.0.2 Reactive modal title
-  #----------------------------
-  output$modalTitle <- renderText({ 
-    if(is.null(zone_filtre())) {return("Informations sur la zone")}
-    
-    print(zone_filtre())
-    
-    paste("Zone : ",zone_filtre()$idZonage," - ",rv$AgateMap@data$idZonage.name[rv$AgateMap@data$idZonage == zone_filtre()$idZonage],sep="") 
-    # paste("Zone : ",zone_filtre()$idAgate," - ",zone_filtre()$idAgate.name,sep="") 
-    })
-
-  # IV.1. Total population infobox
-  #-------------------------------
-  output$IB_pop <- renderInfoBox({
-    infoBox(title = "Population", value =
-              format(round(with(rv$statZone$tRp.I.2 ,popZonage_p[idZonage == zone_filtre()$idZonage]),
-                           digits = 0),digits = 9,decimal.mark=",", big.mark=" "),
-            icon = icon("child"),color = "green", fill = TRUE
-    )
-  })
-
-  # IV.2. Poverty infobox
-  #----------------------
-  output$IB_rev <- renderInfoBox({
-    infoBox(title = "Taux  de pauvrete", value =
-              paste(format(round(with(rv$statZone$tFilo.II.1, tx_pauv60.ind.metro[idZonage == zone_filtre()$idZonage]),
-                           digits = 2),digits = 9,decimal.mark=",", big.mark=" "), " %", sep = "" ),
-            icon = icon("hands-helping",lib = "font-awesome"),color = "aqua", fill = TRUE,subtitle = "seuil metro"
-    )
-  })
-
-  # IV.3. Taux de chomeur infobox
-  #------------------------------
-  output$IB_chom <- renderInfoBox({
-    infoBox(title = "Taux de chomeur", value =
-              paste(format(round(with(rv$statZone$tRp.IV.1, part_p[TACT == "chomeur" & idZonage == zone_filtre()$idZonage]),
-                                 digits = 0),digits = 9,decimal.mark=",", big.mark=" ")," %",sep=""),
-            icon = icon("industry"),color = "orange", fill = TRUE
-    )
-  })
-
-  # IV.4. BoxPlot du Niveau de vie
-  #-------------------------------
-  # renderPlotly() also understands ggplot2 objects!
-  output$plotly1 <- renderPlotly({
-    callModule(plotlyBoxplotIncome,"plotly1",rv$statZone,rv$statHZone,zone_filtre(),input$SI_comp)
-  })
-   
-  # IV.5. Pyramide des ages
-  #------------------------
-  output$plotly2 <- renderPlotly({
-    callModule(plotlyAgedPyramid,"plotly2",rv$statZone,rv$statHZone,zone_filtre(),input$SI_comp)
-  })
-  # IV.6 Informations about household
-  #----------------------------------
-  output$plotly3 <- renderPlotly({
-    callModule(plotlyInfoPopulation,"plotly3")
-  })
+  # zone_filtre <- eventReactive(input$mymap_shape_click,{
+  #   # print(input$mymap_shape_click)
+  # 
+  #   if(is.null(rv$AgateMap)) return(NULL)
+  #   df <- rv$AgateMap@data[rv$AgateMap@data$idZonage == input$mymap_shape_click$id,]
+  #   # df <- qpv_stat@data[qpv_stat@data$CODE_QP == input$mymap_shape_click$id,]
+  #   return(df)
+  # })
+  # 
+  # # IV.0.2 Reactive modal title
+  # #----------------------------
+  # output$modalTitle <- renderText({ 
+  #   if(is.null(zone_filtre())) {return("Informations sur la zone")}
+  #   
+  #   print(zone_filtre())
+  #   
+  #   paste("Zone : ",zone_filtre()$idZonage," - ",rv$AgateMap@data$idZonage.name[rv$AgateMap@data$idZonage == zone_filtre()$idZonage],sep="") 
+  #   # paste("Zone : ",zone_filtre()$idAgate," - ",zone_filtre()$idAgate.name,sep="") 
+  #   })
+  # 
+  # # IV.1. Total population infobox
+  # #-------------------------------
+  # output$IB_pop <- renderInfoBox({
+  #   infoBox(title = "Population", value =
+  #             format(round(with(rv$statZone$tRp.I.2 ,popZonage_p[idZonage == zone_filtre()$idZonage]),
+  #                          digits = 0),digits = 9,decimal.mark=",", big.mark=" "),
+  #           icon = icon("child"),color = "green", fill = TRUE
+  #   )
+  # })
+  # 
+  # # IV.2. Poverty infobox
+  # #----------------------
+  # output$IB_rev <- renderInfoBox({
+  #   infoBox(title = "Taux  de pauvrete", value =
+  #             paste(format(round(with(rv$statZone$tFilo.II.1, tx_pauv60.ind.metro[idZonage == zone_filtre()$idZonage]),
+  #                          digits = 2),digits = 9,decimal.mark=",", big.mark=" "), " %", sep = "" ),
+  #           icon = icon("hands-helping",lib = "font-awesome"),color = "aqua", fill = TRUE,subtitle = "seuil metro"
+  #   )
+  # })
+  # 
+  # # IV.3. Taux de chomeur infobox
+  # #------------------------------
+  # output$IB_chom <- renderInfoBox({
+  #   infoBox(title = "Taux de chomeur", value =
+  #             paste(format(round(with(rv$statZone$tRp.IV.1, part_p[TACT == "chomeur" & idZonage == zone_filtre()$idZonage]),
+  #                                digits = 0),digits = 9,decimal.mark=",", big.mark=" ")," %",sep=""),
+  #           icon = icon("industry"),color = "orange", fill = TRUE
+  #   )
+  # })
+  # 
+  # # IV.4. BoxPlot du Niveau de vie
+  # #-------------------------------
+  # # renderPlotly() also understands ggplot2 objects!
+  # output$plotly1 <- renderPlotly({
+  #   callModule(plotlyBoxplotIncome,"plotly1",rv$statZone,rv$statHZone,zone_filtre(),input$SI_comp)
+  # })
+  #  
+  # # IV.5. Pyramide des ages
+  # #------------------------
+  # output$plotly2 <- renderPlotly({
+  #   callModule(plotlyAgedPyramid,"plotly2",rv$statZone,rv$statHZone,zone_filtre(),input$SI_comp)
+  # })
+  # # IV.6 Informations about household
+  # #----------------------------------
+  # output$plotly3 <- renderPlotly({
+  #   callModule(plotlyInfoPopulation,"plotly3")
+  # })
   # IV.7 Informations about housing
   #--------------------------------
   # output$plotly4 <- callModule(plotlyInfoHousing)
@@ -564,118 +394,118 @@ server <- function(input, output,session) {
   
   # VI.1. MAJ Select input
   #-----------------------
-  observeEvent(rv$qualityZone,{
-    
-    print(is.null(rv$qualityZone))
-    
-    if(!is.null(rv$qualityZone)){
-      QualiteVar<- rv$qualityZone %>% filter(!duplicated(Variable)) %>% select(Variable)
-      QualiteZone<- rv$qualityZone %>% filter(!duplicated(zonage)) %>% select(zonage)
-
-      updateSelectInput(session, "si_variable_qual",
-                        choices = as.character(QualiteVar$Variable),
-                        selected = as.character(QualiteVar$Variable[1])
-      )
-
-      updateSelectInput(session, "si_zone_qual",
-                        choices = as.character(QualiteZone$zonage),
-                        selected = as.character(QualiteZone$zonage[1])
-      )
-      
-      
-      
-    }
-    
-  })
-  
-  
-  
-  
-  # VI.1. Display data
-  #-------------------
-  
-  # output$qualityTable = DT::renderDataTable(
-  #   datatable(rv$qualityZone,
-  #             extensions = 'Buttons',
-  #             options = list(
-  #               scrollX = TRUE,
-  #               # fixedColumns = TRUE,
-  #               # autoWidth = TRUE,
-  #               ordering = FALSE,
-  #               dom = 'lBfrtip',
-  #               buttons = c(I('colvis'),'excel', 'pdf')),
-  #             rownames= FALSE,
-  #             class = "display" #if you want to modify via .css
-  #             ) %>% formatStyle(
-  #     'CV_Y',
-  #     target = 'row',
-  #     # backgroundColor = styleEqual(c(0,28.8), c('blank', 'yellow'))
-  #     backgroundColor = styleInterval(c(15,30,100), c("blank","#fee8c8","#fdbb84","#e34a33"))
-  #   ) %>% 
-  #     formatCurrency(columns = 2:4, currency = "", interval = 3, mark = " ",digits = 0) 
-  # )
-  
-  observeEvent(c(input$si_zone_qual,input$si_variable_qual,input$si_select_qual),{
-    
-    if(!is.null(rv$qualityZone)){
-      
-      if(input$si_select_qual=="Par Zone"){
-        output$TO_titleTab_qual <- renderText(paste0("Toutes les variables sur ",input$si_zone_qual))
-        
-        df<-rv$qualityZone %>% filter(zonage==input$si_zone_qual)
-        output$dt_qualite = renderDT(
-          datatable(df,
-                    #colnames = type.ind,
-                    extensions = 'Buttons',
-                    options = list(
-                      scrollX = TRUE,
-                      # fixedColumns = TRUE,
-                      # autoWidth = TRUE,
-                      ordering = FALSE,
-                      dom = 'lBfrtip',
-                      buttons = c(I('colvis'),'excel')),
-                    rownames= FALSE)
-        )
-      } else if(input$si_select_qual=="Par Variable"){
-        output$TO_titleTab_qual <- renderText(paste0(input$si_variable_qual," sur toutes les zones"))
-        
-        df<-rv$qualityZone %>% filter(Variable==input$si_variable_qual)
-        output$dt_qualite = renderDT(
-          datatable(df,
-                    #colnames = type.ind,
-                    extensions = 'Buttons',
-                    options = list(
-                      scrollX = TRUE,
-                      # fixedColumns = TRUE,
-                      # autoWidth = TRUE,
-                      ordering = FALSE,
-                      dom = 'lBfrtip',
-                      buttons = c(I('colvis'),'excel')),
-                    rownames= FALSE)
-        )
-      }
-      else{
-        output$TO_titleTab_qual <- renderText("Toutes les Variables sur toutes les zones")
-        
-        df<-rv$qualityZone
-        output$dt_qualite = renderDT(
-          datatable(df,
-                    #colnames = type.ind,
-                    extensions = 'Buttons',
-                    options = list(
-                      scrollX = TRUE,
-                      # fixedColumns = TRUE,
-                      # autoWidth = TRUE,
-                      ordering = FALSE,
-                      dom = 'lBfrtip',
-                      buttons = c(I('colvis'),'excel')),
-                    rownames= FALSE)
-        )
-      }# end if
-      
-    }# end if
-    
-  })
+  # observeEvent(rv$qualityZone,{
+  #   
+  #   print(is.null(rv$qualityZone))
+  #   
+  #   if(!is.null(rv$qualityZone)){
+  #     QualiteVar<- rv$qualityZone %>% filter(!duplicated(Variable)) %>% select(Variable)
+  #     QualiteZone<- rv$qualityZone %>% filter(!duplicated(zonage)) %>% select(zonage)
+  # 
+  #     updateSelectInput(session, "si_variable_qual",
+  #                       choices = as.character(QualiteVar$Variable),
+  #                       selected = as.character(QualiteVar$Variable[1])
+  #     )
+  # 
+  #     updateSelectInput(session, "si_zone_qual",
+  #                       choices = as.character(QualiteZone$zonage),
+  #                       selected = as.character(QualiteZone$zonage[1])
+  #     )
+  #     
+  #     
+  #     
+  #   }
+  #   
+  # })
+  # 
+  # 
+  # 
+  # 
+  # # VI.1. Display data
+  # #-------------------
+  # 
+  # # output$qualityTable = DT::renderDataTable(
+  # #   datatable(rv$qualityZone,
+  # #             extensions = 'Buttons',
+  # #             options = list(
+  # #               scrollX = TRUE,
+  # #               # fixedColumns = TRUE,
+  # #               # autoWidth = TRUE,
+  # #               ordering = FALSE,
+  # #               dom = 'lBfrtip',
+  # #               buttons = c(I('colvis'),'excel', 'pdf')),
+  # #             rownames= FALSE,
+  # #             class = "display" #if you want to modify via .css
+  # #             ) %>% formatStyle(
+  # #     'CV_Y',
+  # #     target = 'row',
+  # #     # backgroundColor = styleEqual(c(0,28.8), c('blank', 'yellow'))
+  # #     backgroundColor = styleInterval(c(15,30,100), c("blank","#fee8c8","#fdbb84","#e34a33"))
+  # #   ) %>% 
+  # #     formatCurrency(columns = 2:4, currency = "", interval = 3, mark = " ",digits = 0) 
+  # # )
+  # 
+  # observeEvent(c(input$si_zone_qual,input$si_variable_qual,input$si_select_qual),{
+  #   
+  #   if(!is.null(rv$qualityZone)){
+  #     
+  #     if(input$si_select_qual=="Par Zone"){
+  #       output$TO_titleTab_qual <- renderText(paste0("Toutes les variables sur ",input$si_zone_qual))
+  #       
+  #       df<-rv$qualityZone %>% filter(zonage==input$si_zone_qual)
+  #       output$dt_qualite = renderDT(
+  #         datatable(df,
+  #                   #colnames = type.ind,
+  #                   extensions = 'Buttons',
+  #                   options = list(
+  #                     scrollX = TRUE,
+  #                     # fixedColumns = TRUE,
+  #                     # autoWidth = TRUE,
+  #                     ordering = FALSE,
+  #                     dom = 'lBfrtip',
+  #                     buttons = c(I('colvis'),'excel')),
+  #                   rownames= FALSE)
+  #       )
+  #     } else if(input$si_select_qual=="Par Variable"){
+  #       output$TO_titleTab_qual <- renderText(paste0(input$si_variable_qual," sur toutes les zones"))
+  #       
+  #       df<-rv$qualityZone %>% filter(Variable==input$si_variable_qual)
+  #       output$dt_qualite = renderDT(
+  #         datatable(df,
+  #                   #colnames = type.ind,
+  #                   extensions = 'Buttons',
+  #                   options = list(
+  #                     scrollX = TRUE,
+  #                     # fixedColumns = TRUE,
+  #                     # autoWidth = TRUE,
+  #                     ordering = FALSE,
+  #                     dom = 'lBfrtip',
+  #                     buttons = c(I('colvis'),'excel')),
+  #                   rownames= FALSE)
+  #       )
+  #     }
+  #     else{
+  #       output$TO_titleTab_qual <- renderText("Toutes les Variables sur toutes les zones")
+  #       
+  #       df<-rv$qualityZone
+  #       output$dt_qualite = renderDT(
+  #         datatable(df,
+  #                   #colnames = type.ind,
+  #                   extensions = 'Buttons',
+  #                   options = list(
+  #                     scrollX = TRUE,
+  #                     # fixedColumns = TRUE,
+  #                     # autoWidth = TRUE,
+  #                     ordering = FALSE,
+  #                     dom = 'lBfrtip',
+  #                     buttons = c(I('colvis'),'excel')),
+  #                   rownames= FALSE)
+  #       )
+  #     }# end if
+  #     
+  #   }# end if
+  #   
+  # })
   
   
   

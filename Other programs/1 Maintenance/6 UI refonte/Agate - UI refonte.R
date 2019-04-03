@@ -1,32 +1,31 @@
-#----------------------------------------------------------------------------------------------------------------------#
-#                                   Agate - Dashboard mini app                                                         #
-#----------------------------------------------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------------------------------------#
+#                                             Agate - UI refonte                                                            #
+#---------------------------------------------------------------------------------------------------------------------------#
 
-# 01.04.2019
+# 03.04.2019
 
-# Mini app pour améliorer le dashboard d'Agate avant intégration définitive
-
-# Packages nécessaires
-#---------------------
+library(sp)
+library(leaflet)
+library(leaflet.extras)
 library(tidyverse)
-library(plotly)
-library(DT)
+library(fst)
+library(fstplyr)
 library(shiny) # Graphic web interface
 library(shinyBS) # Pop-up windows
 library(shinyjs) # Mask buttons/elements on graphic interface
 library(shinyWidgets) # Widgets supplementaires
 library(shinydashboard) # Tools like infoBox
+library(plotly)
 
-# Fonctions  particulières
-source("Other programs/2 Fonctions Agate/4 Dashboard/Agate - Dashboard fct.R",encoding = "UTF-8")
+
 
 # Label et choix
 load("data/Liste indicateurs statistiques/lstIndicateur.RData")
-
-#-------------------------------------------------------------------------------------------------------------------
-
-
-#------------------------------------------------------------------------------------------------------------------------------------
+# heatPoints
+load("Data/Maps/HeatPoint/heatpoints.Rdata") 
+# load("Data/Maps/Zones predefinies/zp_departements.RData")
+# load("Data/Maps/Zones predefinies/zp_communes.RData")
+# load("Data/Maps/Zones predefinies/zp_qpv.RData")
 
 # NavBar Spéciale :)
 navbarPageWithInputs <- function(..., inputs) {
@@ -37,21 +36,101 @@ navbarPageWithInputs <- function(..., inputs) {
   navbar
 }
 
-ui <- shinyUI(
-  fluidPage(
-    navbarPage("title",
-               tabPanel("OpenModal",
-                        actionButton("ab_modal","Dashboard"))
-    ),
-    tags$head(tags$style("#bs_dashboard .modal-footer{ display:none}
-                        #bs_dashboard .modal-header{ display:none}")), # Remove BS modal footer
-    tags$head(tags$style(HTML('
 
-                                                    .modal-lg {
-                                                    width: 90%;
-                                                    
-                                                    }
-                                                    '))), # Increase modal size
+ui <- tagList(
+  useShinyjs(),
+  navbarPage(
+    "Agate",
+
+    # I. Carte
+    #-------------------------------------------------------------------------------------------------------------------------------------------------
+    tabPanel(
+      "Carte",
+      div(class="outer",
+          tags$head(includeCSS("www/agate.css")),
+          # I.1.1. Leaflet map
+          #-----------------
+          leafletOutput("llo_agateMap", width = "100%", height = "100%"),
+          
+          # I.1.2. Statistical controls
+          #----------------------------
+          absolutePanel(
+            draggable = TRUE,top = 20, right = 10,width = 200,#height = 500,
+            useSweetAlert(),
+            radioGroupButtons(
+              inputId = "rg_typeZone",
+              choices = c("Utilisateur",
+                          "Prédéfini"),
+              justified = TRUE
+            ),
+            # Utilisateur
+            fluidRow(
+              column(5,
+                     dropdownButton(
+                       inputId = "ddb_import",label = "Importer",size = "sm",circle = FALSE,right = TRUE,
+                       tooltip = tooltipOptions(title = "Importer une carte"),
+                       fileInput('fi_userMap', 'Importer un shapeFile',multiple = T),
+                       selectInput(inputId = "si_userMap_id", label = "Identifiant", 
+                                   choices = c("Choice" =""),selected = c("")),
+                       selectInput(inputId = "si_userMap_idName", label = "Libellé", 
+                                   choices = c("Choice" =""),
+                                   selected = c("")),
+                       fluidRow(
+                         column(6,
+                                switchInput(
+                                  inputId = "swi_userMapEdit",
+                                  value = FALSE,label = "Editer",onStatus = "success"
+                                )
+                         ),
+                         column(6,
+                                
+                                switchInput(
+                                  inputId = "swi_heatPoint",
+                                  value = FALSE,label = "Chaleur",onStatus = "warning"
+                                )
+                         )
+                       )
+                     )
+              ),
+              column(7,
+                     dropdownButton(inputId = "ddb_userMapStat",label = "Statistiques",size = "sm",circle = FALSE,right = TRUE,
+                                    tooltip = tooltipOptions(title = "Calcul des indicateurs statistiques"),
+                                    selectInput(inputId = "si_rp", label = "Recensement de la population", 
+                                                choices = c("2015" = "15","2014" = "14","2013" = "13"),
+                                                selected = "15" ),
+                                    pickerInput(inputId = "pi_userMapSelect",
+                                                label = "Selection des zones à calculer", 
+                                                choices = c("Choice" =""),
+                                                options = list(
+                                                  `actions-box` = TRUE), 
+                                                multiple = TRUE)
+                     )
+              )
+            ),
+            # Zones prédéfinies
+            shinyjs::hidden(
+              selectInput("si_zonePred", "Selectionner une zone",
+                          choices = pred.choice,
+                          selected = c(4))
+            ),
+            style = "opacity: 0.75; z-index: 1000;" # IMPORTANT : Absolute panel not hidden by tiles
+          )
+          
+      )
+    
+    
+    # II. Statistiques et téléchargement
+    #-------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    # III. Documentation
+    #-------------------------------------------------------------------------------------------------------------------------------------------------
+    
+    # IV. Dashboard
+    #-------------------------------------------------------------------------------------------------------------------------------------------------
+    ,
+    tags$head(tags$style("#bs_dashboard .modal-footer{ display:none}
+                         #bs_dashboard .modal-header{ display:none}")), # Remove BS modal footer
+    tags$head(tags$style(HTML('.modal-lg {width: 90%;}'))), # Increase modal size
     bsModal('bs_dashboard', title = "",'test',size = "large",
             # Add CSS files : use infobox from shinydashboard package into a shinyApp
             includeCSS(path = "www/AdminLTE.css"),
@@ -188,11 +267,9 @@ ui <- shinyUI(
                                             )
                                           )
                                  ),
-                                 
                                  # V. Thème Résidences principales
                                  #-----------------------------------------------------------------------------------------------------
                                  tabPanel("Résidences principales",
-                                          
                                           fluidRow(
                                             infoBoxOutput(outputId = "ib_res_pop"),
                                             infoBoxOutput(outputId = "ib_res_collectif"),
@@ -235,33 +312,148 @@ ui <- shinyUI(
                                                          tooltip = tooltipOptions(title = "Zones de comparaison")
                                  )
             )
-    )
+    ) # end Dashboard
+    
+    )# Tabset Carte
+    
+    
   )
 )
-
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
 server = function(input, output, session) {
-
-  load("Data/Tmp/qpv_stat_tmp.RData")
   
-  observeEvent(input$ab_modal,{
-    toggleModal(session, "bs_dashboard", toggle = "toggle")
-  })
+  load("Data/Tmp/qpv_stat_tmp.RData")
   
   # Reactive Values
   #----------------------------------------------------------------------------------------------------------------------------
-  rv <- reactiveValues(zone.etude = "QP971002",
+  rv <- reactiveValues(AgateMap = NULL,
+                       userMap = NULL,
+                       zone.active = NULL,
+                       zone.etude = NULL,
                        zone.compare = NULL,
-                       df.zone=df.zone,
+                       df.zone.etude=NULL,
+                       pyramide.etude = NULL,
                        dash.indicateur = NULL,
-                       pyramide = pyramide,
                        source.an = "13",
                        zonage.com = zonage.com)
   
+  # I. Interactive map
+  #----------------------------------------------------------------------------------------------------------------------------
+  output$llo_agateMap <- renderLeaflet({
+    leaflet("agateMap",data = heat.pts) %>% addTiles()%>% 
+      fitBounds(lng1 = -65,lat1 = 18,lng2 = -45,lat2 = 3) %>% 
+      addHeatmap(group = "heatpts",lng = ~x, lat = ~y,
+                 # intensity = ~nivviem,
+                 blur = 60, radius = 30) %>% 
+      hideGroup("heatpts")
+  })
   
-  observeEvent(c(input$si_typeZone),{
+  # Zoom sur click
+  observeEvent(input$llo_agateMap_shape_click, { 
     
+    if(!is.null(rv$AgateMap)){
+      mapSelect <- rv$AgateMap[rv$AgateMap@data$idZonage == input$llo_agateMap_shape_click$id,]
+      
+      mapSelect.bbox <- as.data.frame(bbox(mapSelect))
+      zoom_lng <- (mapSelect.bbox$max[1] - mapSelect.bbox$min[1])/2
+      zoom_lat <- (mapSelect.bbox$max[2] - mapSelect.bbox$min[2])/2
+      
+      leafletProxy("llo_agateMap") %>%
+        fitBounds(lng1 = mapSelect.bbox$min[1] - zoom_lng,
+                  lat1 = mapSelect.bbox$max[2] + zoom_lat,
+                  lng2 = mapSelect.bbox$max[1] + zoom_lng,
+                  lat2 = mapSelect.bbox$min[2] - zoom_lat)
+    }
+  })
+  
+  # Heatpoints
+  observeEvent(input$swi_heatPoint, {
+    
+    if(input$swi_heatPoint){
+      leafletProxy("llo_agateMap") %>% 
+        showGroup("heatpts")
+    }else{
+      leafletProxy("llo_agateMap") %>% 
+        hideGroup("heatpts")
+    }
+  })
+
+  # Affichage d'un zonage
+  observeEvent(rv$AgateMap,{
+    
+    if(!is.null(rv$AgateMap)){
+      if(!is.null(rv$AgateMap@data$idZonage) & !is.null(rv$AgateMap@data$idZonage.name)){
+
+        rv$AgateMap <- spTransform(rv$AgateMap, "+init=epsg:4326")
+        # Boundary box
+        AgateMap.bbox <- as.data.frame(bbox(rv$AgateMap))
+        
+        # Update leaflet
+        leafletProxy("llo_agateMap") %>%
+          clearShapes() %>% 
+          fitBounds(lng1 = AgateMap.bbox$min[1],lat1 = AgateMap.bbox$max[2],lng2 = AgateMap.bbox$max[1],lat2 = AgateMap.bbox$min[2]) %>%
+          addPolygons(data=rv$AgateMap,opacity = 3,
+                      color = "green", stroke = TRUE, weight = 2,
+                      fill = TRUE, fillOpacity = 0.2,popup = ~paste(idZonage.name),layerId = ~paste(idZonage))
+      }
+    }
+  })
+  
+  # II. Navigation
+  #----------------------------------------------------------------------------------------------------------------------------
+  
+  # Zone utilisateur ou predefinie
+  observeEvent(input$rg_typeZone,{
+    if(input$rg_typeZone == "Utilisateur"){
+      shinyjs::hide("si_zonePred")
+      shinyjs::hide("ab_modal")
+      shinyjs::show("ddb_import")
+      shinyjs::show("ddb_userMapStat")
+    }else{
+      shinyjs::show("si_zonePred")
+      shinyjs::show("ab_modal")
+      shinyjs::hide("ddb_import")
+      shinyjs::hide("ddb_userMapStat")
+    }
+  })
+  
+  # Selection de la zone a afficher
+  observeEvent(input$si_zonePred,{
+    
+    switch(as.numeric(input$si_zonePred),
+           {
+             if(!exists("dep.dom")){
+               print("argh !")
+               load("Data/Maps/Zones predefinies/zp_departements.RData")
+             }
+             rv$AgateMap <- dep.dom},
+           {             
+             if(!exists("com.dom")){
+               print("orf !")
+               load("Data/Maps/Zones predefinies/zp_communes.RData")
+             }
+             rv$AgateMap <- com.dom
+           },
+           {
+             if(!exists("qpv")){
+               print("Humpf !")
+               load("Data/Maps/Zones predefinies/zp_qpv.RData")
+             }
+             rv$AgateMap <- qpv},
+           {print("TODO")})
+  })
+  
+  
+  # Ouverture du dashboard
+  observeEvent(input$llo_agateMap_shape_click,{
+    rv$zone.etude <- input$llo_agateMap_shape_click$id
+
+    toggleModal(session, "bs_dashboard", toggle = "toggle")
+  })
+  
+  # Mise a jour des listes de comparaison dashboard
+  observeEvent(c(input$si_typeZone),{
     if(input$si_typeZone != 4){
       test <- lstZonePreType$zone.pred == input$si_typeZone & lstZonePreType$dep == unique(rv$zonage.com$dep) & 
         lstZonePreType$idZonage != rv$zone.etude
@@ -280,222 +472,70 @@ server = function(input, output, session) {
   
   
   
-  # Indicateur dashboard
-  #-----------------------------------------------------------------------------------------------------------------------------
-  observeEvent(c(input$si_typeZone,input$si_zone),{
-    
-    if(input$si_typeZone != 4){
-      df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>% 
-        filter(zone.pred == input$si_typeZone & idZonage == input$si_zone & substr(source,4,5) == rv$source.an) 
-      
-      df2 <- df %>% 
-        filter(nomVariable %in% c("emp_typeActivite","sco_popSco2","sco_diplome","log_cat","log_ach_constru",
-                                  "log_bati","res_nbPiece","res_surface")) %>% 
-        mutate(type.indicateur = "part_p")
-      df <- bind_rows(df,df2,rv$df.zone %>% filter(idZonage == rv$zone.etude))
-      
-      pyr <- read_fst("Data/Stats/Prefine aera/Real/fst/pyramide.fst") %>% 
-        filter(zone.pred == input$si_typeZone & idZonage == input$si_zone & substr(source,4,5) == rv$source.an) %>% 
-        bind_rows(rv$pyramide %>% filter(idZonage == rv$zone.etude))
-    }else{
-      df <- rv$df.zone %>% filter(idZonage %in% c(rv$zone.etude,input$si_zone))
-      pyr <- rv$pyramide %>% filter(idZonage %in% c(rv$zone.etude,input$si_zone))
-    }
-    
-    rv$dash.indicateur <- stat.dashboard_agate(df = df,zone.etude = rv$zone.etude,
-                                               zone.compare = input$si_zone, lstIndicateur = lstIndicateur,
-                                               pyramide_tr = pyr)
-    
-    # Titre dashboard
-    output$to_titleDash = renderText({
-      rv$dash.indicateur$titreDash
-    })
-    
-    output$to_source = renderText({
-      paste0("Source : recensement de la population 20",rv$dash.indicateur$source.an,
-             " niveau individu et logement - exploitation principale. \n Note : c = données confidentielles, intervalles de confiance 
-             à 95 % calculés à partir d'une estimation de la variance du plan de sondage.")
 
-    })
+  # III. Dashboard
+  #--------------------------------------------------------------------------------------------------------------------------------------------------------------
+  
+  # Selection des données d'études
+  observeEvent(c(input$rg_typeZone,input$si_zonePred),{
     
-    # Theme Démographie
-    #------------------
-    output$ib_dem_feminite <- renderInfoBox({
-      infoBox(title = "Féminité", value = rv$dash.indicateur$vb.dem.fem,
-              icon = icon("female"),fill=TRUE)
-    })
-    
-    output$ib_dem_population <- renderInfoBox({
-      infoBox(title = "Population", value = rv$dash.indicateur$vb.dem.pop,
-              icon = icon("users"),fill=TRUE)
-    })
-    
-    output$ib_dem_superficie <- renderInfoBox({
-      infoBox(title = "Superficie", value = rv$dash.indicateur$vb.dem.super,
-              icon = icon("tree"),fill=TRUE)
-    })
-    
-    output$dt_dem_hg = renderDT(
-      datatable(rv$dash.indicateur$df.dem.tab.hg, colnames = rv$dash.indicateur$dash.label,
-                rownames = FALSE, options = list(dom = 't'))
-    )
-    
-    output$dt_dem_hd = renderDT(
-      datatable(rv$dash.indicateur$df.dem.tab.hd, colnames = rv$dash.indicateur$dash.label,
-                rownames = FALSE, options = list(dom = 't'))
-    )
-    
-    output$g_dem_bg = renderPlotly({
-      hide_legend(ggplotly(rv$dash.indicateur$g.dem.pyramide,tooltip = c("label","label2","label3","label4")))
-    })
-    
-    output$dt_dem_bd = renderDT(
-      datatable(rv$dash.indicateur$df.dem.tab.bd, colnames = rv$dash.indicateur$dash.label,
-                rownames = FALSE, options = list(dom = 't'))
-    )
-    
-    # Theme Emploi
-    #-------------
-    output$ib_emp_pop_trav <- renderInfoBox({
-      infoBox(title = "Population en âge de travailler", value = rv$dash.indicateur$vb.emp.popTrav,
-              icon = icon("fa-user-cog"),fill=TRUE)
-    })
-    
-    output$ib_emp_chomeur <- renderInfoBox({
-      infoBox(title = "Taux de chômage", value = rv$dash.indicateur$vb.emp.chom,
-              icon = icon("fa-people-carry"),fill=TRUE,subtitle = "selon le recensement de la population")
-    })
-    
-    output$ib_emp_inactif <- renderInfoBox({
-      infoBox(title = "Inactifs", value = rv$dash.indicateur$vb.emp.inact,
-              icon = icon("user"),fill=TRUE)
-    })
-    
-    output$dt_emp_hg = renderDT(
-      datatable(rv$dash.indicateur$df.emp.tab.hg, colnames = rv$dash.indicateur$dash.label,
-                rownames = FALSE, options = list(dom = 't'))
-    )
-    
-    output$dt_emp_hd = renderDT(
-      datatable(rv$dash.indicateur$df.emp.tab.hd, colnames = rv$dash.indicateur$dash.label,
-                rownames = FALSE, options = list(dom = 't'))
-    )
-    
-    output$g_emp_bg = renderPlotly({
-      hide_legend(ggplotly(rv$dash.indicateur$g.emp.typeAct,tooltip = c("label","label2")))
-    })
-    
-    output$dt_emp_bd = renderDT(
-      datatable(rv$dash.indicateur$df.emp.tab.bd, colnames = rv$dash.indicateur$dash.label,
-                rownames = FALSE, options = list(dom = 't'))
-    )
-    
-    # Theme Scolarisation
-    #--------------------
-    output$ib_sco_pop_sco <- renderInfoBox({
-      infoBox(title = "Population en âge d'être scolarisée", value = rv$dash.indicateur$vb.sco.popSco,
-              icon = icon("child"),fill=TRUE)
-    })
-    
-    output$ib_sco_etud <- renderInfoBox({
-      infoBox(title = "Jeunes inscrit dans un établissement scolaire", value = rv$dash.indicateur$vb.sco.etud,
-              icon = icon("user-graduate"),fill=TRUE)
-    })
-    
-    output$ib_sco_decrocheur <- renderInfoBox({
-      infoBox(title = "Taux de décrocheur", value = rv$dash.indicateur$vb.sco.decrocheur,
-              icon = icon("user-slash"),fill=TRUE)
-    })
-    
-    output$dt_sco_hg = renderDT(
-      datatable(rv$dash.indicateur$df.sco.tab.hg, colnames = rv$dash.indicateur$dash.label,
-                rownames = FALSE, options = list(dom = 't'))
-    )
-    
-    output$g_sco_hd = renderPlotly({
-      hide_legend(ggplotly(rv$dash.indicateur$g.sco.pop,tooltip = c("label","label2")))
-    })
-    
-    output$g_sco_bg = renderPlotly({
-      hide_legend(ggplotly(rv$dash.indicateur$g.sco.diplome,tooltip = c("label","label2")))
-    })
-    
-    output$dt_sco_bd = renderDT(
-      datatable(rv$dash.indicateur$df.sco.tab.bd, colnames = rv$dash.indicateur$dash.label,
-                rownames = FALSE, options = list(dom = 't'))
-    )
-    
-    # Theme Logement
-    #---------------
-    output$ib_log_pop <- renderInfoBox({
-      infoBox(title = "Nombre de logements", value = rv$dash.indicateur$vb.log.tot,
-              icon = icon("child"),fill=TRUE)
-    })
-    
-    output$ib_log_hlm <- renderInfoBox({
-      infoBox(title = "HLM", value = rv$dash.indicateur$vb.log.hlm,
-              icon = icon("user-graduate"),fill=TRUE)
-    })
-    
-    output$ib_log_maison <- renderInfoBox({
-      infoBox(title = "Taux de décrocheur", value = rv$dash.indicateur$vb.log.maison,
-              icon = icon("user-slash"),fill=TRUE)
-    })
-    
-    output$dt_log_hg = renderDT(
-      datatable(rv$dash.indicateur$df.log.tab.hg, colnames = rv$dash.indicateur$dash.label,
-                rownames = FALSE, options = list(dom = 't'))
-    )
-    
-    output$g_log_hd = renderPlotly({
-      hide_legend(ggplotly(rv$dash.indicateur$g.log.cat,tooltip = c("label","label2")))
-    })
-    
-    output$g_log_bg = renderPlotly({
-      hide_legend(ggplotly(rv$dash.indicateur$g.log.ach,tooltip = c("label","label2")))
-    })
-    
-    output$g_log_bd = renderPlotly({
-      hide_legend(ggplotly(rv$dash.indicateur$g.log.bati,tooltip = c("label","label2")))
-    })
-    
-    # Theme Résidences principales
-    #-----------------------------
-    output$ib_res_pop <- renderInfoBox({
-      infoBox(title = "Résidences principales", value = rv$dash.indicateur$vb.res.part,
-              icon = icon("child"),fill=TRUE)
-    })
-    
-    output$ib_res_collectif <- renderInfoBox({
-      infoBox(title = "Logements collectifs", value = rv$dash.indicateur$vb.res.collectif,
-              icon = icon("user-graduate"),fill=TRUE)
-    })
-    
-    output$ib_res_todo <- renderInfoBox({
-      infoBox(title = "TODO", value = "TODO",
-              icon = icon("user-slash"),fill=TRUE)
-    })
-    
-    output$dt_res_hg = renderDT(
-      datatable(rv$dash.indicateur$df.res.tab.hg, colnames = rv$dash.indicateur$dash.label,
-                rownames = FALSE, options = list(dom = 't'))
-    )
-    
-    output$g_res_hd = renderPlotly({
-      hide_legend(ggplotly(rv$dash.indicateur$g.res.nbp,tooltip = c("label","label2")))
-    })
-    
-    output$g_res_bg = renderPlotly({
-      hide_legend(ggplotly(rv$dash.indicateur$g.res.surf,tooltip = c("label","label2")))
-    })
-    
-    output$dt_res_bd = renderDT(
-      datatable(rv$dash.indicateur$df.res.tab.bd, colnames = rv$dash.indicateur$dash.label,
-                rownames = FALSE, options = list(dom = 't'))
-    )
+    # if(input$rg_typeZone == "Utilisateur"){
+    #   #TODO
+    #   print("TODO")
+    # }else{
+    #   df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>% 
+    #     filter(zone.pred == input$si_zonePred & idZonage == rv$zone.etude & substr(source,4,5) == rv$source.an) 
+    #   df2 <- df %>% 
+    #     filter(nomVariable %in% c("emp_typeActivite","sco_popSco2","sco_diplome","log_cat","log_ach_constru",
+    #                               "log_bati","res_nbPiece","res_surface")) %>% 
+    #     mutate(type.indicateur = "part_p")
+    #   rv$df.zone.etude <- bind_rows(df,df2)
+    #   
+    #   print(rv$df.zone.etude)
+    # }
   })
   
+  # Selection des données de comparaison
+  
+  
+  
+  observeEvent(c(input$si_typeZone,input$si_zone),{
+    
+    # if(input$si_typeZone != 4){
+    #   df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>% 
+    #     filter(zone.pred == input$si_typeZone & idZonage == input$si_zone & substr(source,4,5) == rv$source.an) 
+    #   
+    #   df2 <- df %>% 
+    #     filter(nomVariable %in% c("emp_typeActivite","sco_popSco2","sco_diplome","log_cat","log_ach_constru",
+    #                               "log_bati","res_nbPiece","res_surface")) %>% 
+    #     mutate(type.indicateur = "part_p")
+    #   df <- bind_rows(df,df2,rv$df.zone %>% filter(idZonage == rv$zone.etude))
+    #   
+    #   pyr <- read_fst("Data/Stats/Prefine aera/Real/fst/pyramide.fst") %>% 
+    #     filter(zone.pred == input$si_typeZone & idZonage == input$si_zone & substr(source,4,5) == rv$source.an) %>% 
+    #     bind_rows(rv$pyramide %>% filter(idZonage == rv$zone.etude))
+    # }else{
+    #   df <- rv$df.zone %>% filter(idZonage %in% c(rv$zone.etude,input$si_zone))
+    #   pyr <- rv$pyramide %>% filter(idZonage %in% c(rv$zone.etude,input$si_zone))
+    # }
+    # 
+    # rv$dash.indicateur <- stat.dashboard_agate(df = df,zone.etude = rv$zone.etude,
+    #                                            zone.compare = input$si_zone, lstIndicateur = lstIndicateur,
+    #                                            pyramide_tr = pyr)
+  })
+  
+  # Mise a jour du dashboard
+  
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
 } # End server
 
@@ -503,10 +543,3 @@ server = function(input, output, session) {
 
 # Application
 shinyApp(ui = ui, server = server)
-
-
-
-
-
-
-

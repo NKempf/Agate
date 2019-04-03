@@ -23,7 +23,7 @@ library(leaflet) # Interactive web map
 library(leaflet.extras) # Extras functions for leaflet
 library(rgdal) # Input shapefile
 library(rgeos) # Map tools
-# library(sampling) # Sampling tools
+library(sampling) # Sampling tools
 library(tidyverse) # Tidy data
 library(plotly) # Interactive graphics
 library(openxlsx) # Export data in Excel
@@ -39,9 +39,10 @@ library(rlang) # Non Standard evaluation
 #----------------
 source ("Other programs/2 Fonctions Agate/1 Fake data/Agate - Fake data fct.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/2 Cartographie/Agate - Cartographie fct.R",encoding = "UTF-8")
-source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v8.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v9.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/6 Census Quality/Agate - Qualite du RP.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/7 Statistical disclosure/Agate - statistiscal disclosure.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/4 Dashboard/Agate - Dashboard fct.R",encoding = "UTF-8")
 
 # II.2. Maps
 #-----------
