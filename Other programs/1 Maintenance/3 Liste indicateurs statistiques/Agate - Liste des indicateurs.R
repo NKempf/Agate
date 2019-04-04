@@ -2,7 +2,7 @@
 #                 Agate - Gestion de la liste des indicateurs                                                                    #
 #--------------------------------------------------------------------------------------------------------------------------------#
 
-# MAJ : 18.02.2019
+# MAJ : 02.04.2019
 
 # Nicolas Kempf
 
@@ -22,7 +22,8 @@ lstDomaine <- read_xlsx(fichierExcel,sheet = "domaine")
 lstCategorie <- read_xlsx(fichierExcel,sheet = "categorie")
 lstIndicateur <- read_xlsx(fichierExcel,sheet = "indicateur")
 lstTypeIndicateur <- read_xlsx(fichierExcel,sheet = "type indicateur")
-lstPredefine <- read_xlsx(fichierExcel,sheet = "Zone predefinie")
+lstPredefine <- read_xlsx(fichierExcel,sheet = "zone predefinie")
+lstZonePreType <- read_xlsx(fichierExcel,sheet = "zonePreType")
 
 
 typInd <- lstTypeIndicateur$typeIndicateur
@@ -62,11 +63,11 @@ lstIndicateur <- lstIndicateur %>%
                                          ssChamp == 1 ~ paste0(nomVariable,nomIndicateur," / ",variableChamp,modaliteChamp),
                                        TRUE ~ "nc"))
                                        
-write.xlsx(lstIndicateur,"Data/Liste indicateurs statistiques/testLstIndicateur.xlsx")
+# write.xlsx(lstIndicateur,"Data/Liste indicateurs statistiques/testLstIndicateur.xlsx")
 
 # II. Enregistrement
 #------------------------------------------------------------------------------------------------------------------------------
-save(lstDomaine,lstCategorie,lstIndicateur,typInd,pred.choice,ind.label,lstTypeIndicateur,dep.label,com.label,
+save(lstDomaine,lstCategorie,lstIndicateur,typInd,pred.choice,ind.label,lstTypeIndicateur,dep.label,com.label,lstZonePreType,lstPredefine,
      file = "Data/Liste indicateurs statistiques/lstIndicateur.RData")
 
 

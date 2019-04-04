@@ -7,7 +7,7 @@ library(readxl)
 
 # Chargement des options
 load("Data/Liste indicateurs statistiques/lstIndicateur.RData")
-dmn <- lstDomaine$idDomaine
+dmn <- lstDomaine$domaine
 names(dmn) <- lstDomaine$labelDomaine
 
 
@@ -27,7 +27,7 @@ shinyApp(
            #------------------------
            selectInput("si_domaine", "Domaine",
                        choices = c("Choice" ="",dmn),
-                       selected = c(""))
+                       selected = dmn[2])
     ),
     column(4,
            # II.3. Categorie selection
@@ -60,6 +60,8 @@ shinyApp(
     # I. Import des tables
     #----------------------------------------------------------------------------------------------------------------------------
     load("Data/Tmp/qpv_stat_tmp.RData")
+    typInd <- lstTypeIndicateur$typeIndicateur
+    names(typInd) <- lstTypeIndicateur$labelTypeIndicateur
     
     observe({
       rv$df.zone <- df.zone
@@ -76,30 +78,32 @@ shinyApp(
   
         if(input$si_zoneSelect == 4){
           # Selection des données
-          df <- rv$df.zone %>% 
-            select(source,domaine,categorie,idZonage,idZonage.name,indicateur,type.indicateur,value) %>%
-            filter(type.indicateur != "part_np") %>% 
+          df <- rv$df.zone %>%
+            select(source,domaine,categorie,idZonage,idZonage.name,type.indicateur,value) %>%
+            filter(type.indicateur != "part_np") %>%
             filter(domaine == input$si_domaine & categorie == input$si_categorie)
         }else{
-          df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>% 
-            filter(zone.predefine == input$si_zoneSelect & domaine == input$si_domaine & 
+          df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>%
+            filter(zone.predefine == input$si_zoneSelect & domaine == input$si_domaine &
                      categorie == input$si_categorie & source %in% rv$source) %>%
-            filter(type.indicateur != "part_np") %>% 
-            select(source,domaine,categorie,idZonage,idZonage.name,indicateur,type.indicateur,value)
+            filter(type.indicateur != "part_np") %>%
+            select(source,domaine,categorie,idZonage,idZonage.name,nomIndicateur,type.indicateur,value)
         }
-        
+
         # selection des libelles de colonnes
         type.ind <- typInd[typInd %in% c("idZonage","idZonage.name",unique(df$type.indicateur))]
+        print(type.ind)
+        
         
         df <- df %>%
           spread(key = type.indicateur, value = value) %>%
-          left_join(lstIndicateur %>% select(nomIndicateur,labelIndicateur),c("indicateur" = "nomIndicateur")) %>% 
-          mutate(indicateur = labelIndicateur) %>% 
+          left_join(lstIndicateur %>% select(nomIndicateur,labelIndicateur),"nomIndicateur") %>%
+          mutate(indicateur = labelIndicateur) %>%
           select(-domaine,-categorie,-labelIndicateur)
 
         # Affichage du titre de la
-        output$TO_titleTab <- renderText({lstCategorie$titreTab[lstCategorie$idDomaine == input$si_domaine &
-                                                                  lstCategorie$idCategorie == input$si_categorie]})
+        output$TO_titleTab <- renderText({lstCategorie$titreTab[lstCategorie$domaine == input$si_domaine &
+                                                                  lstCategorie$categorie == input$si_categorie]})
         # Affichage
         output$table = renderDT(
           datatable(df,
@@ -122,10 +126,9 @@ shinyApp(
     
     # Update Si_categorie
     observeEvent(input$si_domaine,{
+      cat <- lstCategorie$categorie[lstCategorie$domaine == input$si_domaine]
+      names(cat) <- lstCategorie$labelCategorie[lstCategorie$domaine == input$si_domaine]
       
-      print(input$si_domaine)
-      cat <- lstCategorie$idCategorie[lstCategorie$idDomaine == input$si_domaine]
-      names(cat) <- lstCategorie$labelCategorie[lstCategorie$idDomaine == input$si_domaine]
       updateSelectInput(session, "si_categorie",
                         choices = cat
       )

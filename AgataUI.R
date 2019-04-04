@@ -5,7 +5,7 @@
 # Options statistiques
 #---------------------
 load("Data/Liste indicateurs statistiques/lstIndicateur.RData")
-dmn <- lstDomaine$idDomaine
+dmn <- lstDomaine$domaine
 names(dmn) <- lstDomaine$labelDomaine
 
 ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
@@ -34,7 +34,7 @@ ui <- navbarPage("Agate",theme = "cosmo",collapsible=TRUE,
                                               # I.1.2.1. Import ShapeFile
                                               #--------------------------
                                               # Import button
-                                              fileInput('file1', 'Import shapeFile',multiple = T),
+                                              fileInput('file1', 'Importer un shapeFile',multiple = T),
                                               
                                               # I.1.2.2. Statistical calculation
                                               #---------------------------------

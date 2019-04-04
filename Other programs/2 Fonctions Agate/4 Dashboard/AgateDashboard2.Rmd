@@ -1,0 +1,327 @@
+---
+title: "Agate dashboard version 2"
+output: 
+  flexdashboard::flex_dashboard:
+    css: flexNk.css
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard) # Widget for dashboard
+library(tidyverse) # Data transformation
+library(DT) # Interactive table
+library(plotly) # Interactive graph
+
+# Chargement des données
+load("../../../Data/Tmp/dashboard_tmp.RData")
+
+dash.label <- dash.indicateur$dash.label
+```
+
+Démographie {data-orientation=rows}
+=====================================  
+    
+Row
+-------------------------------------
+
+### Féminité
+
+```{r}
+valueBox(dash.indicateur$vb.dem.fem, 
+         icon = "fas fa-female")
+```
+
+### Population
+
+```{r}
+valueBox(dash.indicateur$vb.dem.pop, 
+         icon = "fas fa-users")
+```
+
+### Superficie
+
+```{r}
+valueBox(dash.indicateur$vb.dem.super, 
+         icon = "fas fa-tree")
+```
+
+Row 
+-------------------------------------
+   
+### Individus
+
+```{r}
+datatable(dash.indicateur$df.dem.tab.hg, colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```   
+    
+### Ménages
+
+```{r}
+datatable(dash.indicateur$df.dem.tab.hd,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```
+
+Row 
+-------------------------------------
+   
+### Pyramide des ages
+
+```{r}
+ggplotly(dash.indicateur$g.dem.pyramide) 
+```   
+
+### Immigration
+
+```{r}
+datatable(dash.indicateur$df.dem.tab.bd,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't')) 
+```   
+
+
+Emploi {data-orientation=rows}
+=====================================  
+    
+Row
+-------------------------------------
+
+### Population en âge de travailler
+
+```{r}
+valueBox(dash.indicateur$vb.emp.popTrav, 
+         icon = "fas fa-user-cog")
+```
+
+### Taux de chômage (au sens du RP)
+
+```{r}
+valueBox(dash.indicateur$vb.emp.chom, 
+         icon = "fas fa-people-carry")
+```
+
+### Inactifs
+
+```{r}
+valueBox(dash.indicateur$vb.emp.inact, 
+         icon = "far fa-user")
+```
+
+
+Row 
+-------------------------------------
+   
+### Marché de l'emploi
+
+```{r}
+datatable(dash.indicateur$df.emp.tab.hg,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```   
+    
+### Chômage
+
+```{r}
+datatable(dash.indicateur$df.emp.tab.hd,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```
+
+Row 
+-------------------------------------
+   
+### Type d'activité
+
+```{r}
+ggplotly(dash.indicateur$g.emp.typeAct)
+```   
+
+### Travail
+
+```{r}
+datatable(dash.indicateur$df.emp.tab.bd,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```   
+
+
+Scolarisation {data-orientation=rows}
+=====================================  
+    
+Row
+-------------------------------------
+
+### Population en âge d'être scolarisée
+
+```{r}
+valueBox(dash.indicateur$vb.sco.popSco, 
+         icon = "fas fa-child")
+```
+
+### Jeunes inscrit dans un établissement scolaire
+
+```{r}
+valueBox(dash.indicateur$vb.sco.etud, 
+         icon = "fas fa-user-graduate")
+```
+
+### Taux de décrocheur
+
+```{r}
+valueBox(dash.indicateur$vb.sco.decrocheur, 
+         icon = "fas fa-user-slash")
+```
+
+
+Row 
+-------------------------------------
+   
+### Jeunes scolarisés
+
+```{r}
+datatable(dash.indicateur$df.sco.tab.hg,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```   
+    
+### Jeunes
+
+```{r}
+ggplotly(dash.indicateur$g.sco.pop)
+```
+
+Row 
+-------------------------------------
+   
+### Niveau de diplôme
+
+```{r}
+ggplotly(dash.indicateur$g.sco.diplome)
+```   
+
+### Jeunes non scolarisés
+
+```{r}
+datatable(dash.indicateur$df.sco.tab.bd,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```   
+
+
+Logement {data-orientation=rows}
+=====================================  
+    
+Row
+-------------------------------------
+
+### Nombre de logements
+
+```{r}
+valueBox(dash.indicateur$vb.log.tot, 
+         icon = "fas fa-child")
+```
+
+### HLM
+
+```{r}
+valueBox(dash.indicateur$vb.log.hlm, 
+         icon = "fas fa-user-graduate")
+```
+
+### Maison
+
+```{r}
+valueBox(dash.indicateur$vb.log.maison, 
+         icon = "fas fa-user-slash")
+```
+
+
+Row 
+-------------------------------------
+   
+### Caractéristiques des logements
+
+```{r}
+datatable(dash.indicateur$df.log.tab.hg,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```   
+    
+### Catégorie de logement
+
+```{r}
+ggplotly(dash.indicateur$g.log.cat)
+```
+
+Row 
+-------------------------------------
+   
+### Année d'achevement
+
+```{r}
+ggplotly(dash.indicateur$g.log.ach)
+```   
+
+### Aspect du bâti
+
+```{r}
+ggplotly(dash.indicateur$g.log.bati)
+```   
+
+
+Résidences principales {data-orientation=rows}
+=====================================  
+    
+Row
+-------------------------------------
+
+### res_princ
+
+```{r}
+valueBox(dash.indicateur$vb.res.part, 
+         icon = "fas fa-child",
+         caption = "Résidences principales")
+```
+
+### Logements collectifs
+
+```{r}
+valueBox(dash.indicateur$vb.res.collectif, 
+         icon = "fas fa-user-graduate")
+```
+
+### TODO
+
+```{r}
+valueBox("TODO", 
+         icon = "fas fa-user-slash")
+```
+
+
+Row 
+-------------------------------------
+   
+### Caractéristiques des résidences principales
+
+```{r}
+datatable(dash.indicateur$df.res.tab.hg,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```   
+    
+### Nombre de pièces
+
+```{r}
+ggplotly(dash.indicateur$g.res.nbp)
+```
+
+Row 
+-------------------------------------
+   
+### Surface
+
+```{r}
+ggplotly(dash.indicateur$g.res.surf)
+```   
+
+### Équipements
+
+```{r}
+datatable(dash.indicateur$df.res.tab.bd,colnames = dash.label,
+          rownames = FALSE, options = list(dom = 't'))
+```   
+
+
+
+

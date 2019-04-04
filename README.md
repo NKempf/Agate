@@ -8,19 +8,18 @@ Agate est une application développée en Rshiny à destination des agents du SE
 ### Actuelles
 
 * Import d'une carte au format ShapeFile
-* Série d'indicateurs statistiques issus du RP (2013 et 2014) et des fichiers fiscaux (2014)
+* Série d'indicateurs statistiques issus du RP (2013, 2014 et 2015)
 * Visualisation d'un tableau de bord spécifique à chaque zone
 * Comparaison des résultats avec une autre zone (région, commune, commune hors zone)
 * Exploration des données détaillées
 * Export des données détaillées au format **xlsx** lisible par calc
+* Qualité des données dans chaque zone (Intervalles de confiance et coefficient de variation) issue des travaux de L. Delta
+* Gestion du secret statistique primaire et secondaire
 
 ### A venir
 
-* Qualité des données dans chaque zone (Intervalles de confiance et coefficient de variation) issue des travaux de L. Delta
-* Gestion du secret statistique primaire et secondaire
-* Développement d'autres indicateurs statistiques
+
+* Ajout de zones prédéfinies
 * Ajout de nouvelles sources de données (BPE, FIDELI et CAF)
-* Ajout d'autres graphiques intéractifs au tableau de bord
-* Export du tableau de bord au format HTML
-* Amélioration des temps de calcul
 * Tutoriel interactif
+* Documentation des travaux de qualité
