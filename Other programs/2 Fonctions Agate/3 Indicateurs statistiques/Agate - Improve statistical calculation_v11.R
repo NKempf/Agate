@@ -33,7 +33,7 @@ zonage@data <- zonage@data %>%
   select(idZonage,idZonage.name)
 
 # Villes
-load("Data/Maps/Cities/cities.RData") # Cities map
+load("Data/Maps/Zones predefinies/zp_communes.RData")
 
 # Listes des indicateurs statistiques
 load("Data/Liste indicateurs statistiques/lstIndicateur.RData")

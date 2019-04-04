@@ -4,7 +4,7 @@
 
 # 03.04.2019
 
-library(sp)
+library(rgdal)
 library(leaflet)
 library(leaflet.extras)
 library(tidyverse)
@@ -16,16 +16,19 @@ library(shinyjs) # Mask buttons/elements on graphic interface
 library(shinyWidgets) # Widgets supplementaires
 library(shinydashboard) # Tools like infoBox
 library(plotly)
+library(DT)
 
-
+# Fonctions  particulières
+source("Other programs/2 Fonctions Agate/4 Dashboard/Agate - Dashboard fct.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v9.R",encoding = "UTF-8")
 
 # Label et choix
 load("data/Liste indicateurs statistiques/lstIndicateur.RData")
 # heatPoints
 load("Data/Maps/HeatPoint/heatpoints.Rdata") 
-# load("Data/Maps/Zones predefinies/zp_departements.RData")
-# load("Data/Maps/Zones predefinies/zp_communes.RData")
-# load("Data/Maps/Zones predefinies/zp_qpv.RData")
+
+# Communes
+load("Data/Maps/Zones predefinies/zp_communes.RData")
 
 # NavBar Spéciale :)
 navbarPageWithInputs <- function(..., inputs) {
@@ -41,7 +44,7 @@ ui <- tagList(
   useShinyjs(),
   navbarPage(
     "Agate",
-
+    
     # I. Carte
     #-------------------------------------------------------------------------------------------------------------------------------------------------
     tabPanel(
@@ -59,20 +62,20 @@ ui <- tagList(
             useSweetAlert(),
             radioGroupButtons(
               inputId = "rg_typeZone",
-              choices = c("Utilisateur",
-                          "Prédéfini"),
+              choices = c("Utilisateur" = 1,
+                          "Prédéfini" = 2),
               justified = TRUE
             ),
             # Utilisateur
             fluidRow(
               column(5,
-                     dropdownButton(
+                     dropdown(
                        inputId = "ddb_import",label = "Importer",size = "sm",circle = FALSE,right = TRUE,
-                       tooltip = tooltipOptions(title = "Importer une carte"),
+                       tooltip = tooltipOptions(title = "Importer une carte",placement = "left"),
                        fileInput('fi_userMap', 'Importer un shapeFile',multiple = T),
                        selectInput(inputId = "si_userMap_id", label = "Identifiant", 
                                    choices = c("Choice" =""),selected = c("")),
-                       selectInput(inputId = "si_userMap_idName", label = "Libellé", 
+                       selectInput(inputId = "si_userMap_name", label = "Libellé", 
                                    choices = c("Choice" =""),
                                    selected = c("")),
                        fluidRow(
@@ -93,17 +96,18 @@ ui <- tagList(
                      )
               ),
               column(7,
-                     dropdownButton(inputId = "ddb_userMapStat",label = "Statistiques",size = "sm",circle = FALSE,right = TRUE,
-                                    tooltip = tooltipOptions(title = "Calcul des indicateurs statistiques"),
-                                    selectInput(inputId = "si_rp", label = "Recensement de la population", 
-                                                choices = c("2015" = "15","2014" = "14","2013" = "13"),
-                                                selected = "15" ),
-                                    pickerInput(inputId = "pi_userMapSelect",
-                                                label = "Selection des zones à calculer", 
-                                                choices = c("Choice" =""),
-                                                options = list(
-                                                  `actions-box` = TRUE), 
-                                                multiple = TRUE)
+                     dropdown(inputId = "ddb_userMapStat",label = "Statistiques",size = "sm",circle = FALSE,right = TRUE,
+                              tooltip = tooltipOptions(title = "Calcul des indicateurs statistiques",placement = "left"),
+                              selectInput(inputId = "si_rp", label = "Recensement de la population", 
+                                          choices = c("2015" = "15","2014" = "14","2013" = "13"),
+                                          selected = "15" ),
+                              pickerInput(inputId = "pi_userMapSelect",
+                                          label = "Selection des zones à calculer", 
+                                          choices = c("Choice" =""),
+                                          options = list(
+                                            `actions-box` = TRUE), 
+                                          multiple = TRUE),
+                              actionButton("ab_userStat","Indicateurs statistiques")
                      )
               )
             ),
@@ -113,207 +117,211 @@ ui <- tagList(
                           choices = pred.choice,
                           selected = c(4))
             ),
-            style = "opacity: 0.75; z-index: 1000;" # IMPORTANT : Absolute panel not hidden by tiles
+            style = "opacity: 0.80; z-index: 1000;" # IMPORTANT : Absolute panel not hidden by tiles
           )
           
       )
-    
-    
-    # II. Statistiques et téléchargement
-    #-------------------------------------------------------------------------------------------------------------------------------------------------
-    
-    # III. Documentation
-    #-------------------------------------------------------------------------------------------------------------------------------------------------
-    
-    # IV. Dashboard
-    #-------------------------------------------------------------------------------------------------------------------------------------------------
-    ,
-    tags$head(tags$style("#bs_dashboard .modal-footer{ display:none}
+      
+      # II. Statistiques et téléchargement
+      #-------------------------------------------------------------------------------------------------------------------------------------------------
+      
+      # III. Documentation
+      #-------------------------------------------------------------------------------------------------------------------------------------------------
+      
+      # IV. Dashboard
+      #-------------------------------------------------------------------------------------------------------------------------------------------------
+      ,
+      tags$head(tags$style("#bs_dashboard .modal-footer{ display:none}
                          #bs_dashboard .modal-header{ display:none}")), # Remove BS modal footer
-    tags$head(tags$style(HTML('.modal-lg {width: 90%;}'))), # Increase modal size
-    bsModal('bs_dashboard', title = "",'test',size = "large",
-            # Add CSS files : use infobox from shinydashboard package into a shinyApp
-            includeCSS(path = "www/AdminLTE.css"),
-            includeCSS(path = "www/shinydashboard.css"),
-            includeCSS(path = "www/agateDashboard.css"),
-            
-            navbarPageWithInputs(id="nbwi_agate_dashboard",textOutput("to_titleDash"),
-                                 
-                                 # II. Thème Démographie
-                                 #-----------------------------------------------------------------------------------------------------------------
-                                 tabPanel("Démographie",
-                                          includeCSS(path = "www/AdminLTE.css"),
-                                          includeCSS(path = "www/shinydashboard.css"),
-                                          
-                                          fluidRow(
-                                            infoBoxOutput(outputId = "ib_dem_feminite"),
-                                            infoBoxOutput(outputId = "ib_dem_population"),
-                                            infoBoxOutput(outputId = "ib_dem_superficie")
-                                          ),
-                                          fluidRow(
-                                            box(id="b_test",title = "Individus", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                DT::dataTableOutput("dt_dem_hg")
-                                            ),
-                                            box(title = "Ménages", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                DT::dataTableOutput("dt_dem_hd")
-                                            )
-                                          ),
-                                          fluidRow(
-                                            box(title = "Pyramide des âges", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                plotlyOutput("g_dem_bg")
-                                            ),
-                                            box(title = "Immigration", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                DT::dataTableOutput("dt_dem_bd")
-                                            )
-                                          ),
-                                          fluidRow(
-                                            textOutput("to_source")
-                                          )
-                                 ),
-                                 # III. Thème  Emploi
-                                 #-----------------------------------------------------------------------------------------------------
-                                 tabPanel("Emploi",
-                                          
-                                          fluidRow(
-                                            infoBoxOutput(outputId = "ib_emp_pop_trav"),
-                                            infoBoxOutput(outputId = "ib_emp_chomeur"),
-                                            infoBoxOutput(outputId = "ib_emp_inactif")
-                                          ),
-                                          fluidRow(
-                                            box(title = "Marché de l'emploi", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                DT::dataTableOutput("dt_emp_hg")
-                                            ),
-                                            box(title = "Chômage", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                DT::dataTableOutput("dt_emp_hd")
-                                            )
-                                          ),
-                                          fluidRow(
-                                            box(title = "Type d'activité", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                plotlyOutput("g_emp_bg")
-                                            ),
-                                            box(title = "Travail", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                DT::dataTableOutput("dt_emp_bd")
-                                            )
-                                          )
-                                 ),
-                                 
-                                 # IV. Thème Scolarisation
-                                 #-----------------------------------------------------------------------------------------------------
-                                 tabPanel("Scolarisation",
-                                          
-                                          fluidRow(
-                                            infoBoxOutput(outputId = "ib_sco_pop_sco"),
-                                            infoBoxOutput(outputId = "ib_sco_etud"),
-                                            infoBoxOutput(outputId = "ib_sco_decrocheur")
-                                          ),
-                                          fluidRow(
-                                            box(title = "Jeunes scolarisés", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                DT::dataTableOutput("dt_sco_hg")
-                                            ),
-                                            box(title = "Jeunes non scolarisés", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                DT::dataTableOutput("dt_sco_bd")
-                                            )
-                                          ),
-                                          fluidRow(
-                                            box(title = "Niveau de diplôme", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                plotlyOutput("g_sco_bg")
-                                            ),
+      tags$head(tags$style(HTML('.modal-lg {width: 90%;}'))), # Increase modal size
+      bsModal('bs_dashboard', title = "",'test',size = "large",
+              # Add CSS files : use infobox from shinydashboard package into a shinyApp
+              includeCSS(path = "www/AdminLTE.css"),
+              includeCSS(path = "www/shinydashboard.css"),
+              includeCSS(path = "www/agateDashboard.css"),
+              
+              navbarPageWithInputs(id="nbwi_agate_dashboard",textOutput("to_titleDash"),
+                                   
+                                   # II. Thème Démographie
+                                   #-----------------------------------------------------------------------------------------------------------------
+                                   tabPanel("Démographie",
+                                            includeCSS(path = "www/AdminLTE.css"),
+                                            includeCSS(path = "www/shinydashboard.css"),
                                             
-                                            box(title = "Jeunes", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                plotlyOutput("g_sco_hd")
-                                            )
-                                          )
-                                 ),
-                                 
-                                 # V. Thème Logement
-                                 #-----------------------------------------------------------------------------------------------------
-                                 tabPanel("Logement",
-                                          
-                                          fluidRow(
-                                            infoBoxOutput(outputId = "ib_log_pop"),
-                                            infoBoxOutput(outputId = "ib_log_hlm"),
-                                            infoBoxOutput(outputId = "ib_log_maison")
-                                          ),
-                                          fluidRow(
-                                            box(title = "Caractéristiques des logements", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                DT::dataTableOutput("dt_log_hg")
+                                            fluidRow(
+                                              infoBoxOutput(outputId = "ib_dem_feminite"),
+                                              infoBoxOutput(outputId = "ib_dem_population"),
+                                              infoBoxOutput(outputId = "ib_dem_superficie")
                                             ),
-                                            box(title = "Catégorie de logement", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                plotlyOutput("g_log_hd")
-                                            )
-                                          ),
-                                          fluidRow(
-                                            box(title = "Année d'achevement", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                plotlyOutput("g_log_bg")
+                                            fluidRow(
+                                              box(id="b_test",title = "Individus", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  DT::dataTableOutput("dt_dem_hg")
+                                              ),
+                                              box(title = "Ménages", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  DT::dataTableOutput("dt_dem_hd")
+                                              )
                                             ),
-                                            box(title = "Aspect du bâti", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                plotlyOutput("g_log_bd")
-                                            )
-                                          )
-                                 ),
-                                 # V. Thème Résidences principales
-                                 #-----------------------------------------------------------------------------------------------------
-                                 tabPanel("Résidences principales",
-                                          fluidRow(
-                                            infoBoxOutput(outputId = "ib_res_pop"),
-                                            infoBoxOutput(outputId = "ib_res_collectif"),
-                                            infoBoxOutput(outputId = "ib_res_todo")
-                                          ),
-                                          fluidRow(
-                                            box(title = "Caractéristiques des résidences principales", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                DT::dataTableOutput("dt_res_hg")
+                                            fluidRow(
+                                              box(title = "Pyramide des âges", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  plotlyOutput("g_dem_bg")
+                                              ),
+                                              box(title = "Immigration", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  DT::dataTableOutput("dt_dem_bd")
+                                              )
                                             ),
-                                            box(title = "Équipements", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                DT::dataTableOutput("dt_res_bd")
+                                            fluidRow(
+                                              textOutput("to_source")
                                             )
-                                          ),
-                                          fluidRow(
-                                            box(title = "Surface", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                plotlyOutput("g_res_bg")
+                                   ),
+                                   # III. Thème  Emploi
+                                   #-----------------------------------------------------------------------------------------------------
+                                   tabPanel("Emploi",
+                                            
+                                            fluidRow(
+                                              infoBoxOutput(outputId = "ib_emp_pop_trav"),
+                                              infoBoxOutput(outputId = "ib_emp_chomeur"),
+                                              infoBoxOutput(outputId = "ib_emp_inactif")
                                             ),
-                                            box(title = "Nombre de pièces", solidHeader = TRUE,
-                                                collapsible = TRUE,
-                                                plotlyOutput("g_res_hd")
+                                            fluidRow(
+                                              box(title = "Marché de l'emploi", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  DT::dataTableOutput("dt_emp_hg")
+                                              ),
+                                              box(title = "Chômage", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  DT::dataTableOutput("dt_emp_hd")
+                                              )
+                                            ),
+                                            fluidRow(
+                                              box(title = "Type d'activité", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  plotlyOutput("g_emp_bg")
+                                              ),
+                                              box(title = "Travail", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  DT::dataTableOutput("dt_emp_bd")
+                                              )
                                             )
-                                          )
-                                 ),
-                                 
-                                 # VI. Zones de comparaisons
-                                 #-----------------------------------------------------------------------------------------------------
-                                 inputs = dropdownButton(inputId = "ddb_compare" ,
-                                                         selectInput("si_typeZone", "Type de zone",
-                                                                     choices = pred.choice,
-                                                                     selected = c(4)),
-                                                         # II.2.2. Zone
-                                                         selectInput("si_zone", "Zone",
-                                                                     choices = c("Choice" =""),
-                                                                     selected = c("")),
-                                                         circle = TRUE, status = "danger",
-                                                         icon = icon("gear"),size = "sm",right = TRUE,
-                                                         tooltip = tooltipOptions(title = "Zones de comparaison")
-                                 )
-            )
-    ) # end Dashboard
-    
+                                   ),
+                                   
+                                   # IV. Thème Scolarisation
+                                   #-----------------------------------------------------------------------------------------------------
+                                   tabPanel("Scolarisation",
+                                            
+                                            fluidRow(
+                                              infoBoxOutput(outputId = "ib_sco_pop_sco"),
+                                              infoBoxOutput(outputId = "ib_sco_etud"),
+                                              infoBoxOutput(outputId = "ib_sco_decrocheur")
+                                            ),
+                                            fluidRow(
+                                              box(title = "Jeunes scolarisés", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  DT::dataTableOutput("dt_sco_hg")
+                                              ),
+                                              box(title = "Jeunes non scolarisés", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  DT::dataTableOutput("dt_sco_bd")
+                                              )
+                                            ),
+                                            fluidRow(
+                                              box(title = "Niveau de diplôme", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  plotlyOutput("g_sco_bg")
+                                              ),
+                                              
+                                              box(title = "Jeunes", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  plotlyOutput("g_sco_hd")
+                                              )
+                                            )
+                                   ),
+                                   
+                                   # V. Thème Logement
+                                   #-----------------------------------------------------------------------------------------------------
+                                   tabPanel("Logement",
+                                            
+                                            fluidRow(
+                                              infoBoxOutput(outputId = "ib_log_pop"),
+                                              infoBoxOutput(outputId = "ib_log_hlm"),
+                                              infoBoxOutput(outputId = "ib_log_maison")
+                                            ),
+                                            fluidRow(
+                                              box(title = "Caractéristiques des logements", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  DT::dataTableOutput("dt_log_hg")
+                                              ),
+                                              box(title = "Catégorie de logement", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  plotlyOutput("g_log_hd")
+                                              )
+                                            ),
+                                            fluidRow(
+                                              box(title = "Année d'achevement", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  plotlyOutput("g_log_bg")
+                                              ),
+                                              box(title = "Aspect du bâti", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  plotlyOutput("g_log_bd")
+                                              )
+                                            )
+                                   ),
+                                   # V. Thème Résidences principales
+                                   #-----------------------------------------------------------------------------------------------------
+                                   tabPanel("Résidences principales",
+                                            fluidRow(
+                                              infoBoxOutput(outputId = "ib_res_pop"),
+                                              infoBoxOutput(outputId = "ib_res_collectif"),
+                                              infoBoxOutput(outputId = "ib_res_todo")
+                                            ),
+                                            fluidRow(
+                                              box(title = "Caractéristiques des résidences principales", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  DT::dataTableOutput("dt_res_hg")
+                                              ),
+                                              box(title = "Équipements", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  DT::dataTableOutput("dt_res_bd")
+                                              )
+                                            ),
+                                            fluidRow(
+                                              box(title = "Surface", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  plotlyOutput("g_res_bg")
+                                              ),
+                                              box(title = "Nombre de pièces", solidHeader = TRUE,
+                                                  collapsible = TRUE,
+                                                  plotlyOutput("g_res_hd")
+                                              )
+                                            )
+                                   ),
+                                   
+                                   # VI. Zones de comparaisons
+                                   #-----------------------------------------------------------------------------------------------------
+                                   inputs = dropdownButton(inputId = "ddb_compare" ,
+                                                           selectInput("si_typeZone", "Type de zone",
+                                                                       choices = pred.choice,
+                                                                       selected = c(4)),
+                                                           # pickerInput(inputId = "pi_zone_compare",
+                                                           #             label = "Zone de comparaison", 
+                                                           #             choices = c("Choice" =""),
+                                                           #             options = list(
+                                                           #               `live-search` = TRUE)
+                                                           # ),
+                                                           selectInput("si_zone", "Zone de comparaison",
+                                                                       choices = c("Choice" =""),
+                                                                       selected = c("")),
+                                                           circle = TRUE, status = "danger",
+                                                           icon = icon("gear"),size = "sm",right = TRUE,
+                                                           tooltip = tooltipOptions(title = "Zones de comparaison")
+                                   )
+              )
+      ) # end Dashboard
+      
     )# Tabset Carte
     
     
@@ -323,20 +331,21 @@ ui <- tagList(
 
 server = function(input, output, session) {
   
-  load("Data/Tmp/qpv_stat_tmp.RData")
-  
   # Reactive Values
   #----------------------------------------------------------------------------------------------------------------------------
   rv <- reactiveValues(AgateMap = NULL,
                        userMap = NULL,
                        zone.active = NULL,
                        zone.etude = NULL,
-                       zone.compare = NULL,
+                       zone.comparaison = NULL,
                        df.zone.etude=NULL,
                        pyramide.etude = NULL,
                        dash.indicateur = NULL,
-                       source.an = "13",
-                       zonage.com = zonage.com)
+                       zone.dep = NULL,
+                       df.zone.user = NULL,
+                       zonage.com.user = NULL,
+                       pyramide.user = NULL,
+                       source.an = NULL)
   
   # I. Interactive map
   #----------------------------------------------------------------------------------------------------------------------------
@@ -378,18 +387,21 @@ server = function(input, output, session) {
         hideGroup("heatpts")
     }
   })
-
+  
   # Affichage d'un zonage
   observeEvent(rv$AgateMap,{
     
     if(!is.null(rv$AgateMap)){
+      
+      if(input$rg_typeZone == 1){
+        zone <- rv$AgateMap@data$idZonage
+        names(zone) <- rv$AgateMap@data$idZonage.name
+        updatePickerInput(session = session,inputId = "pi_userMapSelect",choices = zone,selected = zone)
+      }
+      
       if(!is.null(rv$AgateMap@data$idZonage) & !is.null(rv$AgateMap@data$idZonage.name)){
-
         rv$AgateMap <- spTransform(rv$AgateMap, "+init=epsg:4326")
-        # Boundary box
         AgateMap.bbox <- as.data.frame(bbox(rv$AgateMap))
-        
-        # Update leaflet
         leafletProxy("llo_agateMap") %>%
           clearShapes() %>% 
           fitBounds(lng1 = AgateMap.bbox$min[1],lat1 = AgateMap.bbox$max[2],lng2 = AgateMap.bbox$max[1],lat2 = AgateMap.bbox$min[2]) %>%
@@ -400,16 +412,57 @@ server = function(input, output, session) {
     }
   })
   
+  # Import d'une carte utilisateur
+  observeEvent(input$fi_userMap,{
+    user.files <- input$fi_userMap
+    
+    dir <- dirname(user.files[1,4])
+    for ( i in 1:nrow(user.files)) {
+      file.rename(user.files[i,4], paste0(dir,"/",user.files[i,1]))
+    }
+    getshp <- list.files(dir, pattern="*.shp", full.names=TRUE)
+    userMap <- readOGR(dsn = getshp,encoding = "UTF-8",stringsAsFactors = FALSE)
+    rv$userMap <- spTransform(userMap, "+init=epsg:4326")
+    
+    if(!is.null(rv$userMap)){
+      lst_var <- colnames(rv$userMap@data)
+      updateSelectInput(session = session,inputId = "si_userMap_id",choices = lst_var,selected = lst_var[1])
+      updateSelectInput(session = session,inputId = "si_userMap_name",choices = lst_var,selected = lst_var[2])
+    }
+  })
+  
+  # Mise a jour des variables identifiant et libellé
+  observeEvent(c(input$si_userMap_id,input$si_userMap_name), {
+    
+    if(input$si_userMap_id != ""){
+      rv$userMap@data$idZonage <- rv$userMap@data[,input$si_userMap_id]
+      rv$userMap@data$idZonage.name <- str_trim(substr(rv$userMap@data[,input$si_userMap_name],1,200))
+      rv$userMap@data <- rv$userMap@data %>% select(idZonage,idZonage.name)
+      rv$AgateMap <- rv$userMap
+    }
+  })
+  
   # II. Navigation
   #----------------------------------------------------------------------------------------------------------------------------
   
+  # Année
+  observeEvent(input$si_rp,{
+    rv$source.an <- input$si_rp
+    print(rv$source.an)
+  })
+  
   # Zone utilisateur ou predefinie
   observeEvent(input$rg_typeZone,{
-    if(input$rg_typeZone == "Utilisateur"){
+    rv$zone.etude <- NULL
+    
+    if(input$rg_typeZone == 1){
       shinyjs::hide("si_zonePred")
       shinyjs::hide("ab_modal")
       shinyjs::show("ddb_import")
       shinyjs::show("ddb_userMapStat")
+      updateSelectInput(session,"si_zonePred",selected = 4)
+      # rv$AgateMap <- rv$userMap
+      
     }else{
       shinyjs::show("si_zonePred")
       shinyjs::show("ab_modal")
@@ -424,15 +477,10 @@ server = function(input, output, session) {
     switch(as.numeric(input$si_zonePred),
            {
              if(!exists("dep.dom")){
-               print("argh !")
                load("Data/Maps/Zones predefinies/zp_departements.RData")
              }
              rv$AgateMap <- dep.dom},
            {             
-             if(!exists("com.dom")){
-               print("orf !")
-               load("Data/Maps/Zones predefinies/zp_communes.RData")
-             }
              rv$AgateMap <- com.dom
            },
            {
@@ -441,92 +489,362 @@ server = function(input, output, session) {
                load("Data/Maps/Zones predefinies/zp_qpv.RData")
              }
              rv$AgateMap <- qpv},
-           {print("TODO")})
+           {
+             if(!is.null(rv$userMap)){
+               rv$AgateMap <- rv$userMap
+             }else{
+               print("En attente d'une carte utilisateur...")
+             }
+           })
   })
-  
   
   # Ouverture du dashboard
   observeEvent(input$llo_agateMap_shape_click,{
     rv$zone.etude <- input$llo_agateMap_shape_click$id
-
+    
     toggleModal(session, "bs_dashboard", toggle = "toggle")
   })
   
   # Mise a jour des listes de comparaison dashboard
-  observeEvent(c(input$si_typeZone),{
+  observeEvent(c(input$si_typeZone,rv$zone.etude),{
     if(input$si_typeZone != 4){
-      test <- lstZonePreType$zone.pred == input$si_typeZone & lstZonePreType$dep == unique(rv$zonage.com$dep) & 
-        lstZonePreType$idZonage != rv$zone.etude
+      
+      if(input$rg_typeZone == 1){
+        test <- lstZonePreType$zone.pred == input$si_typeZone & 
+          lstZonePreType$dep %in% c(0,rv$zonage.com.user$dep[rv$zonage.com.user$idZonage == rv$zone.etude]) & 
+          lstZonePreType$idZonage != rv$zone.etude
+      }else{
+        test <- lstZonePreType$zone.pred == input$si_typeZone & 
+          lstZonePreType$dep %in% c(0,rv$AgateMap@data$dep[rv$AgateMap@data$idZonage == rv$zone.etude]) & 
+          lstZonePreType$idZonage != rv$zone.etude
+      }
+
       cat <- lstZonePreType$idZonage[test]
       names(cat) <- lstZonePreType$idZonage.name[test] 
-      print(cat)
     }else{
-      test <- !rv$df.zone$idZonage %in% rv$zone.etude
-      cat <- unique(rv$df.zone$idZonage[test])
-      names(cat) <- unique(rv$df.zone$idZonage.name[test]) 
+      
+      if(!is.null(rv$df.zone.user)){
+        test <- !rv$df.zone.user$idZonage %in% rv$zone.etude
+        cat <- unique(rv$df.zone.user$idZonage[test])
+        names(cat) <- unique(rv$df.zone.user$idZonage.name[test]) 
+      }else{
+        cat=""
+      }
     }
+    
+    print(cat)
     updateSelectInput(session, "si_zone",
                       choices = cat
     )
   })
   
+  # III. Indicateurs statistiques sur userMap
+  #--------------------------------------------------------------------------------------------------------------------------------------------------------------
   
-  
+  observeEvent(input$ab_userStat,{
+    
+    if(!is.null(rv$userMap)){
+      
+      withProgress(message = "Creation de l'identifiant",style = "notification", value = 0, {
+      
+      t1 <- Sys.time()
+      zonage <- rv$userMap[rv$userMap$idZonage %in% input$pi_userMapSelect,]
+      print(zonage@data)
+      agate.stat <- agate_statRp.shiny(rp.an = rv$source.an,
+                                 zone.pred = 4,
+                                 zoneType = "ZU",
+                                 zonage = zonage,
+                                 group_var = c("idZonage","idZonage.name"),
+                                 com.dom = com.dom,
+                                 rpi.weight = "IPONDI.cal",
+                                 rpl.weight = "IPONDL.cal")
+      
+      rv$df.zone.user <- agate.stat$df.zone
+      rv$zonage.com.user <- agate.stat$zonage.com
+      rv$pyramide.user <- agate.stat$pyramide
 
-  # III. Dashboard
+      }) #end withprogress
+      
+      temps <- as.character(round(abs(difftime(t1,Sys.time(), units="secs")),2))
+      
+      shinyWidgets::sendSweetAlert(
+        session = session,
+        title = "Terminé !", text = paste("Le calcul a été effectué en ",temps," secondes"), type = "success"
+      )
+    }# end if
+  })
+
+  
+  # IV. Dashboard
   #--------------------------------------------------------------------------------------------------------------------------------------------------------------
   
   # Selection des données d'études
-  observeEvent(c(input$rg_typeZone,input$si_zonePred),{
+  observeEvent(rv$zone.etude,{
     
-    # if(input$rg_typeZone == "Utilisateur"){
-    #   #TODO
-    #   print("TODO")
-    # }else{
-    #   df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>% 
-    #     filter(zone.pred == input$si_zonePred & idZonage == rv$zone.etude & substr(source,4,5) == rv$source.an) 
-    #   df2 <- df %>% 
-    #     filter(nomVariable %in% c("emp_typeActivite","sco_popSco2","sco_diplome","log_cat","log_ach_constru",
-    #                               "log_bati","res_nbPiece","res_surface")) %>% 
-    #     mutate(type.indicateur = "part_p")
-    #   rv$df.zone.etude <- bind_rows(df,df2)
-    #   
-    #   print(rv$df.zone.etude)
-    # }
+    if(input$rg_typeZone == 1){
+      if(!is.null(rv$df.zone.user)){
+        
+        rv$df.zone.etude <- rv$df.zone.user %>%
+          filter(idZonage == rv$zone.etude)
+        rv$pyramide.etude <- rv$pyramide.user %>%
+          filter(idZonage == rv$zone.etude)
+
+        print(head(rv$df.zone.etude))
+
+        updateSelectInput(session, "si_typeZone",
+                          choices = pred.choice,
+                          selected = 1
+        )
+      }
+    }else{
+      df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>%
+        filter(zone.pred == input$si_zonePred & idZonage == rv$zone.etude & substr(source,4,5) == rv$source.an)
+      df2 <- df %>%
+        filter(nomVariable %in% c("emp_typeActivite","sco_popSco2","sco_diplome","log_cat","log_ach_constru",
+                                  "log_bati","res_nbPiece","res_surface")) %>%
+        mutate(type.indicateur = "part_p")
+      
+      rv$df.zone.etude <- bind_rows(df,df2)
+      rv$pyramide.etude <- read_fst("Data/Stats/Prefine aera/Real/fst/pyramide.fst") %>%
+        filter(zone.pred == input$si_zonePred & idZonage == rv$zone.etude & substr(source,4,5) == rv$source.an)
+      updateSelectInput(session, "si_typeZone",
+                        choices = pred.choice[pred.choice != 4],
+                        selected = 1
+      )
+    }
   })
   
-  # Selection des données de comparaison
-  
-  
-  
-  observeEvent(c(input$si_typeZone,input$si_zone),{
+  # Données de comparaison et indicateurs du dashboard
+  observeEvent(c(input$si_typeZone,input$si_zone,rv$zone.etude),{
     
-    # if(input$si_typeZone != 4){
-    #   df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>% 
-    #     filter(zone.pred == input$si_typeZone & idZonage == input$si_zone & substr(source,4,5) == rv$source.an) 
-    #   
-    #   df2 <- df %>% 
-    #     filter(nomVariable %in% c("emp_typeActivite","sco_popSco2","sco_diplome","log_cat","log_ach_constru",
-    #                               "log_bati","res_nbPiece","res_surface")) %>% 
-    #     mutate(type.indicateur = "part_p")
-    #   df <- bind_rows(df,df2,rv$df.zone %>% filter(idZonage == rv$zone.etude))
-    #   
-    #   pyr <- read_fst("Data/Stats/Prefine aera/Real/fst/pyramide.fst") %>% 
-    #     filter(zone.pred == input$si_typeZone & idZonage == input$si_zone & substr(source,4,5) == rv$source.an) %>% 
-    #     bind_rows(rv$pyramide %>% filter(idZonage == rv$zone.etude))
-    # }else{
-    #   df <- rv$df.zone %>% filter(idZonage %in% c(rv$zone.etude,input$si_zone))
-    #   pyr <- rv$pyramide %>% filter(idZonage %in% c(rv$zone.etude,input$si_zone))
-    # }
-    # 
-    # rv$dash.indicateur <- stat.dashboard_agate(df = df,zone.etude = rv$zone.etude,
-    #                                            zone.compare = input$si_zone, lstIndicateur = lstIndicateur,
-    #                                            pyramide_tr = pyr)
+    rv$zone.comparaison <- input$si_zone
+    
+    if(!is.null(rv$zone.etude)){
+      
+      if(input$si_typeZone != 4){
+        df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>%
+          filter(zone.pred == input$si_typeZone & idZonage == rv$zone.comparaison & substr(source,4,5) == rv$source.an)
+        df2 <- df %>%
+          filter(nomVariable %in% c("emp_typeActivite","sco_popSco2","sco_diplome","log_cat","log_ach_constru",
+                                    "log_bati","res_nbPiece","res_surface")) %>%
+          mutate(type.indicateur = "part_p")
+        df <- bind_rows(df,df2)
+        
+        pyr <- read_fst("Data/Stats/Prefine aera/Real/fst/pyramide.fst") %>%
+          filter(zone.pred == input$si_typeZone & idZonage == rv$zone.comparaison & substr(source,4,5) == rv$source.an)
+        
+        # Temporaire
+        df.dashboard <- bind_rows(rv$df.zone.etude,df)
+        pyr.dashboard <- bind_rows(rv$pyramide.etude,pyr)
+      }else{
+        print("je marche gros !")
+        
+        df.dashboard <- rv$df.zone.user %>% filter(idZonage %in% c(rv$zone.etude,rv$zone.comparaison))
+        pyr.dashboard <- rv$pyramide.user %>% filter(idZonage %in% c(rv$zone.etude,input$si_zone))
+        
+        print(head(df.dashboard))
+        
+      }# end if
+      
+      rv$dash.indicateur <- stat.dashboard_agate(df = df.dashboard,zone.etude = rv$zone.etude,
+                                                 zone.compare = rv$zone.comparaison, lstIndicateur = lstIndicateur,
+                                                 pyramide_tr = pyr.dashboard)
+    }
   })
   
   # Mise a jour du dashboard
+  observeEvent(rv$dash.indicateur,{
+    
+    # Titre dashboard
+    output$to_titleDash = renderText({
+      rv$dash.indicateur$titreDash
+    })
+    
+    output$to_source = renderText({
+      paste0("Source : recensement de la population 20",rv$dash.indicateur$source.an,
+             " niveau individu et logement - exploitation principale. \n Note : c = données confidentielles, intervalles de confiance 
+             à 95 % calculés à partir d'une estimation de la variance du plan de sondage.")
+      
+    })
+    
+    # Theme Démographie
+    #------------------
+    output$ib_dem_feminite <- renderInfoBox({
+      infoBox(title = "Féminité", value = rv$dash.indicateur$vb.dem.fem,
+              icon = icon("female"),fill=TRUE)
+    })
+    
+    output$ib_dem_population <- renderInfoBox({
+      infoBox(title = "Population", value = rv$dash.indicateur$vb.dem.pop,
+              icon = icon("users"),fill=TRUE)
+    })
+    
+    output$ib_dem_superficie <- renderInfoBox({
+      infoBox(title = "Superficie", value = rv$dash.indicateur$vb.dem.super,
+              icon = icon("tree"),fill=TRUE)
+    })
+    
+    output$dt_dem_hg = renderDT(
+      datatable(rv$dash.indicateur$df.dem.tab.hg, colnames = rv$dash.indicateur$dash.label,
+                rownames = FALSE, options = list(dom = 't'))
+    )
+    
+    output$dt_dem_hd = renderDT(
+      datatable(rv$dash.indicateur$df.dem.tab.hd, colnames = rv$dash.indicateur$dash.label,
+                rownames = FALSE, options = list(dom = 't'))
+    )
+    
+    output$g_dem_bg = renderPlotly({
+      hide_legend(ggplotly(rv$dash.indicateur$g.dem.pyramide,tooltip = c("label","label2","label3","label4")))
+    })
+    
+    output$dt_dem_bd = renderDT(
+      datatable(rv$dash.indicateur$df.dem.tab.bd, colnames = rv$dash.indicateur$dash.label,
+                rownames = FALSE, options = list(dom = 't'))
+    )
+    
+    # Theme Emploi
+    #-------------
+    output$ib_emp_pop_trav <- renderInfoBox({
+      infoBox(title = "Population en âge de travailler", value = rv$dash.indicateur$vb.emp.popTrav,
+              icon = icon("fa-user-cog"),fill=TRUE)
+    })
+    
+    output$ib_emp_chomeur <- renderInfoBox({
+      infoBox(title = "Taux de chômage", value = rv$dash.indicateur$vb.emp.chom,
+              icon = icon("fa-people-carry"),fill=TRUE,subtitle = "selon le recensement de la population")
+    })
+    
+    output$ib_emp_inactif <- renderInfoBox({
+      infoBox(title = "Inactifs", value = rv$dash.indicateur$vb.emp.inact,
+              icon = icon("user"),fill=TRUE)
+    })
+    
+    output$dt_emp_hg = renderDT(
+      datatable(rv$dash.indicateur$df.emp.tab.hg, colnames = rv$dash.indicateur$dash.label,
+                rownames = FALSE, options = list(dom = 't'))
+    )
+    
+    output$dt_emp_hd = renderDT(
+      datatable(rv$dash.indicateur$df.emp.tab.hd, colnames = rv$dash.indicateur$dash.label,
+                rownames = FALSE, options = list(dom = 't'))
+    )
+    
+    output$g_emp_bg = renderPlotly({
+      hide_legend(ggplotly(rv$dash.indicateur$g.emp.typeAct,tooltip = c("label","label2")))
+    })
+    
+    output$dt_emp_bd = renderDT(
+      datatable(rv$dash.indicateur$df.emp.tab.bd, colnames = rv$dash.indicateur$dash.label,
+                rownames = FALSE, options = list(dom = 't'))
+    )
+    
+    # Theme Scolarisation
+    #--------------------
+    output$ib_sco_pop_sco <- renderInfoBox({
+      infoBox(title = "Population en âge d'être scolarisée", value = rv$dash.indicateur$vb.sco.popSco,
+              icon = icon("child"),fill=TRUE)
+    })
+    
+    output$ib_sco_etud <- renderInfoBox({
+      infoBox(title = "Jeunes inscrit dans un établissement scolaire", value = rv$dash.indicateur$vb.sco.etud,
+              icon = icon("user-graduate"),fill=TRUE)
+    })
+    
+    output$ib_sco_decrocheur <- renderInfoBox({
+      infoBox(title = "Taux de décrocheur", value = rv$dash.indicateur$vb.sco.decrocheur,
+              icon = icon("user-slash"),fill=TRUE)
+    })
+    
+    output$dt_sco_hg = renderDT(
+      datatable(rv$dash.indicateur$df.sco.tab.hg, colnames = rv$dash.indicateur$dash.label,
+                rownames = FALSE, options = list(dom = 't'))
+    )
+    
+    output$g_sco_hd = renderPlotly({
+      hide_legend(ggplotly(rv$dash.indicateur$g.sco.pop,tooltip = c("label","label2")))
+    })
+    
+    output$g_sco_bg = renderPlotly({
+      hide_legend(ggplotly(rv$dash.indicateur$g.sco.diplome,tooltip = c("label","label2")))
+    })
+    
+    output$dt_sco_bd = renderDT(
+      datatable(rv$dash.indicateur$df.sco.tab.bd, colnames = rv$dash.indicateur$dash.label,
+                rownames = FALSE, options = list(dom = 't'))
+    )
+    
+    # Theme Logement
+    #---------------
+    output$ib_log_pop <- renderInfoBox({
+      infoBox(title = "Nombre de logements", value = rv$dash.indicateur$vb.log.tot,
+              icon = icon("child"),fill=TRUE)
+    })
+    
+    output$ib_log_hlm <- renderInfoBox({
+      infoBox(title = "HLM", value = rv$dash.indicateur$vb.log.hlm,
+              icon = icon("user-graduate"),fill=TRUE)
+    })
+    
+    output$ib_log_maison <- renderInfoBox({
+      infoBox(title = "Taux de décrocheur", value = rv$dash.indicateur$vb.log.maison,
+              icon = icon("user-slash"),fill=TRUE)
+    })
+    
+    output$dt_log_hg = renderDT(
+      datatable(rv$dash.indicateur$df.log.tab.hg, colnames = rv$dash.indicateur$dash.label,
+                rownames = FALSE, options = list(dom = 't'))
+    )
+    
+    output$g_log_hd = renderPlotly({
+      hide_legend(ggplotly(rv$dash.indicateur$g.log.cat,tooltip = c("label","label2")))
+    })
+    
+    output$g_log_bg = renderPlotly({
+      hide_legend(ggplotly(rv$dash.indicateur$g.log.ach,tooltip = c("label","label2")))
+    })
+    
+    output$g_log_bd = renderPlotly({
+      hide_legend(ggplotly(rv$dash.indicateur$g.log.bati,tooltip = c("label","label2")))
+    })
+    
+    # Theme Résidences principales
+    #-----------------------------
+    output$ib_res_pop <- renderInfoBox({
+      infoBox(title = "Résidences principales", value = rv$dash.indicateur$vb.res.part,
+              icon = icon("child"),fill=TRUE)
+    })
+    
+    output$ib_res_collectif <- renderInfoBox({
+      infoBox(title = "Logements collectifs", value = rv$dash.indicateur$vb.res.collectif,
+              icon = icon("user-graduate"),fill=TRUE)
+    })
+    
+    output$ib_res_todo <- renderInfoBox({
+      infoBox(title = "TODO", value = "TODO",
+              icon = icon("user-slash"),fill=TRUE)
+    })
+    
+    output$dt_res_hg = renderDT(
+      datatable(rv$dash.indicateur$df.res.tab.hg, colnames = rv$dash.indicateur$dash.label,
+                rownames = FALSE, options = list(dom = 't'))
+    )
+    
+    output$g_res_hd = renderPlotly({
+      hide_legend(ggplotly(rv$dash.indicateur$g.res.nbp,tooltip = c("label","label2")))
+    })
+    
+    output$g_res_bg = renderPlotly({
+      hide_legend(ggplotly(rv$dash.indicateur$g.res.surf,tooltip = c("label","label2")))
+    })
+    
+    output$dt_res_bd = renderDT(
+      datatable(rv$dash.indicateur$df.res.tab.bd, colnames = rv$dash.indicateur$dash.label,
+                rownames = FALSE, options = list(dom = 't'))
+    )
+    
+  })
   
-
   
   
   
