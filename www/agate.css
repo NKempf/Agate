@@ -24,3 +24,7 @@
   transition-delay: 0;
 }
 
+.modal-backdrop
+{
+    opacity:0.8;
+}

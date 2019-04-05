@@ -16,7 +16,7 @@ source("Other programs/2 Fonctions Agate/7 Statistical disclosure/Agate - statis
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,rpi.weight,rpl.weight,
-                         seuil_qualite_appariement = 30,seuil_diffusion_qualite = 5,seuil_secret_stat=11){
+                         seuil_qualite_appariement = 30,seuil_diffusion_qualite = 5,seuil_secret_stat=11,secret_stat = FALSE){
   
   
   # Selection des bases du RP
@@ -144,7 +144,7 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
   qualityZone <- Qlfinal(rpa.qualite,group_var.qualite,ril = ril) %>% 
     mutate(val.qualite = ifelse(CoefVariation <= seuil_diffusion_qualite & !is.nan(CoefVariation),EstVariable,IntervalConf.)) 
   
-  df.zone2 <- qualityZone %>% 
+  df.zone <- qualityZone %>% 
     rename(idZonage = zonage,
            qualiteIndicateur = Variable) %>% 
     left_join(rpl %>% filter(!duplicated(idZonage)) %>% 
@@ -160,38 +160,52 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
   # 3 Secret statistique
   #---------------------
   # incProgress(amount = 0.8,message = "Secret statistique")
-  
-  df.zone.secret <- df.zone %>% 
-    filter(type.indicateur %in% c("freq","n"))
-  
-  var.secret <- lstCategorie$nomVariable[lstCategorie$typeVar == "pct" & substr(lstCategorie$source,1,2) == "rp"]
-  
-  # Secret statistique
-  indicateur.secret <- bind_rows(lapply(var.secret,secret_stat,df.zone.secret = df.zone.secret,seuil_secret_stat = seuil_secret_stat))
-  
-  df.zone <- df.zone.secret %>% 
-    left_join(indicateur.secret,by = c("idZonage","nomVariable","nomIndicateur")) %>% # Ajout de la variable diffusable
-    mutate(value = ifelse(is.na(diff.secret),"diffusable",diff.secret),
-           type.indicateur = "secret_stat") %>% 
-    select(-diff.secret) %>% 
-    bind_rows(df.zone)
-  
-  df.zone <- df.zone %>% 
-    filter(type.indicateur %in% c("freq_p","superficie","val.qualite","secret_stat")) %>% 
-    spread(key = type.indicateur, value = value) %>% 
-    mutate(secret_stat = case_when(is.na(secret_stat) & nomVariable == "superficie" ~ "diffusable",
-                                   is.na(secret_stat) & nomVariable != "superficie" ~ "n_diffusable",
-                                   TRUE ~ secret_stat),
-           valeur.diffusable = case_when(secret_stat == "diffusable" & !is.na(val.qualite) ~ val.qualite,
-                                         secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("log_tot") ~ freq_p,
-                                         secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("superficie") ~ superficie,
-                                         TRUE ~ "c")) %>%  # c : données confidencielles
-    select(-secret_stat,-val.qualite,-freq_p,-superficie) %>% 
-    gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
-    bind_rows(df.zone) %>% 
-    mutate(zone.pred = zone.pred)
-  
-  
+  if(secret_stat){
+    df.zone.secret <- df.zone %>% 
+      filter(type.indicateur %in% c("freq","n"))
+    
+    var.secret <- lstCategorie$nomVariable[lstCategorie$typeVar == "pct" & substr(lstCategorie$source,1,2) == "rp"]
+    
+    # Secret statistique
+    indicateur.secret <- bind_rows(lapply(var.secret,secret_stat,df.zone.secret = df.zone.secret,seuil_secret_stat = seuil_secret_stat))
+    
+    df.zone <- df.zone.secret %>% 
+      left_join(indicateur.secret,by = c("idZonage","nomVariable","nomIndicateur")) %>% # Ajout de la variable diffusable
+      mutate(value = ifelse(is.na(diff.secret),"diffusable",diff.secret),
+             type.indicateur = "secret_stat") %>% 
+      select(-diff.secret) %>% 
+      bind_rows(df.zone)
+    
+    df.zone <- df.zone %>% 
+      filter(type.indicateur %in% c("freq_p","superficie","val.qualite","secret_stat")) %>% 
+      spread(key = type.indicateur, value = value) %>% 
+      mutate(secret_stat = case_when(is.na(secret_stat) & nomVariable == "superficie" ~ "diffusable",
+                                     is.na(secret_stat) & nomVariable != "superficie" ~ "n_diffusable",
+                                     TRUE ~ secret_stat),
+             valeur.diffusable = case_when(secret_stat == "diffusable" & !is.na(val.qualite) ~ val.qualite,
+                                           secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("log_tot") ~ freq_p,
+                                           secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("superficie") ~ superficie,
+                                           TRUE ~ "c")) %>%  # c : données confidencielles
+      select(-secret_stat,-val.qualite,-freq_p,-superficie) %>% 
+      gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
+      bind_rows(df.zone) %>% 
+      mutate(zone.pred = zone.pred)
+  }else{
+    
+    print("Secret statistique non appliqué")
+    df.zone <- df.zone %>% 
+      filter(type.indicateur %in% c("freq_p","superficie","val.qualite")) %>% 
+      spread(key = type.indicateur, value = value) %>% 
+      mutate(valeur.diffusable = case_when(!is.na(val.qualite) ~ val.qualite,
+                                           is.na(val.qualite) & nomVariable %in% c("log_tot") ~ freq_p,
+                                           is.na(val.qualite) & nomVariable %in% c("superficie") ~ superficie,
+                                           TRUE ~ "///")) %>%  # c : données confidencielles
+      select(-val.qualite,-freq_p,-superficie) %>% 
+      gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
+      bind_rows(df.zone) %>% 
+      mutate(zone.pred = zone.pred)
+  }
+
   return(list(df.zone = df.zone,
               pyramide = statZone$pyramide_tr %>% 
                 mutate(zone.pred = zone.pred),
@@ -332,7 +346,7 @@ statistics_zone <- function(group_var,zone,rpi,rpl,lstCategorie,sourceRp,rpi.wei
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,rpi.weight,rpl.weight,
-                         seuil_qualite_appariement = 30,seuil_diffusion_qualite = 5,seuil_secret_stat=11){
+                         seuil_qualite_appariement = 30,seuil_diffusion_qualite = 5,seuil_secret_stat=11,secret_stat=FALSE){
   
   
   # Selection des bases du RP
@@ -477,35 +491,51 @@ agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",grou
   #---------------------
   incProgress(amount = 0.5,message = "Secret statistique")
   
-  df.zone.secret <- df.zone %>% 
-    filter(type.indicateur %in% c("freq","n"))
-  
-  var.secret <- lstCategorie$nomVariable[lstCategorie$typeVar == "pct" & substr(lstCategorie$source,1,2) == "rp"]
-  
-  # Secret statistique
-  indicateur.secret <- bind_rows(lapply(var.secret,secret_stat,df.zone.secret = df.zone.secret,seuil_secret_stat = seuil_secret_stat))
-  
-  df.zone <- df.zone.secret %>% 
-    left_join(indicateur.secret,by = c("idZonage","nomVariable","nomIndicateur")) %>% # Ajout de la variable diffusable
-    mutate(value = ifelse(is.na(diff.secret),"diffusable",diff.secret),
-           type.indicateur = "secret_stat") %>% 
-    select(-diff.secret) %>% 
-    bind_rows(df.zone)
-  
-  df.zone <- df.zone %>% 
-    filter(type.indicateur %in% c("freq_p","superficie","val.qualite","secret_stat")) %>% 
-    spread(key = type.indicateur, value = value) %>% 
-    mutate(secret_stat = case_when(is.na(secret_stat) & nomVariable == "superficie" ~ "diffusable",
-                                   is.na(secret_stat) & nomVariable != "superficie" ~ "n_diffusable",
-                                   TRUE ~ secret_stat),
-           valeur.diffusable = case_when(secret_stat == "diffusable" & !is.na(val.qualite) ~ val.qualite,
-                                         secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("log_tot") ~ freq_p,
-                                         secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("superficie") ~ superficie,
-                                         TRUE ~ "c")) %>%  # c : données confidencielles
-    select(-secret_stat,-val.qualite,-freq_p,-superficie) %>% 
-    gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
-    bind_rows(df.zone) %>% 
-    mutate(zone.pred = zone.pred)
+  if(secret_stat){
+    df.zone.secret <- df.zone %>% 
+      filter(type.indicateur %in% c("freq","n"))
+    
+    var.secret <- lstCategorie$nomVariable[lstCategorie$typeVar == "pct" & substr(lstCategorie$source,1,2) == "rp"]
+    
+    # Secret statistique
+    indicateur.secret <- bind_rows(lapply(var.secret,secret_stat,df.zone.secret = df.zone.secret,seuil_secret_stat = seuil_secret_stat))
+    
+    df.zone <- df.zone.secret %>% 
+      left_join(indicateur.secret,by = c("idZonage","nomVariable","nomIndicateur")) %>% # Ajout de la variable diffusable
+      mutate(value = ifelse(is.na(diff.secret),"diffusable",diff.secret),
+             type.indicateur = "secret_stat") %>% 
+      select(-diff.secret) %>% 
+      bind_rows(df.zone)
+    
+    df.zone <- df.zone %>% 
+      filter(type.indicateur %in% c("freq_p","superficie","val.qualite","secret_stat")) %>% 
+      spread(key = type.indicateur, value = value) %>% 
+      mutate(secret_stat = case_when(is.na(secret_stat) & nomVariable == "superficie" ~ "diffusable",
+                                     is.na(secret_stat) & nomVariable != "superficie" ~ "n_diffusable",
+                                     TRUE ~ secret_stat),
+             valeur.diffusable = case_when(secret_stat == "diffusable" & !is.na(val.qualite) ~ val.qualite,
+                                           secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("log_tot") ~ freq_p,
+                                           secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("superficie") ~ superficie,
+                                           TRUE ~ "c")) %>%  # c : données confidencielles
+      select(-secret_stat,-val.qualite,-freq_p,-superficie) %>% 
+      gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
+      bind_rows(df.zone) %>% 
+      mutate(zone.pred = zone.pred)
+  }else{
+    
+    print("Secret statistique non appliqué")
+    df.zone <- df.zone %>% 
+      filter(type.indicateur %in% c("freq_p","superficie","val.qualite")) %>% 
+      spread(key = type.indicateur, value = value) %>% 
+      mutate(valeur.diffusable = case_when(!is.na(val.qualite) ~ val.qualite,
+                                           is.na(val.qualite) & nomVariable %in% c("log_tot") ~ freq_p,
+                                           is.na(val.qualite) & nomVariable %in% c("superficie") ~ superficie,
+                                           TRUE ~ "///")) %>%  # c : données confidencielles
+      select(-val.qualite,-freq_p,-superficie) %>% 
+      gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
+      bind_rows(df.zone) %>% 
+      mutate(zone.pred = zone.pred)
+  }
   
   
   return(list(df.zone = df.zone,

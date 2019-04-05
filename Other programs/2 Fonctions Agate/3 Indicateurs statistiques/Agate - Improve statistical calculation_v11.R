@@ -2,7 +2,7 @@
 #                                   Agata - Statistical calculation improvement                                        #
 #----------------------------------------------------------------------------------------------------------------------#
 
-# 01.04.2019
+# 05.04.2019
 
 # Improve statistical calculation of indicators and display them into cool datatable (package DT)
 # Ajout des travaux de Baptiste Raimbaud
@@ -21,7 +21,7 @@ library(rlang) # non standard evaluation
 library(easySdcTable) # Statistical disclosure
 
 # Fonctions supplémentaires
-source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v9.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v10.R",encoding = "UTF-8")
 
 # I. Import des données
 #---------------------------------------------------------------------------------------------------------------------------------------------
@@ -55,7 +55,7 @@ load("Data/Liste indicateurs statistiques/lstIndicateur.RData")
 #--------------------------------------------------------------------------------------------------------------------------------------------
 t1 <- Sys.time()
 agate.stat <- agate_statRp(rp.an = "13",zone.pred = 4,zoneType = "QPV",zonage = zonage,group_var = c("idZonage","idZonage.name"),
-                           com.dom = com.dom,rpi.weight = "IPONDI.cal",rpl.weight = "IPONDL.cal")
+                           com.dom = com.dom,rpi.weight = "IPONDI.cal",rpl.weight = "IPONDL.cal",secret_stat = FALSE)
 Sys.time() - t1
 
 # IX. Enregistrement temporaire pour test
