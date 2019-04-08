@@ -41,14 +41,14 @@ pyramide_Agate <- function(pyramide,zone.etude,zone.compare,lstIndicateur){
 # barChart dashboard
 
 barChart_agate <- function(df,var.barChart,zone.etude,zone.compare,lstIndicateur){
-  
-  tab.label <- lstIndicateur$labelIndicateur[lstIndicateur$nomVariable %in% var.barChart & 
-                                               !lstIndicateur$nomIndicateur %in% c("g_moins14","e_log_metro","g_sansObjet","d_sansObjet")]
+  test <- lstIndicateur$nomVariable %in% var.barChart & 
+    !lstIndicateur$nomIndicateur %in% c("g_moins14","e_log_metro","g_sansObjet","d_sansObjet")
+  # tab.label <- lstIndicateur$labelIndicateur[test]
   
   df2 <- df %>% 
     filter(idZonage %in% c(zone.etude,zone.compare) & nomVariable == var.barChart & type.indicateur == "part_p") %>% 
     mutate(value = as.numeric(value),
-           nomIndicateur = factor(nomIndicateur,labels = tab.label))
+           nomIndicateur = factor(nomIndicateur,levels = lstIndicateur$nomIndicateur[test],labels = lstIndicateur$labelIndicateur[test]))
   
   g <- ggplot(df2,aes(x = reorder(nomIndicateur, value), y = value,fill=idZonage.name, label = idZonage.name,label2 = value)) +
     geom_bar(stat = "identity",position = "dodge") +
