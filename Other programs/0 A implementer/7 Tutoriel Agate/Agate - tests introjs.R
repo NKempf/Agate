@@ -20,53 +20,61 @@ ui <- tagList(
     
     # I. Carte
     #-------------------------------------------------------------------------------------------------------------------------------------------------
-    tabPanel(
-      "Carte",
-      div(class="outer",
-          tags$head(includeCSS("www/agate.css")),
-          # I.1.1. Leaflet map
-          #-----------------
-          leafletOutput("llo_agateMap", width = "100%", height = "100%")
-      
-      )
-      # ,# Tabset Carte
+    introBox(
+      tabPanel(
+        "Carte",
+        div(class="outer",
+            tags$head(includeCSS("www/agate.css")),
+            # I.1.1. Leaflet map
+            #-----------------
+            leafletOutput("llo_agateMap", width = "100%", height = "100%")
+            
+        )
+        # ,# Tabset Carte
+      ),
+      data.step = 1,
+      data.intro = "This is the title panel"
     ),
     # II. Statistiques et téléchargement
     #-------------------------------------------------------------------------------------------------------------------------------------------------
     tabPanel("Statistiques",value="vis",
              
-             fluidRow(
-               column(4,
-                      # II.1. Zone selection
-                      #---------------------
-                      selectInput("si_stat_zoneSelect", "Zone",
-                                  choices = pred.choice,
-                                  selected = 4)
-               ),
-               column(4,
-                      
-                      # II.2. Domaine selection
-                      #------------------------
-                      selectInput("si_stat_domaine", "Domaine",
-                                  choices = c("Choice" ="",dmn),
-                                  selected = dmn[2])
-               ),
-               column(4,
-                      # II.3. Categorie selection
-                      #--------------------------
-                      selectInput("si_stat_categorie", "Catégorie",
-                                  choices = c("Choice" =""),
-                                  selected = c(""))
-               )
-             ),
-             
-             hr(), # Line between buttons and plot
+             # fluidRow(
+             #   column(4,
+             #          # II.1. Zone selection
+             #          #---------------------
+             #          selectInput("si_stat_zoneSelect", "Zone",
+             #                      choices = pred.choice,
+             #                      selected = 4)
+             #   ),
+             #   column(4,
+             #          
+             #          # II.2. Domaine selection
+             #          #------------------------
+             #          selectInput("si_stat_domaine", "Domaine",
+             #                      choices = c("Choice" ="",dmn),
+             #                      selected = dmn[2])
+             #   ),
+             #   column(4,
+             #          # II.3. Categorie selection
+             #          #--------------------------
+             #          selectInput("si_stat_categorie", "Catégorie",
+             #                      choices = c("Choice" =""),
+             #                      selected = c(""))
+             #   )
+             # ),
+             # 
+             # hr(), # Line between buttons and plot
              
              # II.4. Table visualisation
              #--------------------------
              textOutput("to_stat_title"),
              tags$head(tags$style("#to_stat_title{font-size: 30px;font-style: bold;}")),
-             DT::dataTableOutput("dt_stat_explore")
+             introBox(
+             DT::dataTableOutput("dt_stat_explore"),
+             data.step = 2,
+             data.intro = "Test"
+             )
              
              
     ),
@@ -83,8 +91,8 @@ ui <- tagList(
       icon = icon("question")
     )
     
-      )
   )
+)
 
 
 
@@ -120,9 +128,9 @@ $('a[data-value=\"First tab\"]').removeClass('active');
 $('a[data-value=\"Second tab\"]').addClass('active');
 $('a[data-value=\"Second tab\"]').trigger('click');
 }"
-))
-                   )
-                   )
+                   ))
+               )
+  )
 }# end server
 
 
