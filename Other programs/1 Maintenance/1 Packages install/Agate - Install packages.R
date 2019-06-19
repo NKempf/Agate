@@ -82,7 +82,7 @@ install.packages("fst")
 #------------------------------
 # Le plus simple est de télécharger le zip depuis github 
 library(devtools)
-install_local("chemin vers le zip")
+install_local("../Packages zip/fstplyr/fstplyr-master.zip")
 
 # easySdcTable : statistical disclosure
 #--------------------------------------

@@ -2,6 +2,7 @@
 
 # https://stackoverflow.com/questions/39545002/multi-page-intro-js-with-shiny
 
+# Tests avec la syntaxe basée sur les balises c'est-a-dire les identifiants des objets
 
 library(shiny)
 library(shinyjs)
@@ -27,40 +28,60 @@ ui <- tagList(
     # I. Carte
     #-------------------------------------------------------------------------------------------------------------------------------------------------
     
-      tabPanel(
-        "Carte",
-        div(class="outer",
-            tags$head(includeCSS("www/agate.css")),
-            # I.1.1. Leaflet map
-            #-----------------
-            leafletOutput("llo_agateMap", width = "100%", height = "100%"),
-            
-            # I.1.2. Statistical controls
-            #----------------------------
-            
-              absolutePanel(
-                style = "opacity: 0.80; z-index: 1000;", # IMPORTANT : Absolute panel not hidden by tiles
-                draggable = TRUE,top = 20, right = 10,width = 200,#height = 500,
-                useSweetAlert(),
-                
-                
-                introBox(
-                  radioGroupButtons(
-                    inputId = "rg_typeZone",
-                    choices = c("Utilisateur" = 1,
-                                "Prédéfini" = 2),
-                    justified = TRUE
-                  ),
-                  data.step = 1,
-                  data.intro = "This is the title panel"
-                )
+      # tabPanel(
+      #   "Carte",
+      #   div(class="outer",
+      #       tags$head(includeCSS("www/agate.css")),
+      #       # I.1.1. Leaflet map
+      #       #-----------------
+      #       leafletOutput("llo_agateMap", width = "100%", height = "100%"),
+      #       
+      #       # I.1.2. Statistical controls
+      #       #----------------------------
+      #       
+      #         absolutePanel(id = "ap_controls",
+      #           draggable = TRUE,top = 20, right = 10,width = 200,#height = 500,
+      #           useSweetAlert(),
+      #           
+      #             radioGroupButtons(
+      #               inputId = "rg_typeZone",
+      #               choices = c("Utilisateur" = 1,
+      #                           "Prédéfini" = 2),
+      #               justified = TRUE
+      #             )
+      #         )
+      #   )# end div
+      # ),# Tabset Carte
+    
+    tabPanel(
+      "Carte",
+      div(class="outer",id="testNk",
+          tags$head(includeCSS("www/agate.css")),
+          
+          # I.1.2. Statistical controls
+          #----------------------------
 
-              )
-              
+          absolutePanel(id = "ap_controls",
+                        draggable = FALSE,top = 20, right = 10,width = 200,#height = 500,
+                        
+                        useSweetAlert(),
+                        
+                        radioGroupButtons(
+                          inputId = "rg_typeZone",
+                          choices = c("Utilisateur" = 1,
+                                      "Prédéfini" = 2),
+                          justified = TRUE
+                        )
 
-        )
-        # ,# Tabset Carte
-      ),
+          ),
+          # 
+          # I.1.1. Leaflet map
+          #-----------------
+          leafletOutput("llo_agateMap", width = "100%", height = "100%")
+          
+  
+      )# end div
+    ),# Tabset Carte
     # II. Statistiques et téléchargement
     #-------------------------------------------------------------------------------------------------------------------------------------------------
     tabPanel("Statistiques",value="vis",
@@ -134,27 +155,48 @@ server = function(input, output, session) {
       fitBounds(lng1 = -65,lat1 = 18,lng2 = -45,lat2 = 3) 
   })
   
-  
   # Aide Agate
   #-----------------------------------------------------------------------------------------------------------------------------------
   # start introjs when button is pressed with custom options and events
-  observeEvent(input$ab_aide,
-               introjs(
-                 session,
-                 events = list(
-                   "onchange" = I("if (this._currentStep==0) {
-                                  $('a[data-value=\"Statistiques\"]').removeClass('active');
-                                  $('a[data-value=\"Carte\"]').addClass('active');
-                                  $('a[data-value=\"Carte\"]').trigger('click');
+#   observeEvent(input$ab_aide,
+#                introjs(
+#                  session,
+#                  events = list(
+#                    "onchange" = I("if (this._currentStep==0) {
+#                                   $('a[data-value=\"Statistiques\"]').removeClass('active');
+#                                   $('a[data-value=\"Carte\"]').addClass('active');
+#                                   $('a[data-value=\"Carte\"]').trigger('click');
+# }
+# if (this._currentStep==1) {
+# $('a[data-value=\"Carte\"]').removeClass('active');
+# $('a[data-value=\"Statistiques\"]').addClass('active');
+# $('a[data-value=\"Statistiques\"]').trigger('click');
+# }"
+#                    ))
+#                )
+#   )
+  
+  steps <- reactive(data.frame(element = c("#llo_agateMap","#ap_controls"),
+                               intro = c("Affichage de la carte","Menu de navigation")))
+  
+  observeEvent(input$ab_aide,{
+    introjs(session,
+            options = list(steps=steps(),
+                           events = list(onbeforechange=I("
+// this is javascript
+if (this._currentStep == 1) {
+ $('.outer').css('opacity', 0.5);
+} else {
+// change opacity back
+$('.outer').css('opacity', 1);
 }
-if (this._currentStep==1) {
-$('a[data-value=\"Carte\"]').removeClass('active');
-$('a[data-value=\"Statistiques\"]').addClass('active');
-$('a[data-value=\"Statistiques\"]').trigger('click');
-}"
-                   ))
-               )
-  )
+")
+                                         )
+                           )
+    )
+    
+  })
+  
 }# end server
 
 
