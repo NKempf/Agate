@@ -50,8 +50,9 @@ navbarPageWithInputs <- function(..., inputs) {
 
 
 ui <- tagList(
+  introjsUI(),
   useShinyjs(),
-  navbarPage(
+  navbarPageWithInputs(
     "Agate",
     
     # I. Carte
@@ -369,10 +370,19 @@ ui <- tagList(
              DT::dataTableOutput("dt_stat_explore")
              
              
-    )
+    ),
     # III. Documentation
     #-------------------------------------------------------------------------------------------------------------------------------------------------
     
+    # IV. Aide Agate
+    #-------------------------------------------------------------------------------------------------------------------------------------------------
+    # Aide bouton
+    inputs = actionBttn(
+      inputId = "ab_aide",
+      style = "stretch",
+      color = "warning",
+      icon = icon("question")
+    )
     
   )
 )
@@ -1098,6 +1108,71 @@ server = function(input, output, session) {
 
     } # end if
   })
+  
+  
+# VI. Aide Agate
+#-----------------------------------------------------------------------------------------------------------------------------------
+  observeEvent(input$ab_aide,{
+    
+    introjs(session, options = 
+              list(
+                steps = data.frame(
+                  data.frame(
+                    element = c("#llo_agateMap",
+                                "#rg_typeZone",
+                                "#ddb_import",
+                                "#ddb_userMapStat",
+                                "a[data-value=\"Carte\"]",
+                                "a[data-value=\"Statistiques\"]",
+                                "#dt_stat_explore"
+                    ),
+                    intro = c("Fond de carte Agate. Pour zoomer, utiliser les boutons '+' et '-' ou la roulette de la souris. Les cartes chargées par l'utilisateur apparaîssent en vert.
+                    Un click sur une carte chargée permet d'afficher un tableau de bord contenant une série d'indicateurs issus du recensement de la population.",
+                              "Selectionner 'Utilisateur' permet d'importer manuellement une carte. 
+                    Selectionner 'Prédéfini' permet de visualiser les données associées à des zonages administratifs comme les départements, 
+                                         les communes et les quartiers prioritaires de la politique de la ville",
+                              "Menu spécifique à l'import de carte (Ne fonctionne que le bouton 'Utilisateur' est selectionné). Les cartes à importer doivent être au format Shapefile. 
+                                              Il faut selectionner les quatre fichiers associés (*.shp, *.shx, *.dbf, *.prj). Une fois la carte chargée, Agate doit identifier les variables 
+                                              identifiant et nom de chaque zone. Pour cela, il faut utiliser les listes 'Identifiant' et 'Libellé'. Enfin, le bouton 'Chaleur' permet de visualiser 
+                                              dynamiquement la quantité de données disponibles dans les zones. Plus la chaleur tend vers le rouge plus les données sont nombreuses. A l'inverse, plus 
+                                              la couleur tend vers le bleu ou le transparent, moins il y a de données.",
+                              "Paramètre de calcul des indicateurs statistiques (Ne fonctionne que le bouton 'Utilisateur' est selectionné). Une fois la carte importée, il est possible de
+                                              calculer une série d'indicateurs statistiques. La liste 'Recensement de la population' permet de sélectionner le millesime.
+                                              L'utilisateur peut choisir de ne calculer les indicateurs que sur certaines zones en utilisant la liste 'Selection des zones à calculer'
+                                              afin de réduire les temps de calcul. Enfin, le bouton 'Indicateurs statistiques' lance le calcul (durée minimal environ 45 sec). Plus
+                                              le nombre de zones est important, plus les temps de calculs s'allongent. ",
+                              "Page carte",
+                              "Page Statistiques. Permet d'explorer les statistiques issus d'Agate. Il est possible d'exporter les tableaux au format
+                                              tableur en cliquant sur le bouton 'Excel'.",
+                              "Tableau dynamique pour explorer les indicateurs statistiques."
+                    )
+                  )
+                )),
+            events = list(
+              "onchange" = I(
+                "
+                if (this._currentStep == 0) {
+                $('a[data-value=\"Statistiques\"]').removeClass('active');
+                $('a[data-value=\"Carte\"]').addClass('active');
+                $('a[data-value=\"Carte\"]').trigger('click');
+                }
+                
+                if (this._currentStep == 4) {
+                $('a[data-value=\"Statistiques\"]').removeClass('active');
+                $('a[data-value=\"Carte\"]').addClass('active');
+                $('a[data-value=\"Carte\"]').trigger('click');
+                }
+                  if (this._currentStep == 5) { 
+                  $('a[data-value=\"Carte\"]').removeClass('active');
+                  $('a[data-value=\"Statistiques\"]').addClass('active');
+                  $('a[data-value=\"Statistiques\"]').trigger('click');
+                  }
+                  ")
+            )
+    )
+  
+  }) 
+  
   
   
   

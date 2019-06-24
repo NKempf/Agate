@@ -88,6 +88,10 @@ install_local("../Packages zip/fstplyr/fstplyr-master.zip")
 #--------------------------------------
 install.packages("easySdcTable")
 
+# rintrojs : tutoriel dynamique
+#------------------------------
+install.packages("rintrojs")
+
 
 
 

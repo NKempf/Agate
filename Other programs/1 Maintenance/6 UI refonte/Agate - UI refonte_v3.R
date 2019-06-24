@@ -20,7 +20,7 @@ library(shinydashboard) # Tools like infoBox
 library(plotly)
 library(DT)
 library(easySdcTable)
-library(rintrojs)
+library(rintrojs) # Tutoriel intéractif
 
 # Fonctions  particulières
 source("Other programs/2 Fonctions Agate/4 Dashboard/Agate - Dashboard fct.R",encoding = "UTF-8")
@@ -50,8 +50,9 @@ navbarPageWithInputs <- function(..., inputs) {
 
 
 ui <- tagList(
+  introjsUI(),
   useShinyjs(),
-  navbarPage(
+  navbarPageWithInputs(
     "Agate",
     
     # I. Carte
@@ -66,70 +67,96 @@ ui <- tagList(
           
           # I.1.2. Statistical controls
           #----------------------------
-          absolutePanel(
-            draggable = TRUE,top = 20, right = 10,width = 200,#height = 500,
-            useSweetAlert(),
-            radioGroupButtons(
-              inputId = "rg_typeZone",
-              choices = c("Utilisateur" = 1,
-                          "Prédéfini" = 2),
-              justified = TRUE
-            ),
-            # Utilisateur
-            fluidRow(
-              column(5,
-                     dropdown(
-                       inputId = "ddb_import",label = "Importer",size = "sm",circle = FALSE,right = TRUE,
-                       tooltip = tooltipOptions(title = "Importer une carte",placement = "left"),
-                       fileInput('fi_userMap', 'Importer un shapeFile',multiple = T),
-                       selectInput(inputId = "si_userMap_id", label = "Identifiant", 
-                                   choices = c("Choice" =""),selected = c("")),
-                       selectInput(inputId = "si_userMap_name", label = "Libellé", 
-                                   choices = c("Choice" =""),
-                                   selected = c("")),
-                       fluidRow(
-                         column(6,
-                                switchInput(
-                                  inputId = "swi_userMapEdit",
-                                  value = FALSE,label = "Editer",onStatus = "success"
-                                )
-                         ),
-                         column(6,
-                                
-                                switchInput(
-                                  inputId = "swi_heatPoint",
-                                  value = FALSE,label = "Chaleur",onStatus = "warning"
-                                )
-                         )
-                       )
-                     )
-              ),
-              column(7,
-                     dropdown(inputId = "ddb_userMapStat",label = "Statistiques",size = "sm",circle = FALSE,right = TRUE,
-                              tooltip = tooltipOptions(title = "Calcul des indicateurs statistiques",placement = "left"),
-                              selectInput(inputId = "si_rp", label = "Recensement de la population", 
-                                          choices = c("2015" = "15","2014" = "14","2013" = "13"),
-                                          selected = "15" ),
-                              pickerInput(inputId = "pi_userMapSelect",
-                                          label = "Selection des zones à calculer", 
-                                          choices = c("Choice" =""),
-                                          options = list(
-                                            `actions-box` = TRUE), 
-                                          multiple = TRUE),
-                              actionButton("ab_userStat","Indicateurs statistiques")
-                     )
-              )
-            ),
-            # Zones prédéfinies
-            shinyjs::hidden(
-              selectInput("si_zonePred", "Selectionner une zone",
-                          choices = pred.choice,
-                          selected = c(4))
-            ),
-            style = "opacity: 0.80; z-index: 1000;" # IMPORTANT : Absolute panel not hidden by tiles
-          )
-          
-      )
+          absolutePanel(id = "ap_controls",
+                        
+                        draggable = TRUE,top = 20, right = 10,width = 300,#height = 500,
+                        
+                        useSweetAlert(),
+                        
+                        # h3("Navigation"),
+                        fluidRow(id="fr_typeZone",
+                                 radioGroupButtons(
+                                   inputId = "rg_typeZone",
+                                   choices = c("Utilisateur" = 1,
+                                               "Prédéfini" = 2),
+                                   justified = TRUE
+                                 )
+                        ),
+                        
+                        # I.1.2.1 UTILISATEUR
+                        fluidRow(id = "fr_utilimportMap",
+                                 column(12,
+                                        fileInput('fi_userMap', 'Importer un shapeFile',multiple = T),
+                                        selectInput(inputId = "si_userMap_id", label = "Identifiant", 
+                                                    choices = c("Choice" =""),selected = c("")),
+                                        selectInput(inputId = "si_userMap_name", label = "Libellé", 
+                                                    choices = c("Choice" =""),
+                                                    selected = c("")),
+                                        fluidRow(
+                                          column(6,
+                                                 switchInput(
+                                                   inputId = "swi_userMapEdit",
+                                                   value = FALSE,label = "Editer",onStatus = "success"
+                                                 )
+                                          ),
+                                          column(6,
+                                                 
+                                                 switchInput(
+                                                   inputId = "swi_heatPoint",
+                                                   value = FALSE,label = "Chaleur",onStatus = "warning"
+                                                 )
+                                          )
+                                        )     
+                                        
+                                 )
+                        ),
+                        
+                        
+                        fluidRow(id = "fr_utilStat",
+                                 column(12,
+                                        
+                                        selectInput(inputId = "si_rp", label = "Recensement de la population", 
+                                                    choices = c("2015" = "15","2014" = "14","2013" = "13"),
+                                                    selected = "15" ),
+                                        pickerInput(inputId = "pi_userMapSelect",
+                                                    label = "Selection des zones à calculer", 
+                                                    choices = c("Choice" =""),
+                                                    options = list(
+                                                      `actions-box` = TRUE), 
+                                                    multiple = TRUE),
+                                        actionButton("ab_userStat","Indicateurs statistiques")
+                                 ))
+                        ,
+                        
+                        # I.1.2.2 Zones prédéfinies
+                        hidden(
+                          fluidRow(id = "fr_predOption",
+                                   column(12,
+                                          selectInput("si_zonePred", "Selectionner une maille",
+                                                      choices = c("",pred.choice),
+                                                      selected = ""
+                                          ),
+                                          
+                                          selectInput("si_zonePred_dep", "Selectionner une zone géographique",
+                                                      choices = "",
+                                                      selected = ""
+                                          ) 
+
+                                   )
+                          )
+                        ),
+                        # Affichage / réduction du menu
+                        prettyToggle(
+                          inputId = "pt_hideMenu",
+                          label_on = "Réduire", 
+                          label_off = "Afficher",
+                          outline = TRUE,
+                          plain = TRUE,value = TRUE,status_on = "success",status_off = "success",
+                          icon_on = icon("arrow-up"), 
+                          icon_off = icon("arrow-down")
+                        )
+          ) # end absolutepanel 
+      ) # end div
       
       
       
@@ -334,45 +361,49 @@ ui <- tagList(
     #-------------------------------------------------------------------------------------------------------------------------------------------------
     tabPanel("Statistiques",
              # value="vis", # MAJ 24 juin 2019
-             
-             fluidRow(
-               column(4,
-                      # II.1. Zone selection
-                      #---------------------
-                      selectInput("si_stat_zoneSelect", "Zone",
-                                  choices = pred.choice,
-                                  selected = 4)
-               ),
-               column(4,
-                      
-                      # II.2. Domaine selection
-                      #------------------------
-                      selectInput("si_stat_domaine", "Domaine",
-                                  choices = c("Choice" ="",dmn),
-                                  selected = dmn[2])
-               ),
-               column(4,
-                      # II.3. Categorie selection
-                      #--------------------------
-                      selectInput("si_stat_categorie", "Catégorie",
-                                  choices = c("Choice" =""),
-                                  selected = c(""))
-               )
+             sidebarPanel(width=2,
+                          # II.1. Zone selection
+                          #---------------------
+                          selectInput("si_stat_zoneSelect", "Zone",
+                                      choices = pred.choice,
+                                      selected = 4),
+                          
+                          # II.2. Domaine selection
+                          #------------------------
+                          selectInput("si_stat_domaine", "Domaine",
+                                      choices = c("Choice" ="",dmn),
+                                      selected = dmn[2]),
+                          
+                          # II.3. Categorie selection
+                          #--------------------------
+                          selectInput("si_stat_categorie", "Catégorie",
+                                      choices = c("Choice" =""),
+                                      selected = c(""))
              ),
              
-             hr(), # Line between buttons and plot
+             mainPanel(
+               
+               # II.4. Table visualisation
+               #--------------------------
+               textOutput("to_stat_title"),
+               tags$head(tags$style("#to_stat_title{font-size: 30px;font-style: bold;}")),
+               DT::dataTableOutput("dt_stat_explore")
+             )
              
-             # II.4. Table visualisation
-             #--------------------------
-             textOutput("to_stat_title"),
-             tags$head(tags$style("#to_stat_title{font-size: 30px;font-style: bold;}")),
-             DT::dataTableOutput("dt_stat_explore")
              
-             
-    )
+    ),
     # III. Documentation
     #-------------------------------------------------------------------------------------------------------------------------------------------------
     
+    # IV. Aide Agate
+    #-------------------------------------------------------------------------------------------------------------------------------------------------
+    # Aide bouton
+    inputs = actionBttn(
+      inputId = "ab_aide",
+      style = "stretch",
+      color = "warning",
+      icon = icon("question")
+    )
     
   )
 )
@@ -501,8 +532,35 @@ server = function(input, output, session) {
   # Année
   observeEvent(input$si_rp,{
     rv$source.an <- input$si_rp
-    print(rv$source.an)
   })
+  
+  # Affichage / réduction du menu de navigation de la carte
+  observeEvent(c(input$pt_hideMenu,input$rg_typeZone), {
+    
+    if (input$rg_typeZone == 1) {
+      shinyjs::hide("fr_predOption")
+      
+      if(input$pt_hideMenu){
+        shinyjs::show("fr_utilimportMap")
+        shinyjs::show("fr_utilStat")
+      }else{
+        shinyjs::hide("fr_utilimportMap")
+        shinyjs::hide("fr_utilStat")
+      }
+    }
+    else{
+      shinyjs::hide("fr_utilimportMap")
+      shinyjs::hide("fr_utilStat")
+      
+      if(input$pt_hideMenu){
+        shinyjs::show("fr_predOption")
+      }else{
+        shinyjs::hide("fr_predOption")
+      }
+    }
+  })
+  
+  
   
   # Zone utilisateur ou predefinie
   observeEvent(input$rg_typeZone,{
@@ -512,55 +570,99 @@ server = function(input, output, session) {
     rv$zone.comparaison <- NULL
     rv$dash.indicateur <- NULL
     
-    if(input$rg_typeZone == 1){
-      shinyjs::hide("si_zonePred")
-      shinyjs::hide("ab_modal")
-      shinyjs::show("ddb_import")
-      shinyjs::show("ddb_userMapStat")
-      updateSelectInput(session,"si_zonePred",selected = 4)
-      # rv$AgateMap <- rv$userMap
+    # if(input$rg_typeZone == 1){
+    #   shinyjs::hide("si_zonePred")
+    #   shinyjs::hide("ab_modal")
+    #   shinyjs::show("ddb_import")
+    #   shinyjs::show("ddb_userMapStat")
+    #   updateSelectInput(session,"si_zonePred",selected = 4)
+    #   # rv$AgateMap <- rv$userMap
+    #   
+    # }else{
+    #   shinyjs::show("si_zonePred")
+    #   shinyjs::show("ab_modal")
+    #   shinyjs::hide("ddb_import")
+    #   shinyjs::hide("ddb_userMapStat")
+    # }
+  })
+  
+  
+  observeEvent(input$si_zonePred,{
+   
+    if(input$si_zonePred != ""){
+      print(input$si_zonePred)
+      print(class(input$si_zonePred))
       
-    }else{
-      shinyjs::show("si_zonePred")
-      shinyjs::show("ab_modal")
-      shinyjs::hide("ddb_import")
-      shinyjs::hide("ddb_userMapStat")
+      # if(as.numeric(input$si_zonePred) == 1) {
+      #   updateSelectInput("si_zonePred_dep",choices = c("Tous les départements"="all",
+      #                                                   "Guadeloupe" = "971","Martinique" = "972","Guyane" = "973",
+      #                                                   "Saint-Barthélemy" = "977",
+      #                                                   "Saint-Martin" = "978"),
+      #                     selected = 1)
+      # }else{
+      #   updateSelectInput("si_zonePred_dep",choices = c("Tous les départements"="all",
+      #                                                   "Guadeloupe" = "971","Martinique" = "972","Guyane" = "973"))
+      # }
     }
   })
   
-  # Selection de la zone a afficher
-  observeEvent(input$si_zonePred,{
+  
+  # PREDEFINIE : Selection de la zone a afficher
+  observeEvent(c(input$si_zonePred_dep,input$si_zonePred),{
     
-    # Init
+    # Init parameters
     rv$zone.etude <- NULL
     rv$pyramide.etude <- NULL
     rv$zone.comparaison <- NULL
     rv$dash.indicateur <- NULL
-    
-    switch(as.numeric(input$si_zonePred),
-           {
-             if(!exists("dep.dom")){
-               print("Chargement de la carte departement")
-               load("Data/Maps/Zones predefinies/zp_departements.RData")
-             }
-             rv$AgateMap <- dep.dom},
-           {  
-             print("Chargement de la carte commune")
-             rv$AgateMap <- com.dom
-           },
-           {
-             if(!exists("qpv")){
-               print("Chargement de la carte QPV")
-               load("Data/Maps/Zones predefinies/zp_qpv.RData")
-             }
-             rv$AgateMap <- qpv},
-           {
-             if(!is.null(rv$userMap)){
-               rv$AgateMap <- rv$userMap
-             }else{
-               print("En attente d'une carte utilisateur...")
-             }
-           })
+  #   
+  # if(input$si_zonePred_dep != "") {
+  #   switch(as.numeric(input$si_zonePred),
+  #          { # Département
+  #            print(!exists("dep.dom"))
+  #            
+  #            if(!exists("dep.dom")){
+  #              print("Chargement de la carte departement")
+  #              load("Data/Maps/Zones predefinies/zp_departements.RData")
+  #            }
+  # 
+  #            if(input$si_zonePred_dep != "all"){
+  #              rv$AgateMap <- dep.dom[dep.dom@data$dep == input$si_zonePred_dep,] 
+  #            }else{
+  #              rv$AgateMap <- dep.dom
+  #            }
+  # 
+  #            },
+  #          { # Commune
+  #            print("Chargement de la carte commune")
+  #            
+  #            if(input$si_zonePred_dep != "all"){
+  #              rv$AgateMap <- com.dom[com.dom@data$dep == input$si_zonePred_dep,] 
+  #            }else{
+  #              rv$AgateMap <- com.dom
+  #            }
+  # 
+  #          },
+  #          {
+  #            if(!exists("qpv")){
+  #              print("Chargement de la carte QPV")
+  #              load("Data/Maps/Zones predefinies/zp_qpv.RData")
+  #            }
+  #            
+  #            if(input$si_zonePred_dep != "all"){
+  #              rv$AgateMap <- qpv[qpv@data$dep == input$si_zonePred_dep,] 
+  #            }else{
+  #              rv$AgateMap <- qpv
+  #            }
+  #            },
+  #          {
+  #            if(!is.null(rv$userMap)){
+  #              rv$AgateMap <- rv$userMap
+  #            }else{
+  #              print("En attente d'une carte utilisateur...")
+  #            }
+  #          })
+  # }
   })
   
   # Ouverture du dashboard
@@ -614,7 +716,7 @@ server = function(input, output, session) {
         print(rv$zone.etude)
         toggleModal(session, "bs_dashboard", toggle = "toggle")
       }
-
+      
     }
   })
   
@@ -829,7 +931,7 @@ server = function(input, output, session) {
   observeEvent(rv$dash.indicateur,{
     
     if(!is.null(rv$dash.indicateur) & !is.null(rv$zone.comparaison)){
-
+      
       # Titre dashboard
       output$to_titleDash = renderText({
         rv$dash.indicateur$titreDash
@@ -1024,16 +1126,16 @@ server = function(input, output, session) {
   
   # V. Data explore
   #------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
+  
   # Mise à jour des catégories
   observeEvent(input$si_stat_domaine,{
-
-      cat <- lstCategorie$categorie[lstCategorie$domaine == input$si_stat_domaine]
-      names(cat) <- lstCategorie$labelCategorie[lstCategorie$domaine == input$si_stat_domaine]
-      
-      updateSelectInput(session, "si_stat_categorie",
-                        choices = cat
-      )
+    
+    cat <- lstCategorie$categorie[lstCategorie$domaine == input$si_stat_domaine]
+    names(cat) <- lstCategorie$labelCategorie[lstCategorie$domaine == input$si_stat_domaine]
+    
+    updateSelectInput(session, "si_stat_categorie",
+                      choices = cat
+    )
   })
   
   # Tableau de données dynamique
@@ -1042,9 +1144,9 @@ server = function(input, output, session) {
     if(input$si_stat_categorie != ""){
       df <- NULL
       type.indicateur.filtre <- c("freq","part_np","CoefVariation","IntervalConf.","valeur.diffusable")
-
+      
       if(input$si_stat_zoneSelect == 4){
-
+        
         if(!is.null(rv$df.zone.user)){
           # Selection des données
           df <- rv$df.zone.user %>%
@@ -1054,7 +1156,7 @@ server = function(input, output, session) {
         }else{
           df <- NULL
         }
-
+        
       }else{
         df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>%
           filter(zone.pred == input$si_stat_zoneSelect & domaine == input$si_stat_domaine &
@@ -1062,23 +1164,23 @@ server = function(input, output, session) {
           filter(type.indicateur != "part_np") %>%
           select(source,domaine,categorie,idZonage,idZonage.name,nomIndicateur,type.indicateur,value)
       }
-
+      
       if(!is.null(df)){
         # selection des libelles de colonnes
         typInd <- lstTypeIndicateur$typeIndicateur
         names(typInd) <- lstTypeIndicateur$labelTypeIndicateur
         type.ind <- typInd[typInd %in% c("idZonage","idZonage.name",unique(df$type.indicateur))]
         print(type.ind)
-
+        
         df <- df %>%
           spread(key = type.indicateur, value = value) %>%
           left_join(lstIndicateur %>% select(nomIndicateur,labelIndicateur),"nomIndicateur") %>%
           mutate(nomIndicateur = labelIndicateur) %>%
           select(-labelIndicateur,-domaine,-categorie)
-
+        
         # Affichage du titre de la
         output$to_stat_title <- renderText({lstCategorie$titreTab[lstCategorie$domaine == input$si_domaine &
-                                                                  lstCategorie$categorie == input$si_categorie]})
+                                                                    lstCategorie$categorie == input$si_categorie]})
         # Affichage
         output$dt_stat_explore = renderDT(
           datatable(df,
@@ -1093,11 +1195,102 @@ server = function(input, output, session) {
                       buttons = c(I('colvis'),'excel')),
                     rownames= FALSE)
         )
-
+        
       }
-
+      
     } # end if
   })
+  
+  
+  # VI. Aide Agate
+  #-----------------------------------------------------------------------------------------------------------------------------------
+  
+  
+  observeEvent(input$ab_aide,{
+    
+    introjs(session, options = 
+              list(
+                steps = data.frame(
+                  data.frame(
+                    element = c(NA,
+                                "#llo_agateMap",
+                                "#ap_controls",
+                                "#rg_typeZone",
+                                "#fi_userMap",
+                                "#si_userMap_id",
+                                "#si_userMap_name",
+                                "#swi_heatPoint",
+                                "#si_rp",
+                                "#ab_userStat",
+                                "#pi_userMapSelect",
+                                "#pt_hideMenu",
+                                "a[data-value=\"Carte\"]",
+                                "a[data-value=\"Statistiques\"]",
+                                "#dt_stat_explore",
+                                "#si_stat_zoneSelect"
+                    ),
+                    intro = c(
+                      # 0
+                      "Bienvenue dans Agate : application en Guyane et aux Antilles de statistiques infracommunales. Elle permet de calculer des indicateurs statistiques issus du recensement de la population 
+                    dans n'importe quelle zone. Elle affiche également ces données sous forme d'un tableau bord interactif.",
+                      # 1
+                      "Fond de carte Agate. Pour zoomer, utiliser les boutons '+' et '-' ou la roulette de la souris. Les cartes chargées par l'utilisateur apparaîssent en vert.
+                    Un click sur une carte chargée permet d'afficher un tableau de bord.",
+                      # 2
+                      "Menu de gestion des cartes et des indicateurs statistiques",
+                      # 3
+                      "Selectionner 'Utilisateur' permet d'importer manuellement une carte. Selectionner 'Prédéfini' permet de visualiser les données associées à 
+                    des zonages administratifs comme les départements, les communes et les quartiers prioritaires de la politique de la ville",
+                      # 4
+                      "Les cartes à importer doivent être au format Shapefile. Il faut selectionner les quatre fichiers associés (*.shp, *.shx, *.dbf, *.prj).",
+                      # 5
+                      "Pour fonctionner, Agate doit identifier l'identifiant et le nom de chaque zone. Selectionner cette variable dans la liste.",
+                      # 6
+                      "Selectionner la variable correspondant au nom de la zone.",
+                      # 7
+                      "Le bouton 'Chaleur' affiche dynamiquement la quantité de données disponibles dans les zones. Plus la chaleur tend vers le rouge plus les données 
+                    sont nombreuses. A l'inverse, plus la couleur tend vers le bleu ou le transparent, moins il y a de données.",
+                      # 8
+                      "Selection du millesime du recensement de la population utilisé pour le calcul des indicateurs statistiques",
+                      # 9
+                      "Selection des zones où seront calculés les indicateurs statistiques pour éviter des temps de calcul trop long",
+                      # 10
+                      "Calcul des indicateurs statistiques issus du RP dans les zones sélectionnées par l'utilisateur.",
+                      # 11
+                      "Affiche ou réduire le menu.",
+                      # 12
+                      "Page carte",
+                      # 13
+                      "Page Statistiques. Permet d'explorer les statistiques issus d'Agate. Il est possible d'exporter les tableaux au format tableur 
+                    en cliquant sur le bouton 'Excel'.",
+                      # 14
+                      "Tableau dynamique pour explorer les indicateurs statistiques.",
+                      # 15
+                      "Selection du type de zone : département, commune, QPV et zonage importé par l'utilisateur."
+                    )
+                  )
+                )),
+            events = list(
+              "onchange" = I(
+                "
+                if (this._currentStep == 12) {
+                $('a[data-value=\"Statistiques\"]').removeClass('active');
+                $('a[data-value=\"Carte\"]').addClass('active');
+                $('a[data-value=\"Carte\"]').trigger('click');
+                }
+
+                  if (this._currentStep == 13) { 
+                  $('a[data-value=\"Carte\"]').removeClass('active');
+                  $('a[data-value=\"Statistiques\"]').addClass('active');
+                  $('a[data-value=\"Statistiques\"]').trigger('click');
+                  }
+                  ")
+            )
+            
+    )
+    
+  })
+  
   
   
   

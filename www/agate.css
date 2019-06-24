@@ -6,22 +6,57 @@
   bottom: 0;
   overflow: hidden;
   padding: 0;
+  z-index: 4;
 }
 
-#controls {
+/* NAVIGATION */
+
+#fr_typeZone, #fr_utilimportMap{
+	border-bottom: 1px solid grey ;
+
+}
+
+#ap_controls {
   /* Appearance */
-  background-color: transparent;
+  background-color: rgb(255, 255, 255);
+  border-radius: 10px;
   padding: 0 20px 20px 20px;
   cursor: move;
   /* Fade out while not hovering */
   opacity: 0.6;
   zoom: 1.0;
   transition: opacity 500ms 1s;
+  z-index: 1400;
 }
-#controls:hover {
+#ap_controls:hover {
   /* Fade in while hovering */
-  opacity: 0.95;
+  opacity: 0.90;
   transition-delay: 0;
+}
+
+#rg_typeZone{
+z-index: 1500;
+margin :auto;
+}
+
+
+#ab_userStat{
+	margin :auto;
+}
+
+#pt_hideMenu{
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#to_stat_title{
+	font-size: 30px;
+	font-style: bold;
+	}
+
+#fr_typeZone, #fr_utilimportMap, #fr_utilStat, #fi_userMap {
+	  z-index: 1499;
 }
 
 .modal-backdrop
@@ -34,20 +69,7 @@ z-index: 1;
 }
 
 
-#rg_typeZone{
-z-index: 1500;
-}
-#ap_controls{
-	opacity: 0.80; 
-	z-index: 1500;	
-}
-
-.outer{
-	z-index: 4;
-	
-}
-
-
+/* Tutoriel Agate */
 
 .introjs-helperLayer {
         background: transparent;
