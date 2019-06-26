@@ -2,7 +2,7 @@
 #                                   Agate - Statistical calculation for predefine area fonction                        #
 #----------------------------------------------------------------------------------------------------------------------#
 
-source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v9.R",encoding = "UTF-8")
+source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v10.R",encoding = "UTF-8")
 
 # 02.04.2019
 

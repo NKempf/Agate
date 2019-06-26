@@ -17,6 +17,7 @@ library(shinyBS) # Pop-up windows
 library(shinyjs) # Mask buttons/elements on graphic interface
 library(shinyWidgets) # Widgets supplementaires
 library(shinydashboard) # Tools like infoBox
+library(shinycssloaders) # spinner loader
 library(plotly)
 library(DT)
 library(easySdcTable)
@@ -62,17 +63,14 @@ ui <- tagList(
       div(class="outer",
           tags$head(includeCSS("www/agate.css")),
           # I.1.1. Leaflet map
-          #-----------------
+          #-------------------
           leafletOutput("llo_agateMap", width = "100%", height = "100%"),
           
           # I.1.2. Statistical controls
           #----------------------------
           absolutePanel(id = "ap_controls",
-                        
                         draggable = TRUE,top = 20, right = 10,width = 300,#height = 500,
-                        
                         useSweetAlert(),
-                        
                         # h3("Navigation"),
                         fluidRow(id="fr_typeZone",
                                  radioGroupButtons(
@@ -82,7 +80,6 @@ ui <- tagList(
                                    justified = TRUE
                                  )
                         ),
-                        
                         # I.1.2.1 UTILISATEUR
                         fluidRow(id = "fr_utilimportMap",
                                  column(12,
@@ -107,11 +104,8 @@ ui <- tagList(
                                                  )
                                           )
                                         )     
-                                        
                                  )
                         ),
-                        
-                        
                         fluidRow(id = "fr_utilStat",
                                  column(12,
                                         
@@ -127,21 +121,19 @@ ui <- tagList(
                                         actionButton("ab_userStat","Indicateurs statistiques")
                                  ))
                         ,
-                        
                         # I.1.2.2 Zones prédéfinies
                         hidden(
                           fluidRow(id = "fr_predOption",
                                    column(12,
                                           selectInput("si_zonePred", "Selectionner une maille",
                                                       choices = c("",pred.choice),
-                                                      selected = ""
+                                                      selected =c(4)
                                           ),
                                           
                                           selectInput("si_zonePred_dep", "Selectionner une zone géographique",
                                                       choices = "",
                                                       selected = ""
                                           ) 
-
                                    )
                           )
                         ),
@@ -156,7 +148,7 @@ ui <- tagList(
                           icon_off = icon("arrow-down")
                         )
           ) # end absolutepanel 
-      ) # end div
+      ) %>% withSpinner(type = 6,size = 2,proxy.height = 100) # end div
       
       
       
@@ -185,30 +177,31 @@ ui <- tagList(
                                               infoBoxOutput(outputId = "ib_dem_feminite"),
                                               infoBoxOutput(outputId = "ib_dem_population"),
                                               infoBoxOutput(outputId = "ib_dem_superficie")
-                                            ),
+                                            ) ,
                                             fluidRow(
                                               box(id="b_test",title = "Individus", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  DT::dataTableOutput("dt_dem_hg")
+                                                  DT::dataTableOutput("dt_dem_hg") %>% withSpinner(type = 6) 
                                               ),
                                               box(title = "Ménages", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  DT::dataTableOutput("dt_dem_hd")
+                                                  DT::dataTableOutput("dt_dem_hd") %>% withSpinner(type = 6) 
                                               )
                                             ),
                                             fluidRow(
                                               box(title = "Pyramide des âges", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  plotlyOutput("g_dem_bg")
+                                                  plotlyOutput("g_dem_bg") %>% withSpinner(type = 6) 
                                               ),
                                               box(title = "Immigration", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  DT::dataTableOutput("dt_dem_bd")
+                                                  DT::dataTableOutput("dt_dem_bd") %>% withSpinner(type = 6) 
                                               )
                                             ),
                                             fluidRow(
                                               textOutput("to_source")
                                             )
+                               
                                    ),
                                    # III. Thème  Emploi
                                    #-----------------------------------------------------------------------------------------------------
@@ -222,21 +215,21 @@ ui <- tagList(
                                             fluidRow(
                                               box(title = "Marché de l'emploi", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  DT::dataTableOutput("dt_emp_hg")
+                                                  DT::dataTableOutput("dt_emp_hg") %>% withSpinner(type = 6) 
                                               ),
                                               box(title = "Chômage", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  DT::dataTableOutput("dt_emp_hd")
+                                                  DT::dataTableOutput("dt_emp_hd") %>% withSpinner(type = 6) 
                                               )
                                             ),
                                             fluidRow(
                                               box(title = "Type d'activité", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  plotlyOutput("g_emp_bg")
+                                                  plotlyOutput("g_emp_bg") %>% withSpinner(type = 6) 
                                               ),
                                               box(title = "Travail", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  DT::dataTableOutput("dt_emp_bd")
+                                                  DT::dataTableOutput("dt_emp_bd") %>% withSpinner(type = 6) 
                                               )
                                             )
                                    ),
@@ -253,22 +246,22 @@ ui <- tagList(
                                             fluidRow(
                                               box(title = "Jeunes scolarisés", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  DT::dataTableOutput("dt_sco_hg")
+                                                  DT::dataTableOutput("dt_sco_hg") %>% withSpinner(type = 6) 
                                               ),
                                               box(title = "Jeunes non scolarisés", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  DT::dataTableOutput("dt_sco_bd")
+                                                  DT::dataTableOutput("dt_sco_bd") %>% withSpinner(type = 6) 
                                               )
                                             ),
                                             fluidRow(
                                               box(title = "Niveau de diplôme", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  plotlyOutput("g_sco_bg")
+                                                  plotlyOutput("g_sco_bg") %>% withSpinner(type = 6) 
                                               ),
                                               
                                               box(title = "Jeunes", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  plotlyOutput("g_sco_hd")
+                                                  plotlyOutput("g_sco_hd") %>% withSpinner(type = 6) 
                                               )
                                             )
                                    ),
@@ -285,21 +278,21 @@ ui <- tagList(
                                             fluidRow(
                                               box(title = "Caractéristiques des logements", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  DT::dataTableOutput("dt_log_hg")
+                                                  DT::dataTableOutput("dt_log_hg") %>% withSpinner(type = 6) 
                                               ),
                                               box(title = "Catégorie de logement", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  plotlyOutput("g_log_hd")
+                                                  plotlyOutput("g_log_hd") %>% withSpinner(type = 6) 
                                               )
                                             ),
                                             fluidRow(
                                               box(title = "Année d'achevement", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  plotlyOutput("g_log_bg")
+                                                  plotlyOutput("g_log_bg") %>% withSpinner(type = 6) 
                                               ),
                                               box(title = "Aspect du bâti", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  plotlyOutput("g_log_bd")
+                                                  plotlyOutput("g_log_bd") %>% withSpinner(type = 6) 
                                               )
                                             )
                                    ),
@@ -314,21 +307,21 @@ ui <- tagList(
                                             fluidRow(
                                               box(title = "Caractéristiques des résidences principales", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  DT::dataTableOutput("dt_res_hg")
+                                                  DT::dataTableOutput("dt_res_hg") %>% withSpinner(type = 6) 
                                               ),
                                               box(title = "Équipements", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  DT::dataTableOutput("dt_res_bd")
+                                                  DT::dataTableOutput("dt_res_bd") %>% withSpinner(type = 6) 
                                               )
                                             ),
                                             fluidRow(
                                               box(title = "Surface", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  plotlyOutput("g_res_bg")
+                                                  plotlyOutput("g_res_bg") %>% withSpinner(type = 6) 
                                               ),
                                               box(title = "Nombre de pièces", solidHeader = TRUE,
                                                   collapsible = TRUE,
-                                                  plotlyOutput("g_res_hd")
+                                                  plotlyOutput("g_res_hd") %>% withSpinner(type = 6) 
                                               )
                                             )
                                    ),
@@ -339,12 +332,6 @@ ui <- tagList(
                                                            selectInput("si_typeZone", "Type de zone",
                                                                        choices = pred.choice,
                                                                        selected = c(4)),
-                                                           # pickerInput(inputId = "pi_zone_compare",
-                                                           #             label = "Zone de comparaison", 
-                                                           #             choices = c("Choice" =""),
-                                                           #             options = list(
-                                                           #               `live-search` = TRUE)
-                                                           # ),
                                                            selectInput("si_zone", "Zone de comparaison",
                                                                        choices = c("Choice" =""),
                                                                        selected = c("")),
@@ -352,7 +339,7 @@ ui <- tagList(
                                                            icon = icon("gear"),size = "sm",right = TRUE,
                                                            tooltip = tooltipOptions(title = "Zones de comparaison")
                                    )
-              )
+              ) 
       ) # end Dashboard
       
     ),# Tabset Carte
@@ -362,21 +349,32 @@ ui <- tagList(
     tabPanel("Statistiques",
              # value="vis", # MAJ 24 juin 2019
              sidebarPanel(width=2,
-                          # II.1. Zone selection
-                          #---------------------
-                          selectInput("si_stat_zoneSelect", "Zone",
+                          # II.1. Maille géographique
+                          #--------------------------
+                          selectInput("si_stat_zoneSelect", "Maille géographique",
                                       choices = pred.choice,
                                       selected = 4),
                           
-                          # II.2. Domaine selection
+                          # II.2. Zones étudiéds
+                          #---------------------
+                          pickerInput(inputId = "pi_stat_zone_etude",
+                                      label = "Zones étudiées",
+                                      choices = c("Choice" =""),
+                                      options = list(
+                                        `live-search` = TRUE,
+                                        `actions-box` = TRUE), 
+                                      multiple = TRUE
+                          ),
+                          
+                          # II.3. Domaine selection
                           #------------------------
-                          selectInput("si_stat_domaine", "Domaine",
+                          selectInput("si_stat_domaine", "Thématique",
                                       choices = c("Choice" ="",dmn),
                                       selected = dmn[2]),
                           
-                          # II.3. Categorie selection
+                          # II.4. Categorie selection
                           #--------------------------
-                          selectInput("si_stat_categorie", "Catégorie",
+                          selectInput("si_stat_categorie", "Indicateurs",
                                       choices = c("Choice" =""),
                                       selected = c(""))
              ),
@@ -415,6 +413,7 @@ server = function(input, output, session) {
   #----------------------------------------------------------------------------------------------------------------------------
   rv <- reactiveValues(AgateMap = NULL,
                        userMap = NULL,
+                       importUserMap = NULL,
                        zone.active = NULL,
                        zone.etude = NULL,
                        zone.comparaison = NULL,
@@ -440,7 +439,6 @@ server = function(input, output, session) {
   
   # Zoom sur click
   observeEvent(input$llo_agateMap_shape_click, { 
-    
     if(!is.null(rv$AgateMap)){
       mapSelect <- rv$AgateMap[rv$AgateMap@data$idZonage == input$llo_agateMap_shape_click$id,]
       
@@ -458,7 +456,6 @@ server = function(input, output, session) {
   
   # Heatpoints
   observeEvent(input$swi_heatPoint, {
-    
     if(input$swi_heatPoint){
       leafletProxy("llo_agateMap") %>% 
         showGroup("heatpts")
@@ -495,6 +492,8 @@ server = function(input, output, session) {
   # Import d'une carte utilisateur
   observeEvent(input$fi_userMap,{
     
+    rv$importUserMap <- NULL
+    
     if(input$rg_typeZone == 1){
       
       user.files <- input$fi_userMap
@@ -505,10 +504,10 @@ server = function(input, output, session) {
       }
       getshp <- list.files(dir, pattern="*.shp", full.names=TRUE)
       userMap <- readOGR(dsn = getshp,encoding = "UTF-8",stringsAsFactors = FALSE)
-      rv$userMap <- spTransform(userMap, "+init=epsg:4326")
+      rv$importUserMap <- spTransform(userMap, "+init=epsg:4326")
       
-      if(!is.null(rv$userMap)){
-        lst_var <- colnames(rv$userMap@data)
+      if(!is.null(rv$importUserMap)){
+        lst_var <- colnames(rv$importUserMap@data)
         updateSelectInput(session = session,inputId = "si_userMap_id",choices = lst_var,selected = lst_var[1])
         updateSelectInput(session = session,inputId = "si_userMap_name",choices = lst_var,selected = lst_var[2])
       }
@@ -519,10 +518,43 @@ server = function(input, output, session) {
   observeEvent(c(input$si_userMap_id,input$si_userMap_name), {
     
     if(input$si_userMap_id != ""){
-      rv$userMap@data$idZonage <- rv$userMap@data[,input$si_userMap_id]
-      rv$userMap@data$idZonage.name <- str_trim(substr(str_replace_all(rv$userMap@data[,input$si_userMap_name], "[[:punct:]]", " "),1,200))
-      rv$userMap@data <- rv$userMap@data %>% select(idZonage,idZonage.name)
+      mapTmp <- rv$importUserMap
+
+      # Suppression des caractères spéciaux et des valeurs manquantes
+      idtmp <- mapTmp@data[,input$si_userMap_id] %>% 
+        as.character() %>% 
+        str_replace_all("[[:punct:]]", "") %>% 
+        str_replace_all("\032", "") %>% 
+        str_trim() %>% 
+        iconv(from = 'UTF-8', to = 'ASCII//TRANSLIT')
+      idtmp[is.na(idtmp)] <- "valManquante"
+      
+      nametmp <- mapTmp@data[,input$si_userMap_name] %>% 
+        as.character() %>% 
+        str_replace_all("[[:punct:]]", "") %>% 
+        str_replace_all("\032", "") %>% 
+        str_trim() %>% 
+        iconv(from = 'UTF-8', to = 'ASCII//TRANSLIT')
+      nametmp[is.na(nametmp)] <- "valManquante"
+
+      # Gestion de l'unicité des identifiants 
+      if(sum(idtmp %in% idtmp[duplicated(idtmp)])>0){
+        idtmp <- paste0(idtmp,"_",1:nrow(mapTmp@data))
+      }
+      
+      # Création des variables idZonage et idZonage.name
+      mapTmp@data$idZonage <- idtmp
+      mapTmp@data$idZonage.name <- nametmp
+      
+      # Selection des attributs
+      mapTmp@data <- mapTmp@data %>% select(idZonage,idZonage.name)
+      
+      # MAJ des cartes
+      rv$userMap <- mapTmp
+      print(rv$userMap@proj4string)
+      
       rv$AgateMap <- rv$userMap
+      print(rv$AgateMap@proj4string)
     }
   })
   
@@ -569,40 +601,38 @@ server = function(input, output, session) {
     rv$pyramide.etude <- NULL
     rv$zone.comparaison <- NULL
     rv$dash.indicateur <- NULL
+    rv$zone.etude.previous <- NULL
     
-    # if(input$rg_typeZone == 1){
-    #   shinyjs::hide("si_zonePred")
-    #   shinyjs::hide("ab_modal")
-    #   shinyjs::show("ddb_import")
-    #   shinyjs::show("ddb_userMapStat")
-    #   updateSelectInput(session,"si_zonePred",selected = 4)
-    #   # rv$AgateMap <- rv$userMap
-    #   
-    # }else{
-    #   shinyjs::show("si_zonePred")
-    #   shinyjs::show("ab_modal")
-    #   shinyjs::hide("ddb_import")
-    #   shinyjs::hide("ddb_userMapStat")
-    # }
+    if(input$rg_typeZone == 1){
+      updateSelectInput(session,"si_zonePred",selected = c(4))
+      
+      # shinyjs::hide("si_zonePred")
+      # shinyjs::hide("ab_modal")
+      # shinyjs::show("ddb_import")
+      # shinyjs::show("ddb_userMapStat")
+      # updateSelectInput(session,"si_zonePred",selected = 4)
+      # rv$AgateMap <- rv$userMap
+
+    }else{
+      # shinyjs::show("si_zonePred")
+      # shinyjs::show("ab_modal")
+      # shinyjs::hide("ddb_import")
+      # shinyjs::hide("ddb_userMapStat")
+    }
   })
   
   
   observeEvent(input$si_zonePred,{
-   
     if(input$si_zonePred != ""){
-      print(input$si_zonePred)
-      print(class(input$si_zonePred))
-      
-      # if(as.numeric(input$si_zonePred) == 1) {
-      #   updateSelectInput("si_zonePred_dep",choices = c("Tous les départements"="all",
-      #                                                   "Guadeloupe" = "971","Martinique" = "972","Guyane" = "973",
-      #                                                   "Saint-Barthélemy" = "977",
-      #                                                   "Saint-Martin" = "978"),
-      #                     selected = 1)
-      # }else{
-      #   updateSelectInput("si_zonePred_dep",choices = c("Tous les départements"="all",
-      #                                                   "Guadeloupe" = "971","Martinique" = "972","Guyane" = "973"))
-      # }
+      if(as.numeric(input$si_zonePred) == 1) {
+        updateSelectInput(session,"si_zonePred_dep",choices = c("Tous les départements"="all",
+                                                        "Guadeloupe" = "971","Martinique" = "972","Guyane" = "973",
+                                                        "Saint-Barthélemy" = "977",
+                                                        "Saint-Martin" = "978"))
+      }else{
+        updateSelectInput(session,"si_zonePred_dep",choices = c("Tous les départements"="all",
+                                                        "Guadeloupe" = "971","Martinique" = "972","Guyane" = "973"))
+      }
     }
   })
   
@@ -615,54 +645,54 @@ server = function(input, output, session) {
     rv$pyramide.etude <- NULL
     rv$zone.comparaison <- NULL
     rv$dash.indicateur <- NULL
-  #   
-  # if(input$si_zonePred_dep != "") {
-  #   switch(as.numeric(input$si_zonePred),
-  #          { # Département
-  #            print(!exists("dep.dom"))
-  #            
-  #            if(!exists("dep.dom")){
-  #              print("Chargement de la carte departement")
-  #              load("Data/Maps/Zones predefinies/zp_departements.RData")
-  #            }
-  # 
-  #            if(input$si_zonePred_dep != "all"){
-  #              rv$AgateMap <- dep.dom[dep.dom@data$dep == input$si_zonePred_dep,] 
-  #            }else{
-  #              rv$AgateMap <- dep.dom
-  #            }
-  # 
-  #            },
-  #          { # Commune
-  #            print("Chargement de la carte commune")
-  #            
-  #            if(input$si_zonePred_dep != "all"){
-  #              rv$AgateMap <- com.dom[com.dom@data$dep == input$si_zonePred_dep,] 
-  #            }else{
-  #              rv$AgateMap <- com.dom
-  #            }
-  # 
-  #          },
-  #          {
-  #            if(!exists("qpv")){
-  #              print("Chargement de la carte QPV")
-  #              load("Data/Maps/Zones predefinies/zp_qpv.RData")
-  #            }
-  #            
-  #            if(input$si_zonePred_dep != "all"){
-  #              rv$AgateMap <- qpv[qpv@data$dep == input$si_zonePred_dep,] 
-  #            }else{
-  #              rv$AgateMap <- qpv
-  #            }
-  #            },
-  #          {
-  #            if(!is.null(rv$userMap)){
-  #              rv$AgateMap <- rv$userMap
-  #            }else{
-  #              print("En attente d'une carte utilisateur...")
-  #            }
-  #          })
-  # }
+
+  if(input$si_zonePred_dep != "") {
+    switch(as.numeric(input$si_zonePred),
+           { # Département
+             print(!exists("dep.dom"))
+
+             if(!exists("dep.dom")){
+               print("Chargement de la carte departement")
+               load("Data/Maps/Zones predefinies/zp_departements.RData")
+             }
+
+             if(input$si_zonePred_dep != "all"){
+               rv$AgateMap <- dep.dom[dep.dom@data$dep == input$si_zonePred_dep,]
+             }else{
+               rv$AgateMap <- dep.dom
+             }
+
+             },
+           { # Commune
+             print("Chargement de la carte commune")
+
+             if(input$si_zonePred_dep != "all"){
+               rv$AgateMap <- com.dom[com.dom@data$dep == input$si_zonePred_dep,]
+             }else{
+               rv$AgateMap <- com.dom
+             }
+
+           },
+           {
+             if(!exists("qpv")){
+               print("Chargement de la carte QPV")
+               load("Data/Maps/Zones predefinies/zp_qpv.RData")
+             }
+
+             if(input$si_zonePred_dep != "all"){
+               rv$AgateMap <- qpv[qpv@data$dep == input$si_zonePred_dep,]
+             }else{
+               rv$AgateMap <- qpv
+             }
+             },
+           {
+             if(!is.null(rv$userMap)){
+               rv$AgateMap <- rv$userMap
+             }else{
+               print("En attente d'une carte utilisateur...")
+             }
+           })
+  }
   })
   
   # Ouverture du dashboard
@@ -842,13 +872,14 @@ server = function(input, output, session) {
         )
       }
     }
+    
   })
   
   # Données de comparaison et indicateurs du dashboard
   observeEvent(c(input$si_typeZone,input$si_zone,rv$zone.etude),{
     
     rv$zone.comparaison <- input$si_zone
-    
+
     if(!is.null(rv$zone.etude) & !is.null(rv$zone.comparaison) & input$si_zone != ""){
       
       print(paste0("zone comparaison : ",rv$zone.comparaison))
@@ -924,7 +955,7 @@ server = function(input, output, session) {
                                                      pyramide_tr = pyr.dashboard)
         }
       }
-    }
+    } # end Test1
   })
   
   # Mise a jour du dashboard
@@ -1138,67 +1169,116 @@ server = function(input, output, session) {
     )
   })
   
-  # Tableau de données dynamique
-  observeEvent(c(input$si_stat_categorie,input$si_stat_domaine,input$si_stat_zoneSelect),{
+  # MAJ des zones étudiées
+  observeEvent(input$si_stat_zoneSelect,{
     
-    if(input$si_stat_categorie != ""){
-      df <- NULL
-      type.indicateur.filtre <- c("freq","part_np","CoefVariation","IntervalConf.","valeur.diffusable")
+    if(input$si_stat_zoneSelect == 4){
       
-      if(input$si_stat_zoneSelect == 4){
+      print(rv$df.zone.user)
+      
+      if(!is.null(rv$df.zone.user)){
+        # Selection des données
+        df <- rv$df.zone.user %>%
+          select(idZonage,idZonage.name) %>%
+          filter(!duplicated(idZonage))
+
+        print(df)
         
-        if(!is.null(rv$df.zone.user)){
-          # Selection des données
-          df <- rv$df.zone.user %>%
-            select(source,domaine,categorie,idZonage,idZonage.name,nomIndicateur,type.indicateur,value) %>%
-            filter(type.indicateur %in% type.indicateur.filtre) %>%
-            filter(domaine == input$si_stat_domaine & categorie == input$si_stat_categorie)
-        }else{
-          df <- NULL
-        }
+        choice_zone <- df$idzonage
+        # names(choice_zone) <- df$idZonage.name
         
+        print(choice_zone)
+        
+        updatePickerInput(session,"pi_stat_zone_etude",choices = choice_zone)
+
       }else{
-        df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>%
-          filter(zone.pred == input$si_stat_zoneSelect & domaine == input$si_stat_domaine &
-                   categorie == input$si_stat_categorie & substr(source,4,5) %in% rv$source.an) %>%
-          filter(type.indicateur != "part_np") %>%
-          select(source,domaine,categorie,idZonage,idZonage.name,nomIndicateur,type.indicateur,value)
+        df <- NULL
+        updatePickerInput(session,"pi_stat_zone_etude",choices = "")
       }
+
       
-      if(!is.null(df)){
-        # selection des libelles de colonnes
-        typInd <- lstTypeIndicateur$typeIndicateur
-        names(typInd) <- lstTypeIndicateur$labelTypeIndicateur
-        type.ind <- typInd[typInd %in% c("idZonage","idZonage.name",unique(df$type.indicateur))]
-        print(type.ind)
-        
-        df <- df %>%
-          spread(key = type.indicateur, value = value) %>%
-          left_join(lstIndicateur %>% select(nomIndicateur,labelIndicateur),"nomIndicateur") %>%
-          mutate(nomIndicateur = labelIndicateur) %>%
-          select(-labelIndicateur,-domaine,-categorie)
-        
-        # Affichage du titre de la
-        output$to_stat_title <- renderText({lstCategorie$titreTab[lstCategorie$domaine == input$si_domaine &
-                                                                    lstCategorie$categorie == input$si_categorie]})
-        # Affichage
-        output$dt_stat_explore = renderDT(
-          datatable(df,
-                    colnames = type.ind,
-                    extensions = 'Buttons',
-                    options = list(
-                      scrollX = TRUE,
-                      # fixedColumns = TRUE,
-                      # autoWidth = TRUE,
-                      ordering = FALSE,
-                      dom = 'lBfrtip',
-                      buttons = c(I('colvis'),'excel')),
-                    rownames= FALSE)
-        )
-        
-      }
+    }else{
+      df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>% 
+        filter(zone.pred == input$si_stat_zoneSelect & substr(source,4,5) %in% rv$source.an) %>% 
+        select(idZonage,idZonage.name) %>% 
+        filter(!duplicated(idZonage)) %>% 
+        as.data.frame()
+
+      choice_zone <- df$idZonage
+      names(choice_zone) <- df$idZonage.name
+
       
-    } # end if
+      updatePickerInput(session,"pi_stat_zone_etude",choices = choice_zone,selected = choice_zone)
+    }
+    
+  })
+  
+  
+  
+  
+  # Tableau de données dynamique
+  observeEvent(c(input$si_stat_categorie,input$si_stat_domaine,input$pi_stat_zone_etude),{
+    
+    # if(input$si_stat_categorie != ""){
+    #   df <- NULL
+    #   type.indicateur.filtre <- c("freq","part_np","CoefVariation","IntervalConf.","valeur.diffusable")
+    #   
+    #   if(input$si_stat_zoneSelect == 4){
+    #     
+    #     if(!is.null(rv$df.zone.user)){
+    #       # Selection des données
+    #       df <- rv$df.zone.user %>%
+    #         filter(idZonage %in% input$pi_stat_zone_etude) %>% 
+    #         select(source,domaine,categorie,idZonage,idZonage.name,nomIndicateur,type.indicateur,value) %>%
+    #         filter(type.indicateur %in% type.indicateur.filtre) %>%
+    #         filter(domaine == input$si_stat_domaine & categorie == input$si_stat_categorie)
+    #     }else{
+    #       df <- NULL
+    #     }
+    #     
+    #   }else{
+    #     df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>%
+    #       filter(zone.pred == input$si_stat_zoneSelect & domaine == input$si_stat_domaine &
+    #                categorie == input$si_stat_categorie & substr(source,4,5) %in% rv$source.an) %>%
+    #       filter(type.indicateur != "part_np") %>%
+    #       select(source,domaine,categorie,idZonage,idZonage.name,nomIndicateur,type.indicateur,value)
+    #   }
+    #   
+    #   if(!is.null(df)){
+    #     # selection des libelles de colonnes
+    #     typInd <- lstTypeIndicateur$typeIndicateur
+    #     names(typInd) <- lstTypeIndicateur$labelTypeIndicateur
+    #     type.ind <- typInd[typInd %in% c("idZonage","idZonage.name",unique(df$type.indicateur))]
+    #     print(type.ind)
+    #     
+    #     df <- df %>%
+    #       filter(idZonage %in% input$pi_stat_zone_etude) %>% 
+    #       spread(key = type.indicateur, value = value) %>%
+    #       left_join(lstIndicateur %>% select(nomIndicateur,labelIndicateur),"nomIndicateur") %>%
+    #       mutate(nomIndicateur = labelIndicateur) %>%
+    #       select(-labelIndicateur,-domaine,-categorie)
+    #     
+    #     # Affichage du titre de la
+    #     output$to_stat_title <- renderText({lstCategorie$titreTab[lstCategorie$domaine == input$si_domaine &
+    #                                                                 lstCategorie$categorie == input$si_categorie]})
+    #     # Affichage
+    #     output$dt_stat_explore = renderDT(
+    #       datatable(df,
+    #                 colnames = type.ind,
+    #                 extensions = 'Buttons',
+    #                 options = list(
+    #                   scrollX = TRUE,
+    #                   # fixedColumns = TRUE,
+    #                   # autoWidth = TRUE,
+    #                   ordering = FALSE,
+    #                   dom = 'lBfrtip',
+    #                   buttons = c(I('colvis'),'excel')),
+    #                 rownames= FALSE)
+    #     )
+    #     
+    #   }
+    #   
+    # } # end if
   })
   
   
@@ -1273,6 +1353,12 @@ server = function(input, output, session) {
             events = list(
               "onchange" = I(
                 "
+                if (this._currentStep == 0) {
+                $('a[data-value=\"Statistiques\"]').removeClass('active');
+                $('a[data-value=\"Carte\"]').addClass('active');
+                $('a[data-value=\"Carte\"]').trigger('click');
+                }
+                
                 if (this._currentStep == 12) {
                 $('a[data-value=\"Statistiques\"]').removeClass('active');
                 $('a[data-value=\"Carte\"]').addClass('active');

@@ -144,7 +144,7 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
   qualityZone <- Qlfinal(rpa.qualite,group_var.qualite,ril = ril) %>% 
     mutate(val.qualite = ifelse(CoefVariation <= seuil_diffusion_qualite & !is.nan(CoefVariation),EstVariable,IntervalConf.)) 
   
-  df.zone2 <- qualityZone %>% 
+  df.zone <- qualityZone %>% 
     rename(idZonage = zonage,
            qualiteIndicateur = Variable) %>% 
     left_join(rpl %>% filter(!duplicated(idZonage)) %>% 

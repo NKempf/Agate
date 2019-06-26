@@ -16,7 +16,7 @@ source("Other programs/2 Fonctions Agate/7 Statistical disclosure/Agate - statis
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,rpi.weight,rpl.weight,
-                         seuil_qualite_appariement = 30,seuil_diffusion_qualite = 5,seuil_secret_stat=11,secret_stat = FALSE){
+                         seuil_qualite_appariement = 30,seuil_diffusion_qualite = 5,seuil_secret_stat=11,secret_stat_agate = FALSE){
   
   
   # Selection des bases du RP
@@ -160,7 +160,7 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
   # 3 Secret statistique
   #---------------------
   # incProgress(amount = 0.8,message = "Secret statistique")
-  if(secret_stat){
+  if(secret_stat_agate){
     df.zone.secret <- df.zone %>% 
       filter(type.indicateur %in% c("freq","n"))
     
