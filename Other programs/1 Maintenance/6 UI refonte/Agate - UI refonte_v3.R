@@ -1181,14 +1181,10 @@ server = function(input, output, session) {
         df <- rv$df.zone.user %>%
           select(idZonage,idZonage.name) %>%
           filter(!duplicated(idZonage))
+        
+        choice_zone <- df$idZonage
+        names(choice_zone) <- df$idZonage.name
 
-        print(df)
-        
-        choice_zone <- df$idzonage
-        # names(choice_zone) <- df$idZonage.name
-        
-        print(choice_zone)
-        
         updatePickerInput(session,"pi_stat_zone_etude",choices = choice_zone)
 
       }else{
@@ -1207,7 +1203,6 @@ server = function(input, output, session) {
       choice_zone <- df$idZonage
       names(choice_zone) <- df$idZonage.name
 
-      
       updatePickerInput(session,"pi_stat_zone_etude",choices = choice_zone,selected = choice_zone)
     }
     
@@ -1219,66 +1214,66 @@ server = function(input, output, session) {
   # Tableau de données dynamique
   observeEvent(c(input$si_stat_categorie,input$si_stat_domaine,input$pi_stat_zone_etude),{
     
-    # if(input$si_stat_categorie != ""){
-    #   df <- NULL
-    #   type.indicateur.filtre <- c("freq","part_np","CoefVariation","IntervalConf.","valeur.diffusable")
-    #   
-    #   if(input$si_stat_zoneSelect == 4){
-    #     
-    #     if(!is.null(rv$df.zone.user)){
-    #       # Selection des données
-    #       df <- rv$df.zone.user %>%
-    #         filter(idZonage %in% input$pi_stat_zone_etude) %>% 
-    #         select(source,domaine,categorie,idZonage,idZonage.name,nomIndicateur,type.indicateur,value) %>%
-    #         filter(type.indicateur %in% type.indicateur.filtre) %>%
-    #         filter(domaine == input$si_stat_domaine & categorie == input$si_stat_categorie)
-    #     }else{
-    #       df <- NULL
-    #     }
-    #     
-    #   }else{
-    #     df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>%
-    #       filter(zone.pred == input$si_stat_zoneSelect & domaine == input$si_stat_domaine &
-    #                categorie == input$si_stat_categorie & substr(source,4,5) %in% rv$source.an) %>%
-    #       filter(type.indicateur != "part_np") %>%
-    #       select(source,domaine,categorie,idZonage,idZonage.name,nomIndicateur,type.indicateur,value)
-    #   }
-    #   
-    #   if(!is.null(df)){
-    #     # selection des libelles de colonnes
-    #     typInd <- lstTypeIndicateur$typeIndicateur
-    #     names(typInd) <- lstTypeIndicateur$labelTypeIndicateur
-    #     type.ind <- typInd[typInd %in% c("idZonage","idZonage.name",unique(df$type.indicateur))]
-    #     print(type.ind)
-    #     
-    #     df <- df %>%
-    #       filter(idZonage %in% input$pi_stat_zone_etude) %>% 
-    #       spread(key = type.indicateur, value = value) %>%
-    #       left_join(lstIndicateur %>% select(nomIndicateur,labelIndicateur),"nomIndicateur") %>%
-    #       mutate(nomIndicateur = labelIndicateur) %>%
-    #       select(-labelIndicateur,-domaine,-categorie)
-    #     
-    #     # Affichage du titre de la
-    #     output$to_stat_title <- renderText({lstCategorie$titreTab[lstCategorie$domaine == input$si_domaine &
-    #                                                                 lstCategorie$categorie == input$si_categorie]})
-    #     # Affichage
-    #     output$dt_stat_explore = renderDT(
-    #       datatable(df,
-    #                 colnames = type.ind,
-    #                 extensions = 'Buttons',
-    #                 options = list(
-    #                   scrollX = TRUE,
-    #                   # fixedColumns = TRUE,
-    #                   # autoWidth = TRUE,
-    #                   ordering = FALSE,
-    #                   dom = 'lBfrtip',
-    #                   buttons = c(I('colvis'),'excel')),
-    #                 rownames= FALSE)
-    #     )
-    #     
-    #   }
-    #   
-    # } # end if
+    if(input$si_stat_categorie != ""){
+      df <- NULL
+      type.indicateur.filtre <- c("freq","part_np","CoefVariation","IntervalConf.","valeur.diffusable")
+
+      if(input$si_stat_zoneSelect == 4){
+
+        if(!is.null(rv$df.zone.user)){
+          # Selection des données
+          df <- rv$df.zone.user %>%
+            filter(idZonage %in% input$pi_stat_zone_etude) %>%
+            select(source,domaine,categorie,idZonage,idZonage.name,nomIndicateur,type.indicateur,value) %>%
+            filter(type.indicateur %in% type.indicateur.filtre) %>%
+            filter(domaine == input$si_stat_domaine & categorie == input$si_stat_categorie)
+        }else{
+          df <- NULL
+        }
+
+      }else{
+        df <- read_fst("Data/Stats/Prefine aera/Real/fst/indicateur_stat.fst") %>%
+          filter(zone.pred == input$si_stat_zoneSelect & domaine == input$si_stat_domaine &
+                   categorie == input$si_stat_categorie & substr(source,4,5) %in% rv$source.an) %>%
+          filter(type.indicateur != "part_np") %>%
+          select(source,domaine,categorie,idZonage,idZonage.name,nomIndicateur,type.indicateur,value)
+      }
+
+      if(!is.null(df)){
+        # selection des libelles de colonnes
+        typInd <- lstTypeIndicateur$typeIndicateur
+        names(typInd) <- lstTypeIndicateur$labelTypeIndicateur
+        type.ind <- typInd[typInd %in% c("idZonage","idZonage.name",unique(df$type.indicateur))]
+        print(type.ind)
+
+        df <- df %>%
+          filter(idZonage %in% input$pi_stat_zone_etude) %>%
+          spread(key = type.indicateur, value = value) %>%
+          left_join(lstIndicateur %>% select(nomIndicateur,labelIndicateur),"nomIndicateur") %>%
+          mutate(nomIndicateur = labelIndicateur) %>%
+          select(-labelIndicateur,-domaine,-categorie)
+
+        # Affichage du titre de la
+        output$to_stat_title <- renderText({lstCategorie$titreTab[lstCategorie$domaine == input$si_domaine &
+                                                                    lstCategorie$categorie == input$si_categorie]})
+        # Affichage
+        output$dt_stat_explore = renderDT(
+          datatable(df,
+                    colnames = type.ind,
+                    extensions = 'Buttons',
+                    options = list(
+                      scrollX = TRUE,
+                      # fixedColumns = TRUE,
+                      # autoWidth = TRUE,
+                      ordering = FALSE,
+                      dom = 'lBfrtip',
+                      buttons = c(I('colvis'),'excel')),
+                    rownames= FALSE)
+        )
+
+      }
+
+    } # end if
   })
   
   
