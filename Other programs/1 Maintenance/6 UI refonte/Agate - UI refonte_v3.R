@@ -2,7 +2,7 @@
 #                                             Agate - UI refonte                                                            #
 #---------------------------------------------------------------------------------------------------------------------------#
 
-# 03.04.2019
+# 01.07.2019
 
 library(rgdal)
 library(rgeos)
@@ -39,6 +39,12 @@ load("Data/Maps/HeatPoint/heatpoints.Rdata")
 
 # Communes
 load("Data/Maps/Zones predefinies/zp_communes.RData")
+
+# Markdown files
+qualiteRpFile <- "Other programs/3 Documentation/1 Agate documentation/2 Qualite RP/NoteQualite.Rmd"
+rmdfiles <- c(qualiteRpFile)
+sapply(rmdfiles, knit, quiet = T)
+
 
 # NavBar Spéciale :)
 navbarPageWithInputs <- function(..., inputs) {
@@ -189,11 +195,11 @@ ui <- tagList(
                                               )
                                             ),
                                             fluidRow(
-                                              box(title = "Pyramide des âges", solidHeader = TRUE,
+                                              box(title = "Structure de la population", solidHeader = TRUE,
                                                   collapsible = TRUE,
                                                   plotlyOutput("g_dem_bg") %>% withSpinner(type = 6) 
                                               ),
-                                              box(title = "Immigration", solidHeader = TRUE,
+                                              box(title = "Étrangers - immigrés", solidHeader = TRUE,
                                                   collapsible = TRUE,
                                                   DT::dataTableOutput("dt_dem_bd") %>% withSpinner(type = 6) 
                                               )
@@ -353,7 +359,7 @@ ui <- tagList(
                           #--------------------------
                           selectInput("si_stat_zoneSelect", "Maille géographique",
                                       choices = pred.choice,
-                                      selected = 4),
+                                      selected = 1),
                           
                           # II.2. Zones étudiéds
                           #---------------------
@@ -392,7 +398,32 @@ ui <- tagList(
     ),
     # III. Documentation
     #-------------------------------------------------------------------------------------------------------------------------------------------------
-    
+    navbarMenu("Documentation",
+               # III.1. indicateurs
+               #-------------------
+               tabPanel("Indicateurs",
+                        
+                        sidebarPanel(width=2,
+                                     selectInput("si_ind_domaine", "Thématique",
+                                                 choices = c("Choice" ="",dmn),
+                                                 selected = dmn[2]),
+
+                                     selectInput("si_ind_categorie", "Indicateurs",
+                                                 choices = c("Choice" =""),
+                                                 selected = c(""))
+                        ),
+                        mainPanel(
+                          DT::dataTableOutput("dt_indicateurs") 
+                        )
+               ),
+               # III.2. Qualité du RP
+               #---------------------
+               tabPanel("Qualité du RP",
+                        withMathJax(includeMarkdown(qualiteRpFile))
+                        )
+               
+               
+    ),# End documentation
     # IV. Aide Agate
     #-------------------------------------------------------------------------------------------------------------------------------------------------
     # Aide bouton
@@ -823,10 +854,15 @@ server = function(input, output, session) {
       
       temps <- as.character(round(abs(difftime(t1,Sys.time(), units="secs")),2))
       
+      # Update data explore
+      updateSelectInput(session,"si_stat_zoneSelect",selected = 4)
+      
       shinyWidgets::sendSweetAlert(
         session = session,
         title = "Terminé !", text = paste("Le calcul a été effectué en ",temps," secondes"), type = "success"
       )
+      
+      
     }# end if
   })
   
@@ -944,12 +980,6 @@ server = function(input, output, session) {
           df.dashboard <- bind_rows(rv$df.zone.etude,df)
           pyr.dashboard <- bind_rows(rv$pyramide.etude,pyr)
           
-          
-          print("Df predefinie")
-          print(head(df.dashboard))
-          
-          print("pyramide Predefinie")
-          print(head(pyr))
           rv$dash.indicateur <- stat.dashboard_agate(df = df.dashboard,zone.etude = rv$zone.etude,
                                                      zone.compare = rv$zone.comparaison, lstIndicateur = lstIndicateur,
                                                      pyramide_tr = pyr.dashboard)
@@ -972,13 +1002,12 @@ server = function(input, output, session) {
         paste0("Source : recensement de la population 20",rv$dash.indicateur$source.an,
                " niveau individu et logement - exploitation principale. \n Note : c = données confidentielles, intervalles de confiance 
              à 95 % calculés à partir d'une estimation de la variance du plan de sondage.")
-        
       })
       
       # Theme Démographie
       #------------------
       output$ib_dem_feminite <- renderInfoBox({
-        infoBox(title = "Féminité", value = rv$dash.indicateur$vb.dem.fem,
+        infoBox(title = "Part des femmes", value = rv$dash.indicateur$vb.dem.fem,
                 icon = icon("female"),fill=TRUE)
       })
       
@@ -1150,9 +1179,7 @@ server = function(input, output, session) {
         datatable(rv$dash.indicateur$df.res.tab.bd, colnames = rv$dash.indicateur$dash.label,
                   rownames = FALSE, options = list(dom = 't'))
       )
-      
     }
-    
   })
   
   # V. Data explore
@@ -1185,7 +1212,7 @@ server = function(input, output, session) {
         choice_zone <- df$idZonage
         names(choice_zone) <- df$idZonage.name
 
-        updatePickerInput(session,"pi_stat_zone_etude",choices = choice_zone)
+        updatePickerInput(session,"pi_stat_zone_etude",choices = choice_zone,selected = choice_zone)
 
       }else{
         df <- NULL
@@ -1277,10 +1304,55 @@ server = function(input, output, session) {
   })
   
   
-  # VI. Aide Agate
+  # VI. Documentation
   #-----------------------------------------------------------------------------------------------------------------------------------
   
+  # Mise à jour des catégories
+  observeEvent(input$si_ind_domaine,{
+    cat <- lstCategorie$categorie[lstCategorie$domaine == input$si_ind_domaine]
+    names(cat) <- lstCategorie$labelCategorie[lstCategorie$domaine == input$si_ind_domaine]
+    
+    updateSelectInput(session, "si_ind_categorie",
+                      choices = c("Tous",cat),selected = "Tous"
+    )
+  })
   
+  observeEvent(c(input$si_ind_categorie,input$si_ind_domaine),{
+    
+    indicateur_description <- lstCategorie %>% 
+      filter(substr(source,1,2) %in% c("rp","ig")) %>% 
+      left_join(lstDomaine,by = c("domaine")) %>% 
+      left_join(lstIndicateur %>% select(nomVariable,labelIndicateur),by = c("nomVariable"))
+    
+
+    if(input$si_ind_categorie == "Tous"){
+      indicateur_description <- indicateur_description %>% 
+        filter(domaine %in% input$si_ind_domaine) %>% 
+        select(labelDomaine,labelCategorie,labelIndicateur,champLabel,source) 
+      
+    }else{
+      indicateur_description <- indicateur_description %>% 
+        filter(domaine %in% input$si_ind_domaine & categorie %in% input$si_ind_categorie) %>% 
+        select(labelDomaine,labelCategorie,labelIndicateur,champLabel,source) 
+    }
+
+    output$dt_indicateurs <- DT::renderDataTable({
+      
+      DT::datatable(indicateur_description,colnames = c("Thématique","Indicateur","Modalité","Champ","Source"),
+                    extensions = 'Buttons',
+                    options = list(
+                      scrollX = TRUE,
+                      # fixedColumns = TRUE,
+                      # autoWidth = TRUE,
+                      ordering = FALSE,
+                      dom = 'lBfrtip',
+                      buttons = c(I('colvis'),'excel')),
+                    rownames= FALSE)
+    })
+  })
+  
+  # VI. Aide Agate
+  #-----------------------------------------------------------------------------------------------------------------------------------
   observeEvent(input$ab_aide,{
     
     introjs(session, options = 
