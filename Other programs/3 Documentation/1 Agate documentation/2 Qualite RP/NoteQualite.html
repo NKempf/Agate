@@ -191,39 +191,38 @@ $(document).ready(function () {
 </div>
 
 
-<div id="qualite-des-estimateur-dans-agate" class="section level3">
-<h3>Qualité des estimateur dans agate</h3>
-<p>La méthode d’estimation se base sur l’estimation d’un total dans le RP sur une communes entière par Lionnel Delta.</p>
-</div>
-<div id="plan-de-sondage" class="section level1">
-<h1>Plan de Sondage :</h1>
-<p>Probabilité = 1 pour les adresses situées dans les petites communes. Et quelques adresses de grande communes.</p>
+<div id="qualite-des-estimateurs-dans-agate" class="section level1">
+<h1>Qualité des estimateurs dans Agate</h1>
+<p>La méthode d’estimation se base sur les travaux sur la qualité du RP par Lionnel Delta.</p>
+<div id="plan-de-sondage" class="section level2">
+<h2>Plan de Sondage :</h2>
+<p>Probabilité = 1 pour les adresses situées dans les petites communes. Et quelques adresses de grandes communes.</p>
 <p>Probabilité = 2,5 pour les adresses de grandes communes.</p>
-<p>Les poids sont calés en utilisant le nombre de logements (Variable appelé X )</p>
+<p>Les poids sont calés en utilisant le nombre de logements (variable appelée X )</p>
 </div>
-<div id="partie-i-estimation-simple-dun-total-et-variance-associer." class="section level1">
-<h1>Partie I : Estimation Simple d’un Total et Variance Associer.</h1>
-<p>L’estimation du Total TY ce fait par l’intermédiaire de  : <span class="math inline">\({\hat{T}}_Y = \sum y_i \times IPOND\)</span> et la variance associée est : <span class="math inline">\(V( {\hat T}_Y ) = {{1-f} \over f²} \sum (y_i - R x_i)\)</span> où <span class="math inline">\(R = {{\hat T }_Y \over {{\hat T }_X}}\)</span></p>
-<p>L’estimation de <span class="math inline">\(T_Y\)</span> sur un sous domaine est équivalent à l’estimation de <span class="math inline">\(T_Z\)</span> où <span class="math inline">\(Z = Y · 1_{[zone]}\)</span>.</p>
+</div>
+<div id="i.-estimation-simple-dun-total-et-variance-associee." class="section level1">
+<h1>I. Estimation simple d’un total et variance associée.</h1>
+<p>L’estimation du total TY se fait par l’intermédiaire de  : <span class="math inline">\({\hat{T}}_Y = \sum y_i \times IPOND\)</span> et la variance associée est : <span class="math inline">\(V( {\hat T}_Y ) = {{1-f} \over f²} \sum (y_i - R x_i)\)</span> où <span class="math inline">\(R = {{\hat T }_Y \over {{\hat T }_X}}\)</span></p>
+<p>L’estimation de <span class="math inline">\(T_Y\)</span> sur un sous-domaine est équivalent à l’estimation de <span class="math inline">\(T_Z\)</span> où <span class="math inline">\(Z = Y · 1_{[zone]}\)</span>.</p>
 <p>Ainsi : <span class="math inline">\({\hat T}_Z = \sum z_i \times IPOND\)</span><br />
 et <span class="math inline">\(V( {\hat T}_Z ) = {{1-f} \over {f²}} \sum (z_i - R x_i)\)</span> où <span class="math inline">\(R = {{\hat T }_Z \over {{\hat T }_X}}\)</span></p>
-<p>Le RP étant fais de manière indépendante entre chaque commune, la variance totale est égale a la somme des variances sur chacune des communes</p>
+<p>Le RP étant fait de manière indépendante entre chaque commune, la variance totale est égale à la somme des variances sur chacune des communes</p>
 </div>
-<div id="partie-ii-estimation-de-la-variance-dun-ratio" class="section level1">
-<h1>Partie II : Estimation de la Variance d’un Ratio</h1>
-<p>L’estimation de la Variance d’un ratio passe par la Variable linéarisée <span class="math inline">\(U = (Z1 - R Z2) / {\hat T}_{Z2}\)</span> où <span class="math inline">\(R = {{\hat T}_{Z1} \over {\hat T}_{Z2}}\)</span> au-quelle ont applique la formule du total précédente.</p>
+<div id="ii.-estimation-de-la-variance-dun-ratio" class="section level1">
+<h1>II. Estimation de la variance d’un ratio</h1>
+<p>L’estimation de la Variance d’un ratio passe par la variable linéarisée <span class="math inline">\(U = (Z1 - R Z2) / {\hat T}_{Z2}\)</span> où <span class="math inline">\(R = {{\hat T}_{Z1} \over {\hat T}_{Z2}}\)</span> à la quelle on applique la formule du total précédente.</p>
 </div>
-<div id="partie-iii-estimation-par-le-ratio-dun-total" class="section level1">
-<h1>Partie III : Estimation par le Ratio d’un Total</h1>
-<pre><code>L’estimation par le ratio que l’on applique a l’ensemble restreins des adresses a probabilité = 2,5 :</code></pre>
-<p><span class="math inline">\({\hat T}_{Z_ration} = {\hat T}_{ Z } \times {T_{X ril1_[zone]} / T_{X ril} \over {{\hat T}_{X rp{1[zone]}} / {\hat T}_{X rp}} } = {{\hat T}_{ Z } \over {\hat T}_{X rp_[zone]}} \times T_{X_[zone] theorique}\)</span></p>
-<p>Dans une estimation par le ratio classique, le nombre total de logement par communes dans le RP se cale sur le nombre (considéré comme le vrai nombre) du RIL. Or comme le RP a déjà été calé niveau logement par communes, on ne cherche donc qu’a corrigé la structure et non la taille. De plus on fait ainsi l’hypothèse que <span class="math inline">\(T_{X rp}\)</span> est un total connus au mème titre que les totaux originaires du RIL a fin de créées un TX théorique (ne dépendant pas du tirage aléatoire) afin de calculer la variance.</p>
+<div id="iii.-estimation-par-le-ratio-dun-total" class="section level1">
+<h1>III. Estimation par le ratio d’un total</h1>
+<p>L’estimation par le ratio que l’on applique à l’ensemble restreint des adresses à probabilités égale à 2,5 : <span class="math inline">\({\hat T}_{Z_ration} = {\hat T}_{ Z } \times {T_{X ril1_[zone]} / T_{X ril} \over {{\hat T}_{X rp{1[zone]}} / {\hat T}_{X rp}} } = {{\hat T}_{ Z } \over {\hat T}_{X rp_[zone]}} \times T_{X_[zone] theorique}\)</span></p>
+<p>Dans une estimation par le ratio classique, le nombre total de logements par communes dans le RP se cale sur le nombre (considéré comme la <strong>vraie valeur</strong>) du RIL. Or, comme le RP a déjà été calé au niveau logement par communes, on ne cherche donc qu’à corriger la structure et non la taille. De plus, on fait ainsi l’hypothèse que <span class="math inline">\(T_{X rp}\)</span> est un total connu au mème titre que les totaux originaires du RIL afin de créer un <span class="math inline">\(T_X\)</span> théorique (ne dépendant pas du tirage aléatoire) afin de calculer la variance.</p>
 <p><span class="math inline">\(U = ( Z - R X )\)</span> où <span class="math inline">\(R = {{\hat T}_{ Z } \over {\hat T}_{X rp_[zone]}}\)</span></p>
-<p>Cette méthode par le ratio modifier sert à résoudre le problème des différences entre le RP et le RIL (le Ril étant valable avant la collecte et le RP après)</p>
+<p>Cette méthode par le ratio modifié sert à résoudre le problème des différences entre le RP et le RIL (le Ril étant valable avant la collecte et le RP après)</p>
 </div>
-<div id="partie-iv-effet-de-lestimation-par-le-ratio" class="section level1">
-<h1>Partie IV : Effet de l’Estimation par le ratio</h1>
-<p>Cette estimation divise par environs 2 les écart-types des estimateurs (de -30 % à -85%) . Dans la plupart des cas le nouvel intervalle de confiance est contenu dans l’ancien. Néanmoins, la somme des totaux de population par communes sont transformés légèrement en fonction du découpage. par exemple, avec le découpage en QPV, il y a une perte de 356 habitant tout l’ensemble des communes abritant un QPV (538 025 -&gt; 537 669)</p>
+<div id="iv.-effet-de-lestimation-par-le-ratio" class="section level1">
+<h1>IV. Effet de l’estimation par le ratio</h1>
+<p>Cette estimation divise par environs 2 les écart-types des estimateurs (de - 30 % à - 85 %) . Dans la plupart des cas, le nouvel intervalle de confiance est contenu dans l’ancien. Néanmoins, la somme des totaux de population par communes est transformée légèrement en fonction du découpage. Par exemple, avec le découpage en QPV, il y a une perte de 356 habitants sur l’ensemble des communes abritant un QPV (538 025 -&gt; 537 669)</p>
 </div>
 
 
