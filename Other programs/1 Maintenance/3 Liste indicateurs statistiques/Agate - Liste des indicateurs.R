@@ -17,7 +17,7 @@ library(openxlsx)
 
 # I. Data import
 #------------------------------------------------------------------------------------------------------------------------------
-fichierExcel <- "Data/Liste indicateurs statistiques/Agate - indicateurs statistiques_v2.xlsx"
+fichierExcel <- "Data/Liste indicateurs statistiques/Agate - indicateurs statistiques_v3.xlsx"
 lstDomaine <- read_xlsx(fichierExcel,sheet = "domaine")
 lstCategorie <- read_xlsx(fichierExcel,sheet = "categorie")
 lstIndicateur <- read_xlsx(fichierExcel,sheet = "indicateur")

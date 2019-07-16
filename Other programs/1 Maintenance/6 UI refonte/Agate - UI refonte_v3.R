@@ -233,7 +233,7 @@ ui <- tagList(
                                                   collapsible = TRUE,
                                                   plotlyOutput("g_emp_bg") %>% withSpinner(type = 6) 
                                               ),
-                                              box(title = "Travail", solidHeader = TRUE,
+                                              box(title = "Conditions d'emploi", solidHeader = TRUE,
                                                   collapsible = TRUE,
                                                   DT::dataTableOutput("dt_emp_bd") %>% withSpinner(type = 6) 
                                               )
@@ -242,7 +242,7 @@ ui <- tagList(
                                    
                                    # IV. Thème Scolarisation
                                    #-----------------------------------------------------------------------------------------------------
-                                   tabPanel("Scolarisation",
+                                   tabPanel("Education - formation",
                                             
                                             fluidRow(
                                               infoBoxOutput(outputId = "ib_sco_pop_sco"),
@@ -515,7 +515,12 @@ server = function(input, output, session) {
           fitBounds(lng1 = AgateMap.bbox$min[1],lat1 = AgateMap.bbox$max[2],lng2 = AgateMap.bbox$max[1],lat2 = AgateMap.bbox$min[2]) %>%
           addPolygons(data=rv$AgateMap,opacity = 3,
                       color = "green", stroke = TRUE, weight = 2,
-                      fill = TRUE, fillOpacity = 0.2,popup = ~paste(idZonage.name),layerId = ~paste(idZonage))
+                      fill = TRUE, fillOpacity = 0.2,
+                      label = ~paste(idZonage.name),
+                      highlightOptions = highlightOptions(
+                        color = "#ff2052", opacity = 1, weight = 3, fillOpacity = 0.5,
+                        bringToFront = TRUE, sendToBack = TRUE),
+                      layerId = ~paste(idZonage))
       }
     }
   })
@@ -637,12 +642,6 @@ server = function(input, output, session) {
     if(input$rg_typeZone == 1){
       updateSelectInput(session,"si_zonePred",selected = c(4))
       
-      # shinyjs::hide("si_zonePred")
-      # shinyjs::hide("ab_modal")
-      # shinyjs::show("ddb_import")
-      # shinyjs::show("ddb_userMapStat")
-      # updateSelectInput(session,"si_zonePred",selected = 4)
-      # rv$AgateMap <- rv$userMap
 
     }else{
       # shinyjs::show("si_zonePred")
@@ -692,6 +691,8 @@ server = function(input, output, session) {
              }else{
                rv$AgateMap <- dep.dom
              }
+             
+             print(rv$AgateMap)
 
              },
            { # Commune
@@ -1044,12 +1045,12 @@ server = function(input, output, session) {
       #-------------
       output$ib_emp_pop_trav <- renderInfoBox({
         infoBox(title = "Population en âge de travailler", value = rv$dash.indicateur$vb.emp.popTrav,
-                icon = icon("fa-user-cog"),fill=TRUE)
+                icon = icon("user-cog"),fill=TRUE)
       })
       
       output$ib_emp_chomeur <- renderInfoBox({
         infoBox(title = "Taux de chômage", value = rv$dash.indicateur$vb.emp.chom,
-                icon = icon("fa-people-carry"),fill=TRUE,subtitle = "selon le recensement de la population")
+                icon = icon("people-carry"),fill=TRUE,subtitle = "selon le recensement de la population")
       })
       
       output$ib_emp_inactif <- renderInfoBox({
@@ -1090,7 +1091,7 @@ server = function(input, output, session) {
       
       output$ib_sco_decrocheur <- renderInfoBox({
         infoBox(title = "Taux de décrocheur", value = rv$dash.indicateur$vb.sco.decrocheur,
-                icon = icon("user-slash"),fill=TRUE)
+                icon = icon("bell-slash"),fill=TRUE)
       })
       
       output$dt_sco_hg = renderDT(
@@ -1115,17 +1116,17 @@ server = function(input, output, session) {
       #---------------
       output$ib_log_pop <- renderInfoBox({
         infoBox(title = "Nombre de logements", value = rv$dash.indicateur$vb.log.tot,
-                icon = icon("child"),fill=TRUE)
+                icon = icon("city"),fill=TRUE)
       })
       
       output$ib_log_hlm <- renderInfoBox({
         infoBox(title = "HLM", value = rv$dash.indicateur$vb.log.hlm,
-                icon = icon("user-graduate"),fill=TRUE)
+                icon = icon("building"),fill=TRUE)
       })
       
       output$ib_log_maison <- renderInfoBox({
         infoBox(title = "Maisons", value = rv$dash.indicateur$vb.log.maison,
-                icon = icon("user-slash"),fill=TRUE)
+                icon = icon("home"),fill=TRUE)
       })
       
       output$dt_log_hg = renderDT(
@@ -1149,12 +1150,12 @@ server = function(input, output, session) {
       #-----------------------------
       output$ib_res_pop <- renderInfoBox({
         infoBox(title = "Résidences principales", value = rv$dash.indicateur$vb.res.part,
-                icon = icon("child"),fill=TRUE)
+                icon = icon("home"),fill=TRUE)
       })
       
       output$ib_res_collectif <- renderInfoBox({
         infoBox(title = "Logements collectifs", value = rv$dash.indicateur$vb.res.collectif,
-                icon = icon("user-graduate"),fill=TRUE)
+                icon = icon("building"),fill=TRUE)
       })
       
       output$ib_res_todo <- renderInfoBox({
@@ -1381,7 +1382,7 @@ server = function(input, output, session) {
                       "Bienvenue dans Agate : application en Guyane et aux Antilles de statistiques infracommunales. Elle permet de calculer des indicateurs statistiques issus du recensement de la population 
                     dans n'importe quelle zone. Elle affiche également ces données sous forme d'un tableau bord interactif.",
                       # 1
-                      "Fond de carte Agate. Pour zoomer, utiliser les boutons '+' et '-' ou la roulette de la souris. Les cartes chargées par l'utilisateur apparaîssent en vert.
+                      "Pour zoomer, utiliser les boutons '+' et '-' ou la roulette de la souris. Les cartes chargées par l'utilisateur apparaîssent en vert.
                     Un click sur une carte chargée permet d'afficher un tableau de bord.",
                       # 2
                       "Menu de gestion des cartes et des indicateurs statistiques",
