@@ -165,10 +165,10 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
     select(value)
   vb.emp.chom
   
-  # III.3. Taux d'inactif 
-  #----------------------
-  vb.emp.inact <- df.dashboard %>% 
-    filter(idZonage %in% zone.etude & nomIndicateur == "b_autreInactif") %>% 
+  # III.3. Taux d'actif 
+  #--------------------
+  vb.emp.act <- df.dashboard %>% 
+    filter(idZonage %in% zone.etude & nomVariable == "emp_popActive" & nomIndicateur == "a_de15a64Actif") %>% 
     select(value)
   
   # III.4. tableau haut gauche : Marché de l'emploi
@@ -266,10 +266,10 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   vb.log.tot <- format(round(as.numeric(vb.log.tot),digits = 0),digits = 9,decimal.mark=",", big.mark=" ")
   vb.log.tot
 
-  # V.2. HLM
-  #----------
-  vb.log.hlm <- df.dashboard %>% 
-    filter(idZonage %in% zone.etude & nomVariable == "log_hlm" & nomIndicateur == "a_hlm") %>% 
+  # V.2. Logements vacants
+  #-----------------------
+  vb.log.vac <- df.dashboard %>% 
+    filter(idZonage %in% zone.etude & nomVariable == "log_cat" & nomIndicateur == "d_log_vacants") %>% 
     select(value)
   
   # V.3. Maisons
@@ -353,9 +353,9 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   # Enregistrement
   save(df.dashboard,titreDash,dash.label,
        vb.dem.fem,vb.dem.pop,vb.dem.super,df.dem.tab.hg,df.dem.tab.hd,df.dem.tab.bd,g.dem.pyramide,
-       vb.emp.popTrav,vb.emp.chom,vb.emp.inact,df.emp.tab.hg,df.emp.tab.hd,df.emp.tab.bd,g.emp.typeAct,
+       vb.emp.popTrav,vb.emp.chom,vb.emp.act,df.emp.tab.hg,df.emp.tab.hd,df.emp.tab.bd,g.emp.typeAct,
        vb.sco.popSco,vb.sco.etud,vb.sco.decrocheur,df.sco.tab.hg,df.sco.tab.bd,g.sco.pop,g.sco.diplome,
-       vb.log.tot,vb.log.hlm,vb.log.maison,df.log.tab.hg,g.log.cat,g.log.ach,g.log.bati,
+       vb.log.tot,vb.log.vac,vb.log.maison,df.log.tab.hg,g.log.cat,g.log.ach,g.log.bati,
        vb.res.part,vb.res.collectif,df.res.tab.hg,g.res.nbp,g.res.surf,df.res.tab.bd,
        file = "Data/Tmp/dashboard_tmp.RData")
   
@@ -366,7 +366,7 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
                    df.dem.tab.hg = df.dem.tab.hg, df.dem.tab.hd = df.dem.tab.hd,df.dem.tab.bd = df.dem.tab.bd,
                    g.dem.pyramide = g.dem.pyramide,
                    # Emploi
-                   vb.emp.popTrav = vb.emp.popTrav,vb.emp.chom = vb.emp.chom,vb.emp.inact = vb.emp.inact,
+                   vb.emp.popTrav = vb.emp.popTrav,vb.emp.chom = vb.emp.chom,vb.emp.act = vb.emp.act,
                    df.emp.tab.hg = df.emp.tab.hg,df.emp.tab.hd = df.emp.tab.hd,df.emp.tab.bd = df.emp.tab.bd,
                    g.emp.typeAct = g.emp.typeAct,
                    # Scolarisation
@@ -374,7 +374,7 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
                    df.sco.tab.hg = df.sco.tab.hg,df.sco.tab.bd = df.sco.tab.bd,
                    g.sco.pop = g.sco.pop,g.sco.diplome = g.sco.diplome,
                    # Logement
-                   vb.log.tot = vb.log.tot,vb.log.hlm = vb.log.hlm,vb.log.maison = vb.log.maison,
+                   vb.log.tot = vb.log.tot,vb.log.vac = vb.log.vac,vb.log.maison = vb.log.maison,
                    df.log.tab.hg = df.log.tab.hg,
                    g.log.cat = g.log.cat,g.log.ach = g.log.ach,g.log.bati = g.log.bati,
                    # Résidences principales

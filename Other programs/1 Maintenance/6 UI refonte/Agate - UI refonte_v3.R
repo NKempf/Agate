@@ -205,7 +205,7 @@ ui <- tagList(
                                               )
                                             ),
                                             fluidRow(
-                                              textOutput("to_source")
+                                              textOutput("to_source_dem")
                                             )
                                
                                    ),
@@ -216,7 +216,7 @@ ui <- tagList(
                                             fluidRow(
                                               infoBoxOutput(outputId = "ib_emp_pop_trav"),
                                               infoBoxOutput(outputId = "ib_emp_chomeur"),
-                                              infoBoxOutput(outputId = "ib_emp_inactif")
+                                              infoBoxOutput(outputId = "ib_emp_actif")
                                             ),
                                             fluidRow(
                                               box(title = "Marché de l'emploi", solidHeader = TRUE,
@@ -237,6 +237,9 @@ ui <- tagList(
                                                   collapsible = TRUE,
                                                   DT::dataTableOutput("dt_emp_bd") %>% withSpinner(type = 6) 
                                               )
+                                            ),
+                                            fluidRow(
+                                              textOutput("to_source_emp")
                                             )
                                    ),
                                    
@@ -269,6 +272,9 @@ ui <- tagList(
                                                   collapsible = TRUE,
                                                   plotlyOutput("g_sco_hd") %>% withSpinner(type = 6) 
                                               )
+                                            ),
+                                            fluidRow(
+                                              textOutput("to_source_sco")
                                             )
                                    ),
                                    
@@ -278,7 +284,7 @@ ui <- tagList(
                                             
                                             fluidRow(
                                               infoBoxOutput(outputId = "ib_log_pop"),
-                                              infoBoxOutput(outputId = "ib_log_hlm"),
+                                              infoBoxOutput(outputId = "ib_log_vac"),
                                               infoBoxOutput(outputId = "ib_log_maison")
                                             ),
                                             fluidRow(
@@ -300,6 +306,9 @@ ui <- tagList(
                                                   collapsible = TRUE,
                                                   plotlyOutput("g_log_bd") %>% withSpinner(type = 6) 
                                               )
+                                            ),
+                                            fluidRow(
+                                              textOutput("to_source_log")
                                             )
                                    ),
                                    # V. Thème Résidences principales
@@ -329,6 +338,9 @@ ui <- tagList(
                                                   collapsible = TRUE,
                                                   plotlyOutput("g_res_hd") %>% withSpinner(type = 6) 
                                               )
+                                            ),
+                                            fluidRow(
+                                              textOutput("to_source_res")
                                             )
                                    ),
                                    
@@ -354,7 +366,7 @@ ui <- tagList(
     #-------------------------------------------------------------------------------------------------------------------------------------------------
     tabPanel("Statistiques",
              # value="vis", # MAJ 24 juin 2019
-             sidebarPanel(width=2,
+             sidebarPanel(width=2,id = "sp_test",
                           # II.1. Maille géographique
                           #--------------------------
                           selectInput("si_stat_zoneSelect", "Maille géographique",
@@ -989,6 +1001,14 @@ server = function(input, output, session) {
     } # end Test1
   })
   
+  # Source
+  sourceDash <- reactive({
+    paste0("Source : recensement de la population 20",rv$dash.indicateur$source.an,
+           " niveau individu et logement - exploitation principale. \n Note : c = données confidentielles, intervalles de confiance 
+             à 95 % calculés à partir d'une estimation de la variance du plan de sondage.")
+  })
+  
+  
   # Mise a jour du dashboard
   observeEvent(rv$dash.indicateur,{
     
@@ -999,10 +1019,21 @@ server = function(input, output, session) {
         rv$dash.indicateur$titreDash
       })
       
-      output$to_source = renderText({
-        paste0("Source : recensement de la population 20",rv$dash.indicateur$source.an,
-               " niveau individu et logement - exploitation principale. \n Note : c = données confidentielles, intervalles de confiance 
-             à 95 % calculés à partir d'une estimation de la variance du plan de sondage.")
+      # Sources
+      output$to_source_dem = renderText({
+        sourceDash()
+      })
+      output$to_source_emp = renderText({
+        sourceDash()
+      })
+      output$to_source_sco = renderText({
+        sourceDash()
+      })
+      output$to_source_log = renderText({
+        sourceDash()
+      })
+      output$to_source_res = renderText({
+        sourceDash()
       })
       
       # Theme Démographie
@@ -1053,9 +1084,9 @@ server = function(input, output, session) {
                 icon = icon("people-carry"),fill=TRUE,subtitle = "selon le recensement de la population")
       })
       
-      output$ib_emp_inactif <- renderInfoBox({
-        infoBox(title = "Inactifs", value = rv$dash.indicateur$vb.emp.inact,
-                icon = icon("user"),fill=TRUE)
+      output$ib_emp_actif <- renderInfoBox({
+        infoBox(title = "Actifs", value = rv$dash.indicateur$vb.emp.act,
+                icon = icon("user"),fill=TRUE,subtitle = "parmi la population en âge de travailler")
       })
       
       output$dt_emp_hg = renderDT(
@@ -1119,8 +1150,8 @@ server = function(input, output, session) {
                 icon = icon("city"),fill=TRUE)
       })
       
-      output$ib_log_hlm <- renderInfoBox({
-        infoBox(title = "HLM", value = rv$dash.indicateur$vb.log.hlm,
+      output$ib_log_vac <- renderInfoBox({
+        infoBox(title = "Logements vacants", value = rv$dash.indicateur$vb.log.vac,
                 icon = icon("building"),fill=TRUE)
       })
       
@@ -1364,18 +1395,20 @@ server = function(input, output, session) {
                                 "#llo_agateMap",
                                 "#ap_controls",
                                 "#rg_typeZone",
-                                "#fi_userMap",
-                                "#si_userMap_id",
-                                "#si_userMap_name",
+                                ".input-group",
+                                "#si_userMap_id + .selectize-control",
+                                "#si_userMap_name + .selectize-control",
                                 "#swi_heatPoint",
-                                "#si_rp",
+                                "#si_rp + .selectize-control",
+                                "#pi_userMapSelect + .selectpicker.form-control",
                                 "#ab_userStat",
-                                "#pi_userMapSelect",
                                 "#pt_hideMenu",
                                 "a[data-value=\"Carte\"]",
                                 "a[data-value=\"Statistiques\"]",
                                 "#dt_stat_explore",
-                                "#si_stat_zoneSelect"
+                                "#sp_test",
+                                "a[data-value=\"Documentation\"]"
+                                # "#si_stat_zoneSelect + .selectize-control"
                     ),
                     intro = c(
                       # 0
@@ -1409,12 +1442,13 @@ server = function(input, output, session) {
                       # 12
                       "Page carte",
                       # 13
-                      "Page Statistiques. Permet d'explorer les statistiques issus d'Agate. Il est possible d'exporter les tableaux au format tableur 
-                    en cliquant sur le bouton 'Excel'.",
+                      "Page Statistiques. Permet d'explorer les statistiques issus d'Agate.",
                       # 14
-                      "Tableau dynamique pour explorer les indicateurs statistiques.",
+                      "Tableau dynamique pour explorer les indicateurs statistiques. Cliquer sur le bouton 'Excel' pour exporter le tableau au format tableur.",
                       # 15
-                      "Selection du type de zone : département, commune, QPV et zonage importé par l'utilisateur."
+                      "Ce menu permet de filtrer les résultats selon la maille géographique, la zone étudiée, la thématique et les indicateurs à afficher.",
+                      # 16
+                      "Documentation de l'application concernant les indicateurs calculés et la formule de variance utilisée pour le calcul des intervalles de confiance."
                     )
                   )
                 )),
@@ -1440,9 +1474,7 @@ server = function(input, output, session) {
                   }
                   ")
             )
-            
     )
-    
   })
   
   
