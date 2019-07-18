@@ -31,15 +31,20 @@ indStat_RegCity <- function(rp.an,var.pred,zonage,lstCategorie,lstIndicateur,pre
 
   df.zone <- statZone$indicateur_stat %>% 
     mutate(zone.pred = pred.zone) %>% 
-    filter(type.indicateur %in% c("freq_p","superficie","part_p")) %>% 
+    filter(type.indicateur %in% c("freq_p","superficie","part_p","Q_0.5","avg")) %>% 
     spread(key = type.indicateur, value = value) %>% 
-    left_join(lstIndicateur %>% select(nomVariable,nomIndicateur,typeIndicateurDiffusable),by=c("nomVariable","nomIndicateur")) %>% 
+    left_join(lstIndicateur %>% select(nomVariable,nomIndicateur,typeIndicateurDiffusable),by=c("nomVariable","nomIndicateur")) %>%
+    left_join(lstCategorie %>% select(nomVariable,Arrondi_RegCity),by=c("nomVariable")) %>% 
     mutate(valeur.diffusable = case_when(typeIndicateurDiffusable == "freq_p" ~ freq_p,
                                          typeIndicateurDiffusable == "superficie" ~ superficie,
-                                         TRUE ~ part_p)) %>% 
-    select(-freq_p,-superficie,-part_p,-typeIndicateurDiffusable) %>% 
+                                         typeIndicateurDiffusable == "Q_0.5" ~ Q_0.5,
+                                         typeIndicateurDiffusable == "avg" ~ avg,
+                                         TRUE ~ part_p),
+           valeur.diffusable = as.character(round(as.numeric(valeur.diffusable),digits = Arrondi_RegCity))) %>% 
+    select(group_var,nomVariable,nomIndicateur,valeur.diffusable) %>% 
     mutate(type.indicateur = "valeur.diffusable") %>% 
     rename(value = valeur.diffusable)
+
   
   pyramide <- statZone$pyramide_tr %>% 
     mutate(zone.pred = pred.zone)

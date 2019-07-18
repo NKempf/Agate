@@ -15,6 +15,7 @@ library(fst) # Read partial data
 library(fstplyr) # dplyr for fst object
 library(rlang) # non standard evaluation
 library(easySdcTable)
+library(Hmisc)
 
 # Fonction necessaire
 source("Other programs/1 Maintenance/4 Indicateurs stat pour zone predefinie/Fonctions/Agate - Indicators predefine area fct.R",encoding = "UTF-8")

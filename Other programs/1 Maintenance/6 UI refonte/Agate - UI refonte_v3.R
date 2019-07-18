@@ -9,6 +9,7 @@ library(rgeos)
 library(leaflet)
 library(leaflet.extras) # 
 library(rlang) #
+library(Hmisc)
 library(tidyverse)
 library(fst)
 library(fstplyr)
