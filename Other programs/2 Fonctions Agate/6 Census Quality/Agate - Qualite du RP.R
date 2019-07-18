@@ -17,7 +17,8 @@ Qlbsrt <- function(Y,zone,rpa,constante=0.4,ril){
   
   Tt <- rpaZ %>% group_by(C_ANNEE_COL,com) %>% summarise(TZg=sum(Z2*IPOND),TXg=sum(X*IPOND),TZgtest=sum(Ztest*IPOND))
   
-  rpaU <- rpaZ %>% left_join(Tt, by = c("C_ANNEE_COL", "com")) %>% mutate(U2 = (Z2-(TZg/TXg)*X)^2,Utest = (Ztest-(TZgtest/TXg)*X)^2)
+  rpaU <- rpaZ %>% left_join(Tt, by = c("C_ANNEE_COL", "com")) %>% mutate(U2 = (Z2-(TZg/TXg)*X)^2,Utest = (Ztest-(TZgtest/TXg)*X)^2) %>% 
+    filter(!is.nan(U2))
   
   Vf <- (1-constante)/(constante^2)*sum(rpaU$U2)
   a<-T_R %>% mutate(Z=TZ/TX*TXmod) %>% filter(!(is.na(Z)|is.nan(Z)))
