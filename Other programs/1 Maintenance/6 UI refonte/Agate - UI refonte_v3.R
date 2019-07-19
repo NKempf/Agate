@@ -24,6 +24,7 @@ library(DT)
 library(easySdcTable)
 library(rintrojs) # Tutoriel intéractif
 
+
 # Fonctions  particulières
 source("Other programs/2 Fonctions Agate/4 Dashboard/Agate - Dashboard fct.R",encoding = "UTF-8")
 source("Other programs/2 Fonctions Agate/3 Indicateurs statistiques/Agate - Statistics Zonage_v10.R",encoding = "UTF-8")
