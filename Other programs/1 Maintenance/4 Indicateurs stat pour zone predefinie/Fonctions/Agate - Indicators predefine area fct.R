@@ -41,7 +41,7 @@ indStat_RegCity <- function(rp.an,var.pred,zonage,lstCategorie,lstIndicateur,pre
                                          typeIndicateurDiffusable == "avg" ~ avg,
                                          TRUE ~ part_p),
            valeur.diffusable = as.character(round(as.numeric(valeur.diffusable),digits = Arrondi_RegCity))) %>% 
-    select(group_var,nomVariable,nomIndicateur,valeur.diffusable) %>% 
+    select(zone.pred,domaine,categorie,source,group_var,nomVariable,nomIndicateur,valeur.diffusable) %>% 
     mutate(type.indicateur = "valeur.diffusable") %>% 
     rename(value = valeur.diffusable)
 

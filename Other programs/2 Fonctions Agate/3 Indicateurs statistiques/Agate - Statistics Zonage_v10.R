@@ -122,7 +122,8 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
   ril <- read_fst("Data/Ril/ril_leger.fst") %>% 
     select(idx,x,y,nb_logn) %>% 
     mutate(com = substr(idx,1,5)) %>%
-    filter(com %in% com.dom.select)
+    filter(com %in% com.dom.select & C_ANNEE_COL %in% unique(rpi$C_ANNEE_COL)) %>% 
+    select(-C_ANNEE_COL)
   coordinates(ril) <- ~x+y
   ril@proj4string <- CRS("+init=epsg:3857")
   ril.geo <- ril[!duplicated(ril@data$idx),]
@@ -150,6 +151,7 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
     left_join(rpl %>% filter(!duplicated(idZonage)) %>% 
                 select(idZonage,idZonage.name),by="idZonage") %>% 
     left_join(lstIndicateur %>% 
+                filter(lstIndicateur$calculQualite == 1) %>% 
                 select(domaine,categorie,nomVariable,nomIndicateur,qualiteIndicateur,source),
               by = "qualiteIndicateur") %>% # Ajout de variables
     mutate(source = paste0(source,rp.an)) %>% 
@@ -465,7 +467,8 @@ agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",grou
   ril <- read_fst("Data/Ril/ril_leger.fst") %>% 
     select(idx,x,y,nb_logn) %>% 
     mutate(com = substr(idx,1,5)) %>%
-    filter(com %in% com.dom.select)
+    filter(com %in% com.dom.select & C_ANNEE_COL %in% unique(rpi$C_ANNEE_COL)) %>% 
+    select(-C_ANNEE_COL)
   coordinates(ril) <- ~x+y
   ril@proj4string <- CRS("+init=epsg:3857")
   ril.geo <- ril[!duplicated(ril@data$idx),]
