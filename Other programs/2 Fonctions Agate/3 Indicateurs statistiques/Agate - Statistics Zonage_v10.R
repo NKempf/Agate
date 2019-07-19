@@ -122,7 +122,8 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
   ril <- read_fst("Data/Ril/ril_leger.fst") %>% 
     select(idx,x,y,nb_logn) %>% 
     mutate(com = substr(idx,1,5)) %>%
-    filter(com %in% com.dom.select)
+    filter(com %in% com.dom.select & C_ANNEE_COL %in% unique(rpi$C_ANNEE_COL)) %>% 
+    select(-C_ANNEE_COL)
   coordinates(ril) <- ~x+y
   ril@proj4string <- CRS("+init=epsg:3857")
   ril.geo <- ril[!duplicated(ril@data$idx),]
@@ -150,6 +151,7 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
     left_join(rpl %>% filter(!duplicated(idZonage)) %>% 
                 select(idZonage,idZonage.name),by="idZonage") %>% 
     left_join(lstIndicateur %>% 
+                filter(lstIndicateur$calculQualite == 1) %>% 
                 select(domaine,categorie,nomVariable,nomIndicateur,qualiteIndicateur,source),
               by = "qualiteIndicateur") %>% # Ajout de variables
     mutate(source = paste0(source,rp.an)) %>% 
@@ -177,30 +179,43 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
       bind_rows(df.zone)
     
     df.zone <- df.zone %>% 
-      filter(type.indicateur %in% c("freq_p","superficie","val.qualite","secret_stat")) %>% 
+      filter(type.indicateur %in% c("freq_p","superficie","val.qualite","secret_stat","avg","Q_0.5")) %>% 
       spread(key = type.indicateur, value = value) %>% 
+      left_join(lstCategorie %>% select(nomVariable,Arrondi_agate),by=c("nomVariable")) %>% 
       mutate(secret_stat = case_when(is.na(secret_stat) & nomVariable == "superficie" ~ "diffusable",
                                      is.na(secret_stat) & nomVariable != "superficie" ~ "n_diffusable",
                                      TRUE ~ secret_stat),
              valeur.diffusable = case_when(secret_stat == "diffusable" & !is.na(val.qualite) ~ val.qualite,
                                            secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("log_tot") ~ freq_p,
                                            secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("superficie") ~ superficie,
-                                           TRUE ~ "c")) %>%  # c : données confidencielles
-      select(-secret_stat,-val.qualite,-freq_p,-superficie) %>% 
+                                           secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("dem_ageDistrib") ~ Q_0.5,
+                                           secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("res_nperslog") ~ avg,
+                                           TRUE ~ "c"), # c : données confidencielles
+             valeur.diffusable = ifelse(!is.na(as.numeric(valeur.diffusable)),
+                                        round(as.numeric(valeur.diffusable),digits = Arrondi_agate),
+                                        valeur.diffusable)) %>% 
+      select(domaine,categorie,source,group_var,nomVariable,nomIndicateur,valeur.diffusable) %>% 
       gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
       bind_rows(df.zone) %>% 
       mutate(zone.pred = zone.pred)
+    
   }else{
     
     print("Secret statistique non appliqué")
     df.zone <- df.zone %>% 
-      filter(type.indicateur %in% c("freq_p","superficie","val.qualite")) %>% 
+      filter(type.indicateur %in% c("freq_p","superficie","val.qualite","avg","Q_0.5")) %>% 
       spread(key = type.indicateur, value = value) %>% 
+      left_join(lstCategorie %>% select(nomVariable,Arrondi_agate),by=c("nomVariable")) %>% 
       mutate(valeur.diffusable = case_when(!is.na(val.qualite) ~ val.qualite,
                                            is.na(val.qualite) & nomVariable %in% c("log_tot") ~ freq_p,
                                            is.na(val.qualite) & nomVariable %in% c("superficie") ~ superficie,
-                                           TRUE ~ "///")) %>%  # c : données confidencielles
-      select(-val.qualite,-freq_p,-superficie) %>% 
+                                           is.na(val.qualite) & nomVariable %in% c("dem_ageDistrib") ~ Q_0.5,
+                                           is.na(val.qualite) & nomVariable %in% c("res_nperslog") ~ avg,
+                                           TRUE ~ "///"), # c : données confidencielles
+             valeur.diffusable = ifelse(!is.na(as.numeric(valeur.diffusable)),
+                                        round(as.numeric(valeur.diffusable),digits = Arrondi_agate),
+                                        valeur.diffusable)) %>%  
+      select(domaine,categorie,source,group_var,nomVariable,nomIndicateur,valeur.diffusable) %>% 
       gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
       bind_rows(df.zone) %>% 
       mutate(zone.pred = zone.pred)
@@ -216,133 +231,133 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 
-statistics_zone <- function(group_var,zone,rpi,rpl,lstCategorie,sourceRp,rpi.weight,rpl.weight){
-  
-  #----------------------------------------------------------------------------------------------------------------------------------------------#
-  #                                             A. Recensement de la population                                                                  #
-  #----------------------------------------------------------------------------------------------------------------------------------------------#
-  
-  # I. Territoire
-  #-----------------------------------------------------------------------------------------------------------------------------------------------
-  # domaine <- 1
-
-  # I.1. Superficie et densité de population
-  #-----------------------------------------
-  
-  # Superficie en km²
-  zone@data$value <- round(gArea(zone,byid = T)/1000000,1)
-  zone <- zone@data %>% 
-    mutate(type.indicateur = "superficie",
-           nomVariable = "superficie",
-           nomIndicateur = "a_superficie")
-
-  # II. Individu
-  #-----------------------------------------------------------------------------------------------------------------------------------------------
-  
-  # II.1. population totale
-  #------------------------
-  rpi.popTot <- rpi %>%
-    group_by(!!! syms(group_var)) %>% 
-    summarise(freq = n(),
-              freq_p = round(sum(!!! syms(rpi.weight),na.rm = TRUE),0)) %>% 
-    gather("type.indicateur","value",-group_var) %>% 
-    mutate(nomVariable = "population",
-           nomIndicateur = "a_population") %>% 
-    bind_rows(zone)
-  
-  # II.2. Champ : population totale
-  #--------------------------------
-  
-  # II.2.1. Selection des variables
-  lst_var <- lstCategorie$nomVariable[lstCategorie$source == "rpi" & lstCategorie$typeVar == "pct" & lstCategorie$ssChamp == 0]
-  
-  # II.2.2. Calcul indicateurs
-  rpi.popTot.champ <- bind_rows(lapply(lst_var, agate_qualitative,df = rpi,group_var = group_var, poids = rpi.weight))
-  
-  # II.3. Sous-champs
-  #------------------
-  
-  # II.3.1. Informations sur les champs
-  df_ssChamp <- lstCategorie %>% 
-    filter(source == "rpi" & typeVar == "pct" & ssChamp == 1) %>% 
-    select(nomVariable,variableChamp,modaliteChamp) %>% 
-    mutate(varmod.champ = paste0(variableChamp,modaliteChamp))
-  
-  # II.3.2. Liste des sous-champs à calculer
-  lst_champ <- unique(df_ssChamp$varmod.champ)
-  
-  # II.3.3. Calcul des indicateurs
-  rpi.sschamp <- bind_rows(lapply(lst_champ, agate_qualitative.ssChamp,group_var = group_var,df_ssChamp = df_ssChamp,rp = rpi, poids = rpi.weight))
-  
-  # III. Logements
-  #-----------------------------------------------------------------------------------------------------------------------------------------------
-  
-  # III.1. population totale
-  #------------------------
-  rpl.popTot <- rpl %>%
-    group_by(!!! syms(group_var)) %>% 
-    summarise(freq = n(),
-              freq_p = round(sum(!!! syms(rpl.weight),na.rm = TRUE),0)) %>% 
-    gather("type.indicateur","value",-group_var) %>% 
-    mutate(nomVariable = "log_tot",
-           nomIndicateur = "a_log_tot")
-  
-  # III.2. Champ : Logements
-  #-------------------------
-  # III.2.1. Selection des variables
-  lst_var <- lstCategorie$nomVariable[lstCategorie$variableChamp %in% "X" & lstCategorie$typeVar == "pct" & lstCategorie$ssChamp == 0]
-  
-  # III.2.2. Calcul indicateurs
-  rpl.log.champ <- bind_rows(lapply(lst_var, agate_qualitative,df = rpl,group_var = group_var, poids = rpl.weight))
-  
-  # III.3. Sous-champs
-  #------------------
-  
-  # III.3.1. Informations sur les champs
-  df_ssChamp <- lstCategorie %>% 
-    filter(source == "rpl" & !is.na(modaliteChamp)) %>% 
-    select(nomVariable,variableChamp,modaliteChamp) %>% 
-    mutate(varmod.champ = paste0(variableChamp,modaliteChamp))
-  
-  # III.3.2. Liste des sous-champs à calculer
-  lst_champ <- unique(df_ssChamp$varmod.champ)
-  
-  # III.3.3. Calcul des indicateurs
-  rpl.sschamp <- bind_rows(lapply(lst_champ, agate_qualitative.ssChamp,group_var = group_var,df_ssChamp = df_ssChamp,rp = rpl, poids = rpl.weight))
-  
-  # IV. Ajout à la table finale
-  #-----------------------------------------------------------------------------------------------------------------------------------------------
-  indicateur_stat <- bind_rows(rpi.popTot,rpi.popTot.champ,rpi.sschamp,rpl.popTot,rpl.log.champ,rpl.sschamp) %>% 
-    left_join(lstCategorie %>% select(nomVariable,domaine,categorie,source),by="nomVariable") %>% 
-    mutate(source = paste0(source,sourceRp),
-           value = as.character(value))
-    
-  #----------------------------------------------------------------------------------------------------------------------------------------------#
-  #                                             B.  Objets speciaux                                                                              #
-  #----------------------------------------------------------------------------------------------------------------------------------------------#  
-
-  # 1. Pyramide par sexe, zonage et tranche d'age (MAJ : 27.03.2019) 
-  #----------------------------------------------------------------
-  pyramide_tr <- bind_rows(lapply(c("a_homme","b_femme"),function(mod.sexe,group_var){
-    rpi %>% 
-      filter(dem_sexe == mod.sexe) %>% 
-      agate_qualitative(df = .,indicateur = "dem_agerevTr",group_var = group_var,poids = rpi.weight) %>% 
-      filter(type.indicateur == "part_p") %>% 
-      mutate(dem_sexe = mod.sexe)
-  },group_var = group_var)) %>% 
-    mutate(value = ifelse(dem_sexe == "a_homme",-value,value),
-           source = paste0("rpi",sourceRp)) %>% 
-    rename(age = nomIndicateur,
-           sexe = dem_sexe,
-           pop = value)
-  
-  #----------------------------------------------------------------------------------------------------------------------------------------------#
-  #                                             VII. Listes de tableaux finaux                                                                   #
-  #----------------------------------------------------------------------------------------------------------------------------------------------#
-  list_tab <- list(indicateur_stat = indicateur_stat,pyramide_tr = pyramide_tr)
-  
-  return(list_tab)  
-} 
+# statistics_zone <- function(group_var,zone,rpi,rpl,lstCategorie,sourceRp,rpi.weight,rpl.weight){
+#   
+#   #----------------------------------------------------------------------------------------------------------------------------------------------#
+#   #                                             A. Recensement de la population                                                                  #
+#   #----------------------------------------------------------------------------------------------------------------------------------------------#
+#   
+#   # I. Territoire
+#   #-----------------------------------------------------------------------------------------------------------------------------------------------
+#   # domaine <- 1
+# 
+#   # I.1. Superficie et densité de population
+#   #-----------------------------------------
+#   
+#   # Superficie en km²
+#   zone@data$value <- round(gArea(zone,byid = T)/1000000,1)
+#   zone <- zone@data %>% 
+#     mutate(type.indicateur = "superficie",
+#            nomVariable = "superficie",
+#            nomIndicateur = "a_superficie")
+# 
+#   # II. Individu
+#   #-----------------------------------------------------------------------------------------------------------------------------------------------
+#   
+#   # II.1. population totale
+#   #------------------------
+#   rpi.popTot <- rpi %>%
+#     group_by(!!! syms(group_var)) %>% 
+#     summarise(freq = n(),
+#               freq_p = round(sum(!!! syms(rpi.weight),na.rm = TRUE),0)) %>% 
+#     gather("type.indicateur","value",-group_var) %>% 
+#     mutate(nomVariable = "population",
+#            nomIndicateur = "a_population") %>% 
+#     bind_rows(zone)
+#   
+#   # II.2. Champ : population totale
+#   #--------------------------------
+#   
+#   # II.2.1. Selection des variables
+#   lst_var <- lstCategorie$nomVariable[lstCategorie$source == "rpi" & lstCategorie$typeVar == "pct" & lstCategorie$ssChamp == 0]
+#   
+#   # II.2.2. Calcul indicateurs
+#   rpi.popTot.champ <- bind_rows(lapply(lst_var, agate_qualitative,df = rpi,group_var = group_var, poids = rpi.weight))
+#   
+#   # II.3. Sous-champs
+#   #------------------
+#   
+#   # II.3.1. Informations sur les champs
+#   df_ssChamp <- lstCategorie %>% 
+#     filter(source == "rpi" & typeVar == "pct" & ssChamp == 1) %>% 
+#     select(nomVariable,variableChamp,modaliteChamp) %>% 
+#     mutate(varmod.champ = paste0(variableChamp,modaliteChamp))
+#   
+#   # II.3.2. Liste des sous-champs à calculer
+#   lst_champ <- unique(df_ssChamp$varmod.champ)
+#   
+#   # II.3.3. Calcul des indicateurs
+#   rpi.sschamp <- bind_rows(lapply(lst_champ, agate_qualitative.ssChamp,group_var = group_var,df_ssChamp = df_ssChamp,rp = rpi, poids = rpi.weight))
+#   
+#   # III. Logements
+#   #-----------------------------------------------------------------------------------------------------------------------------------------------
+#   
+#   # III.1. population totale
+#   #------------------------
+#   rpl.popTot <- rpl %>%
+#     group_by(!!! syms(group_var)) %>% 
+#     summarise(freq = n(),
+#               freq_p = round(sum(!!! syms(rpl.weight),na.rm = TRUE),0)) %>% 
+#     gather("type.indicateur","value",-group_var) %>% 
+#     mutate(nomVariable = "log_tot",
+#            nomIndicateur = "a_log_tot")
+#   
+#   # III.2. Champ : Logements
+#   #-------------------------
+#   # III.2.1. Selection des variables
+#   lst_var <- lstCategorie$nomVariable[lstCategorie$variableChamp %in% "X" & lstCategorie$typeVar == "pct" & lstCategorie$ssChamp == 0]
+#   
+#   # III.2.2. Calcul indicateurs
+#   rpl.log.champ <- bind_rows(lapply(lst_var, agate_qualitative,df = rpl,group_var = group_var, poids = rpl.weight))
+#   
+#   # III.3. Sous-champs
+#   #------------------
+#   
+#   # III.3.1. Informations sur les champs
+#   df_ssChamp <- lstCategorie %>% 
+#     filter(source == "rpl" & !is.na(modaliteChamp)) %>% 
+#     select(nomVariable,variableChamp,modaliteChamp) %>% 
+#     mutate(varmod.champ = paste0(variableChamp,modaliteChamp))
+#   
+#   # III.3.2. Liste des sous-champs à calculer
+#   lst_champ <- unique(df_ssChamp$varmod.champ)
+#   
+#   # III.3.3. Calcul des indicateurs
+#   rpl.sschamp <- bind_rows(lapply(lst_champ, agate_qualitative.ssChamp,group_var = group_var,df_ssChamp = df_ssChamp,rp = rpl, poids = rpl.weight))
+#   
+#   # IV. Ajout à la table finale
+#   #-----------------------------------------------------------------------------------------------------------------------------------------------
+#   indicateur_stat <- bind_rows(rpi.popTot,rpi.popTot.champ,rpi.sschamp,rpl.popTot,rpl.log.champ,rpl.sschamp) %>% 
+#     left_join(lstCategorie %>% select(nomVariable,domaine,categorie,source),by="nomVariable") %>% 
+#     mutate(source = paste0(source,sourceRp),
+#            value = as.character(value))
+#     
+#   #----------------------------------------------------------------------------------------------------------------------------------------------#
+#   #                                             B.  Objets speciaux                                                                              #
+#   #----------------------------------------------------------------------------------------------------------------------------------------------#  
+# 
+#   # 1. Pyramide par sexe, zonage et tranche d'age (MAJ : 27.03.2019) 
+#   #----------------------------------------------------------------
+#   pyramide_tr <- bind_rows(lapply(c("a_homme","b_femme"),function(mod.sexe,group_var){
+#     rpi %>% 
+#       filter(dem_sexe == mod.sexe) %>% 
+#       agate_qualitative(df = .,indicateur = "dem_agerevTr",group_var = group_var,poids = rpi.weight) %>% 
+#       filter(type.indicateur == "part_p") %>% 
+#       mutate(dem_sexe = mod.sexe)
+#   },group_var = group_var)) %>% 
+#     mutate(value = ifelse(dem_sexe == "a_homme",-value,value),
+#            source = paste0("rpi",sourceRp)) %>% 
+#     rename(age = nomIndicateur,
+#            sexe = dem_sexe,
+#            pop = value)
+#   
+#   #----------------------------------------------------------------------------------------------------------------------------------------------#
+#   #                                             VII. Listes de tableaux finaux                                                                   #
+#   #----------------------------------------------------------------------------------------------------------------------------------------------#
+#   list_tab <- list(indicateur_stat = indicateur_stat,pyramide_tr = pyramide_tr)
+#   
+#   return(list_tab)  
+# } 
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
 agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,rpi.weight,rpl.weight,
@@ -452,7 +467,8 @@ agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",grou
   ril <- read_fst("Data/Ril/ril_leger.fst") %>% 
     select(idx,x,y,nb_logn) %>% 
     mutate(com = substr(idx,1,5)) %>%
-    filter(com %in% com.dom.select)
+    filter(com %in% com.dom.select & C_ANNEE_COL %in% unique(rpi$C_ANNEE_COL)) %>% 
+    select(-C_ANNEE_COL)
   coordinates(ril) <- ~x+y
   ril@proj4string <- CRS("+init=epsg:3857")
   ril.geo <- ril[!duplicated(ril@data$idx),]
@@ -480,6 +496,7 @@ agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",grou
     left_join(rpl %>% filter(!duplicated(idZonage)) %>% 
                 select(idZonage,idZonage.name),by="idZonage") %>% 
     left_join(lstIndicateur %>% 
+                filter(lstIndicateur$calculQualite == 1) %>% 
                 select(domaine,categorie,nomVariable,nomIndicateur,qualiteIndicateur,source),
               by = "qualiteIndicateur") %>% # Ajout de variables
     mutate(source = paste0(source,rp.an)) %>% 
@@ -508,16 +525,22 @@ agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",grou
       bind_rows(df.zone)
     
     df.zone <- df.zone %>% 
-      filter(type.indicateur %in% c("freq_p","superficie","val.qualite","secret_stat")) %>% 
+      filter(type.indicateur %in% c("freq_p","superficie","val.qualite","secret_stat","avg","Q_0.5")) %>% 
       spread(key = type.indicateur, value = value) %>% 
+      left_join(lstCategorie %>% select(nomVariable,Arrondi_agate),by=c("nomVariable")) %>% 
       mutate(secret_stat = case_when(is.na(secret_stat) & nomVariable == "superficie" ~ "diffusable",
                                      is.na(secret_stat) & nomVariable != "superficie" ~ "n_diffusable",
                                      TRUE ~ secret_stat),
              valeur.diffusable = case_when(secret_stat == "diffusable" & !is.na(val.qualite) ~ val.qualite,
                                            secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("log_tot") ~ freq_p,
                                            secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("superficie") ~ superficie,
-                                           TRUE ~ "c")) %>%  # c : données confidencielles
-      select(-secret_stat,-val.qualite,-freq_p,-superficie) %>% 
+                                           secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("dem_ageDistrib") ~ Q_0.5,
+                                           secret_stat == "diffusable" & is.na(val.qualite) & nomVariable %in% c("res_nperslog") ~ avg,
+                                           TRUE ~ "c"), # c : données confidencielles
+             valeur.diffusable = ifelse(!is.na(as.numeric(valeur.diffusable)),
+                                        round(as.numeric(valeur.diffusable),digits = Arrondi_agate),
+                                        valeur.diffusable)) %>% 
+      select(domaine,categorie,source,group_var,nomVariable,nomIndicateur,valeur.diffusable) %>% 
       gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
       bind_rows(df.zone) %>% 
       mutate(zone.pred = zone.pred)
@@ -525,13 +548,19 @@ agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",grou
     
     print("Secret statistique non appliqué")
     df.zone <- df.zone %>% 
-      filter(type.indicateur %in% c("freq_p","superficie","val.qualite")) %>% 
+      filter(type.indicateur %in% c("freq_p","superficie","val.qualite","avg","Q_0.5")) %>% 
       spread(key = type.indicateur, value = value) %>% 
+      left_join(lstCategorie %>% select(nomVariable,Arrondi_agate),by=c("nomVariable")) %>% 
       mutate(valeur.diffusable = case_when(!is.na(val.qualite) ~ val.qualite,
                                            is.na(val.qualite) & nomVariable %in% c("log_tot") ~ freq_p,
                                            is.na(val.qualite) & nomVariable %in% c("superficie") ~ superficie,
-                                           TRUE ~ "///")) %>%  # c : données confidencielles
-      select(-val.qualite,-freq_p,-superficie) %>% 
+                                           is.na(val.qualite) & nomVariable %in% c("dem_ageDistrib") ~ Q_0.5,
+                                           is.na(val.qualite) & nomVariable %in% c("res_nperslog") ~ avg,
+                                           TRUE ~ "///"), # c : données confidencielles
+             valeur.diffusable = ifelse(!is.na(as.numeric(valeur.diffusable)),
+                                        round(as.numeric(valeur.diffusable),digits = Arrondi_agate),
+                                        valeur.diffusable)) %>%  
+      select(domaine,categorie,source,group_var,nomVariable,nomIndicateur,valeur.diffusable) %>% 
       gather("type.indicateur","value",-group_var,-nomVariable,-nomIndicateur,-domaine,-categorie,-source) %>% 
       bind_rows(df.zone) %>% 
       mutate(zone.pred = zone.pred)
@@ -581,6 +610,14 @@ statistics_zone <- function(group_var,zone,rpi,rpl,lstCategorie,sourceRp,rpi.wei
     mutate(nomVariable = "population",
            nomIndicateur = "a_population") %>% 
     bind_rows(zone)
+  # Distribution de l'age
+  rpi.popTot <- rpi %>%
+    group_by(!!! syms(group_var)) %>% 
+    agate_distrib_weight(x = "AGEREV",weight = rpi.weight) %>% 
+    gather("type.indicateur","value",-group_var) %>% 
+    mutate(nomVariable = "dem_ageDistrib",
+           nomIndicateur = "a_ageMed") %>% 
+    bind_rows(rpi.popTot)
   
   # II.2. Champ : population totale
   #--------------------------------
@@ -632,7 +669,7 @@ statistics_zone <- function(group_var,zone,rpi,rpl,lstCategorie,sourceRp,rpi.wei
   
   # III.3.1. Informations sur les champs
   df_ssChamp <- lstCategorie %>% 
-    filter(source == "rpl" & !is.na(modaliteChamp)) %>% 
+    filter(source == "rpl" & !is.na(modaliteChamp) & !VarCreation %in% c("Agate")) %>% 
     select(nomVariable,variableChamp,modaliteChamp) %>% 
     mutate(varmod.champ = paste0(variableChamp,modaliteChamp))
   
@@ -641,6 +678,18 @@ statistics_zone <- function(group_var,zone,rpi,rpl,lstCategorie,sourceRp,rpi.wei
   
   # III.3.3. Calcul des indicateurs
   rpl.sschamp <- bind_rows(lapply(lst_champ, agate_qualitative.ssChamp,group_var = group_var,df_ssChamp = df_ssChamp,rp = rpl, poids = rpl.weight))
+  
+  # III.3.4. Distribution de nombre de personnes par logement
+  
+  rpl.sschamp <- rpl %>%
+    filter(log_cat == "a_res_princ") %>% 
+    group_by(!!! syms(group_var)) %>% 
+    agate_distrib_weight(x = "NPERR",weight = rpl.weight) %>% 
+    gather("type.indicateur","value",-group_var) %>% 
+    mutate(nomVariable = "res_nperslog",
+           nomIndicateur = "a_nbpers_mean") %>% 
+    bind_rows(rpl.sschamp)
+    
   
   # IV. Ajout à la table finale
   #-----------------------------------------------------------------------------------------------------------------------------------------------
@@ -723,6 +772,39 @@ majDf <- function(df_init,df_final,group_var = group_var,domaine,source,categori
     ungroup() %>% 
     bind_rows(df_final)
 }
+
+agate_distrib_weight <- function(df,x,weight,
+                                 proba = c(0.01,0.05,0.1,0.2,0.25,0.5,0.75,0.80,0.90,0.95,0.99)){
+  # Programming tips about do function : https://www.r-bloggers.com/dplyr-do-some-tips-for-using-and-programming/
+  df <- df %>%
+    mutate(x = as.numeric(!!! syms(x)),
+           weight = as.numeric(!!! syms(weight))) %>% 
+    do(data.frame(Q=proba, n = length(.$x),avg = round(wtd.mean(.$x,weights = .$weight),2), stat=wtd.quantile(.$x,weights = .$weight, probs=proba))) %>% 
+    spread(Q, stat,sep = "_") %>% 
+    mutate(d9_d1 = round(Q_0.9 / Q_0.1,2),
+           q4_q1 = round(Q_0.8 / Q_0.2,2),
+           d5_d1 = round(Q_0.5 / Q_0.1,2),
+           d9_d5 = round(Q_0.9 / Q_0.5,2))
+  
+  # Arrondi
+  df.select <- colnames(df)[substr(colnames(df),1,2) == "Q_"]
+  df[,df.select] <- round(df[,df.select],0)
+  
+  return(df)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Distribution d'un revenu
 income_distrib <- function(df,income,

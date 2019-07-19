@@ -9,6 +9,7 @@ library(rgeos)
 library(leaflet)
 library(leaflet.extras) # 
 library(rlang) #
+library(Hmisc)
 library(tidyverse)
 library(fst)
 library(fstplyr)
@@ -182,7 +183,7 @@ ui <- tagList(
                                             fluidRow(
                                               infoBoxOutput(outputId = "ib_dem_feminite"),
                                               infoBoxOutput(outputId = "ib_dem_population"),
-                                              infoBoxOutput(outputId = "ib_dem_superficie")
+                                              infoBoxOutput(outputId = "ib_dem_agemed")
                                             ) ,
                                             fluidRow(
                                               box(id="b_test",title = "Individus", solidHeader = TRUE,
@@ -317,7 +318,7 @@ ui <- tagList(
                                             fluidRow(
                                               infoBoxOutput(outputId = "ib_res_pop"),
                                               infoBoxOutput(outputId = "ib_res_collectif"),
-                                              infoBoxOutput(outputId = "ib_res_todo")
+                                              infoBoxOutput(outputId = "ib_res_persmoy")
                                             ),
                                             fluidRow(
                                               box(title = "Caractéristiques des résidences principales", solidHeader = TRUE,
@@ -1048,9 +1049,9 @@ server = function(input, output, session) {
                 icon = icon("users"),fill=TRUE)
       })
       
-      output$ib_dem_superficie <- renderInfoBox({
-        infoBox(title = "Superficie", value = rv$dash.indicateur$vb.dem.super,
-                icon = icon("tree"),fill=TRUE)
+      output$ib_dem_agemed <- renderInfoBox({
+        infoBox(title = "Age médian", value = rv$dash.indicateur$vb.dem.agemed,
+                icon = icon("user-clock"),fill=TRUE)
       })
       
       output$dt_dem_hg = renderDT(
@@ -1189,9 +1190,9 @@ server = function(input, output, session) {
                 icon = icon("building"),fill=TRUE)
       })
       
-      output$ib_res_todo <- renderInfoBox({
-        infoBox(title = "TODO", value = "TODO",
-                icon = icon("user-slash"),fill=TRUE)
+      output$ib_res_persmoy <- renderInfoBox({
+        infoBox(title = "Nombre moyen de personnes du logement", value = rv$dash.indicateur$vb.res.persmoy,
+                icon = icon("bed"),fill=TRUE)
       })
       
       output$dt_res_hg = renderDT(

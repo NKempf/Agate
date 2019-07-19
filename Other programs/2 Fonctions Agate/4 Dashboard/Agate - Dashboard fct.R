@@ -105,13 +105,13 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   vb.dem.pop <- format(round(as.numeric(vb.dem.pop),digits = 0),digits = 9,decimal.mark=",", big.mark=" ")
   vb.dem.pop
   
-  # II.3. Superficie 
+  # II.3. Age médian 
   #-----------------
-  vb.dem.super <- df.dashboard %>% 
-    filter(idZonage %in% zone.etude & nomIndicateur == "a_superficie") %>% 
+  vb.dem.agemed <- df.dashboard %>% 
+    filter(idZonage %in% zone.etude & nomVariable == "dem_ageDistrib" & nomIndicateur == "a_ageMed") %>% 
     select(value) %>% 
-    mutate(value = paste0(as.character(value)," km²") )
-  vb.dem.super
+    mutate(value = paste0(as.character(value)," ans") )
+  vb.dem.agemed
   
   # II.4. Tableau haut gauche : Démographie
   #----------------------------------------
@@ -317,9 +317,11 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
     filter(idZonage %in% zone.etude & nomVariable == "res_type" & nomIndicateur == "b_collectif") %>% 
     select(value)
   
-  # VI.3. TODO
-  #--------------
-  #TODO (Revoir le calcul)
+  # VI.3. Nombre de personnes moyen dans le logement
+  #-------------------------------------------------
+  vb.res.persmoy <- df.dashboard %>% 
+    filter(idZonage %in% zone.etude & nomVariable == "res_nperslog" & nomIndicateur == "a_nbpers_mean") %>% 
+    select(value)
   
   # VI.4. tableau haut gauche : Caractéristiques des résidences
   #-----------------------------------------------------------
@@ -352,17 +354,17 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   #-------------------------------------------------------------------------------------------------------------------------
   # Enregistrement
   save(df.dashboard,titreDash,dash.label,
-       vb.dem.fem,vb.dem.pop,vb.dem.super,df.dem.tab.hg,df.dem.tab.hd,df.dem.tab.bd,g.dem.pyramide,
+       vb.dem.fem,vb.dem.pop,vb.dem.agemed,df.dem.tab.hg,df.dem.tab.hd,df.dem.tab.bd,g.dem.pyramide,
        vb.emp.popTrav,vb.emp.chom,vb.emp.act,df.emp.tab.hg,df.emp.tab.hd,df.emp.tab.bd,g.emp.typeAct,
        vb.sco.popSco,vb.sco.etud,vb.sco.decrocheur,df.sco.tab.hg,df.sco.tab.bd,g.sco.pop,g.sco.diplome,
        vb.log.tot,vb.log.vac,vb.log.maison,df.log.tab.hg,g.log.cat,g.log.ach,g.log.bati,
-       vb.res.part,vb.res.collectif,df.res.tab.hg,g.res.nbp,g.res.surf,df.res.tab.bd,
+       vb.res.part,vb.res.collectif,vb.res.persmoy,df.res.tab.hg,g.res.nbp,g.res.surf,df.res.tab.bd,
        file = "Data/Tmp/dashboard_tmp.RData")
   
   
   lst_dash <- list(df.dashboard = df.dashboard,titreDash = titreDash,dash.label = dash.label,source.an = source.an,
                    # Demographie
-                   vb.dem.fem = vb.dem.fem, vb.dem.pop = vb.dem.pop, vb.dem.super = vb.dem.super,
+                   vb.dem.fem = vb.dem.fem, vb.dem.pop = vb.dem.pop, vb.dem.agemed = vb.dem.agemed,
                    df.dem.tab.hg = df.dem.tab.hg, df.dem.tab.hd = df.dem.tab.hd,df.dem.tab.bd = df.dem.tab.bd,
                    g.dem.pyramide = g.dem.pyramide,
                    # Emploi
@@ -378,7 +380,7 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
                    df.log.tab.hg = df.log.tab.hg,
                    g.log.cat = g.log.cat,g.log.ach = g.log.ach,g.log.bati = g.log.bati,
                    # Résidences principales
-                   vb.res.part = vb.res.part,vb.res.collectif = vb.res.collectif,
+                   vb.res.part = vb.res.part,vb.res.collectif = vb.res.collectif,vb.res.persmoy = vb.res.persmoy,
                    df.res.tab.hg = df.res.tab.hg,df.res.tab.bd = df.res.tab.bd,
                    g.res.nbp = g.res.nbp,g.res.surf = g.res.surf)
   
