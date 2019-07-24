@@ -31,7 +31,10 @@ L’estimation du total $T_Y$ se fait par l’intermédiaire de  :
 
 où  $S_{c g}$ est l'ensemble des adresses sondées dans une communes 'c' et appartenant au groupe de rotation 'g' ; la variance associée est : 
 
-(2) $V( {\hat T}_Y )  = \sum_{cg} {{1-f} \over f²} \sum_{i \in S_{c g}} (y_i  -  R x_i)²$ où $R  =  {{\hat T }_Y \over {{\hat T }_X}}$ (DELTA, 2017).
+\begin{equation}
+\tag{2 (DELTA, 2017)}
+V( {\hat T}_Y )  = \sum_{cg} {{1-f} \over f²} \sum_{i \in S_{c g}} (y_i  -  R x_i)²,  où  R  =  {{\hat T }_Y \over {{\hat T }_X}}
+\end{equation}
 
 L’estimation de $T_Y$ sur un sous-domaine est équivalent à l’estimation de $T_Z$ où $Z = Y ·  1_{[zone]}$. (DELTA, 2017).
 
@@ -43,19 +46,26 @@ Le RP étant fait de manière indépendante entre chaque commune et chaque group
 # II. Estimation de la variance d’un ratio
 
 L’estimation de la variance d’un ratio $Z1 \over Z2$, on passe par la variable linéarisée : 
+\begin{equation}
+\tag{3}
+U = (Z1 - R Z2) / {\hat T}_{Z2},  où R = {{\hat T}_{Z1} \over {\hat T}_{Z2}}
+\end{equation}
 
-(3) $U = (Z1 - R Z2) / {\hat T}_{Z2}$ où $R = {{\hat T}_{Z1} \over {\hat T}_{Z2}}$ 
 à laquelle on applique la formule du total précédente.
 
 # III. Estimation par le ratio d’un total
 
 L’estimation par le ratio que l’on applique à l’ensemble restreint des adresses à probabilités égale à 2,5 :
-
-(4) ${\hat T}_{Z_ration} = {\hat T}_{ Z } \times {T_{X ril1_[zone]} / T_{X ril} \over {{\hat T}_{X rp{1[zone]}} / {\hat T}_{X rp}} } =  {{\hat T}_{ Z } \over {\hat T}_{X rp_[zone]}} \times T_{X_[zone] theorique}$ 
+\begin{equation}
+\tag{4}
+{\hat T}_{Z_ration} = {\hat T}_{ Z } \times {T_{X ril1_[zone]} / T_{X ril} \over {{\hat T}_{X rp{1[zone]}} / {\hat T}_{X rp}} } =  {{\hat T}_{ Z } \over {\hat T}_{X rp_[zone]}} \times T_{X_[zone] theorique}
+\end{equation}
 
 Dans une estimation par le ratio classique, le nombre total de logements par communes dans le RP se cale sur le nombre (considéré comme la **vraie valeur**) du RIL. Or, comme le RP a déjà été calé au niveau logement par commune, on ne cherche donc qu’à corriger la structure et non la taille. De plus, on fait l’hypothèse que $T_{X rp}$ est un total connu au mème titre que les totaux originaires du RIL afin de créer un $T_X$ théorique (ne dépendant pas du tirage aléatoire) afin de calculer la variance.
-
-(5)  $U = ( Z - R X )$ où $R = {{\hat T}_{ Z } \over {\hat T}_{X rp_[zone]}}$
+\begin{equation}
+\tag{5}
+U = ( Z - R X ),  où R = {{\hat T}_{ Z } \over {\hat T}_{X rp_[zone]}}
+\end{equation}
 
 Cette méthode par le ratio modifié sert à résoudre le problème des différences entre le RP et le RIL (le RIL étant valable **avant** la collecte et le RP **après**).
 
