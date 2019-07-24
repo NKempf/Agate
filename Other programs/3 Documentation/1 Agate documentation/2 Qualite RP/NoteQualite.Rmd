@@ -24,7 +24,10 @@ On considère que les adresses sondées sont celles dont le poids après traitem
 
 L’estimation du total $T_Y$ se fait par l’intermédiaire de  :
 
-(1) ${\hat{T}}_Y = \sum_{cg} \sum_{i \in S_{c g}}  y_i  \times  IPOND$ 
+\begin{equation}
+\tag{1}
+{\hat{T}}_Y = \sum_{cg} \sum_{i \in S_{c g}}  y_i  \times  IPOND 
+\end{equation}
 
 où  $S_{c g}$ est l'ensemble des adresses sondées dans une communes 'c' et appartenant au groupe de rotation 'g' ; la variance associée est : 
 
