@@ -12,9 +12,9 @@ output: html_document
 La méthode d’estimation se base sur les travaux sur la qualité du RP (DELTA, 2017).
 
 ## Plan de Sondage :
-Probabilité = 1 pour les adresses situées dans les petites communes. Et quelques adresses de grandes communes.
+`Probabilité = 1` pour les adresses situées dans les petites communes. Et quelques adresses de grandes communes.
 
-Probabilité = 0.4 pour les adresses de grandes communes.
+`Probabilité = 0.4` pour les adresses de grandes communes.
 
 Les poids sont calés en utilisant le nombre de logements (variable appelée X).
 
@@ -63,14 +63,5 @@ Les totaux utilisés pour calculer $R$ sont sur l'ensemble de la zone (i.e. et n
 Cette estimation divise par environs 2 les écart-types des estimateurs (de - 30 % à - 85 %) . Dans la plupart des cas, le nouvel intervalle de confiance est contenu dans l’ancien.
 Néanmoins, la somme des totaux de population par commune est transformée légèrement en fonction du découpage. Par exemple, avec le découpage en QPV, il y a une perte de 356 habitants sur l’ensemble des communes abritant un QPV (538 025 -> 537 669)
 
-```{r,echo=FALSE,message=FALSE,warning=FALSE}
-library(readxl)
-library(DT)
-
-tab <- read_xlsx("Donnee Qualite.xlsx",sheet = 1)
-
-datatable(tab,rownames = FALSE)
-
-```
 
 

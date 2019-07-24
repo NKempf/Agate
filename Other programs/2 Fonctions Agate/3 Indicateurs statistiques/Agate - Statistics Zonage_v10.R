@@ -120,7 +120,7 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
   # incProgress(amount = 0.5,message = "Qualité des données du rp")
   
   ril <- read_fst("Data/Ril/ril_leger.fst") %>% 
-    select(idx,x,y,nb_logn) %>% 
+    select(idx,x,y,nb_logn,C_ANNEE_COL) %>% 
     mutate(com = substr(idx,1,5)) %>%
     filter(com %in% com.dom.select & C_ANNEE_COL %in% unique(rpi$C_ANNEE_COL)) %>% 
     select(-C_ANNEE_COL)
@@ -465,7 +465,7 @@ agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",grou
   incProgress(amount = 0.2,message = "Qualité des données du rp")
   
   ril <- read_fst("Data/Ril/ril_leger.fst") %>% 
-    select(idx,x,y,nb_logn) %>% 
+    select(idx,x,y,nb_logn,C_ANNEE_COL) %>% 
     mutate(com = substr(idx,1,5)) %>%
     filter(com %in% com.dom.select & C_ANNEE_COL %in% unique(rpi$C_ANNEE_COL)) %>% 
     select(-C_ANNEE_COL)
