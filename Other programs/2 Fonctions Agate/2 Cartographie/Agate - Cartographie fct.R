@@ -182,11 +182,11 @@ zonaRouteNode <- function(route){
 # MAJ : 20.06.2018
 #
 #######################################################
-zonaPts <- function(pts.sp,zonage){
+zonaPts <- function(pts.sp,zonage,CRSagate = "+init=EPSG:3857"){
   
-  #### Changement du système de projection : Utilisation de epsg:3857 
-  pts.sp <- spTransform(x = pts.sp,CRSobj = CRS("+init=epsg:3857"))
-  zonage <- spTransform(x = zonage,CRSobj = CRS("+init=epsg:3857"))
+  #### Changement du système de projection
+  pts.sp <- spTransform(x = pts.sp,CRSobj = CRS(CRSagate))
+  zonage <- spTransform(x = zonage,CRSobj = CRS(CRSagate))
   
   #########################################     
   ### Zonage : préparation de la base #####

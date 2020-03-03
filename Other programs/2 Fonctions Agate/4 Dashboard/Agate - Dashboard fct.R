@@ -59,6 +59,39 @@ barChart_agate <- function(df,var.barChart,zone.etude,zone.compare,lstIndicateur
 }
 
 #----------------------------------------------------------------------------------------------------------------------------------------
+# barChart dashboard plotly (MAJ : 31.12.2019)
+
+barChart_agate_plotly <- function(df,var.barChart,zone.etude,zone.compare,lstIndicateur){
+  test <- lstIndicateur$nomVariable %in% var.barChart & 
+    !lstIndicateur$nomIndicateur %in% c("g_moins14","e_log_metro","g_sansObjet","d_sansObjet")
+  # tab.label <- lstIndicateur$labelIndicateur[test]
+  
+  df2 <- df %>% 
+    filter(idZonage %in% c(zone.etude,zone.compare) & nomVariable == var.barChart) %>% 
+    mutate(value = as.numeric(value),
+           nomIndicateur = factor(nomIndicateur,levels = lstIndicateur$nomIndicateur[test],labels = lstIndicateur$labelIndicateur[test]))
+  
+  df3 <- df2 %>% filter(idZonage == zone.etude)
+  df4 <- df2 %>% filter(idZonage == zone.compare)
+  
+  p <- plot_ly(data = df3,
+               y = reorder(df3$nomIndicateur,df3$value), 
+               x = ~value, type = 'bar', orientation = 'h',
+               name = unique(df3$idZonage.name),
+               marker = list(color = "#CEBC81")) %>% 
+    add_trace(data = df4,
+              y = reorder(df4$nomIndicateur,df4$value),  
+              y = ~value,
+              name = unique(df4$idZonage.name),
+              marker = list(color = "#A16E83")) %>%
+    layout(xaxis = list(
+      title = "Part des individus en %"
+    ))  
+  return(p)
+}
+
+
+#----------------------------------------------------------------------------------------------------------------------------------------
 # Statistiques pour le dashboard d'Agate
 
 stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyramide_tr){
@@ -203,7 +236,7 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   
   # III.7. graphique bas gauche : Type d'activité
   #----------------------------------------------
-  g.emp.typeAct <- barChart_agate(df = df,var.barChart = "emp_typeActivite",
+  g.emp.typeAct <- barChart_agate_plotly(df = df,var.barChart = "emp_typeActivite",
                                   zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # IV. Thème Scolarisation
@@ -238,12 +271,12 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   
   # IV.5. graphique haut droit : Population scolarisée
   #---------------------------------------------------
-  g.sco.pop <- barChart_agate(df = df,var.barChart = "sco_popSco2",
+  g.sco.pop <- barChart_agate_plotly(df = df,var.barChart = "sco_popSco2",
                               zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # IV.6. graphique bas gauche : Dîplome
   #-------------------------------------
-  g.sco.diplome <- barChart_agate(df = df,var.barChart = "sco_diplome",
+  g.sco.diplome <- barChart_agate_plotly(df = df,var.barChart = "sco_diplome",
                                   zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # IV.7. tableau bas droit : Jeunes non scolarisés
@@ -289,17 +322,17 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   
   # V.5. graphique haut droit : Categorie de logement
   #--------------------------------------------------
-  g.log.cat <- barChart_agate(df = df,var.barChart = "log_cat",
+  g.log.cat <- barChart_agate_plotly(df = df,var.barChart = "log_cat",
                               zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # V.6. graphique bas gauche : Année d'achevement
   #-----------------------------------------------
-  g.log.ach <- barChart_agate(df = df,var.barChart = "log_ach_constru",
+  g.log.ach <- barChart_agate_plotly(df = df,var.barChart = "log_ach_constru",
                               zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # V.7. graphique bas droit : Aspect du bati
   #-------------------------------------------
-  g.log.bati <- barChart_agate(df = df,var.barChart = "log_bati",
+  g.log.bati <- barChart_agate_plotly(df = df,var.barChart = "log_bati",
                                zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # VI. Thème Résidences principales
@@ -334,12 +367,12 @@ stat.dashboard_agate <- function(df,zone.etude,zone.compare,lstIndicateur,pyrami
   
   # VI.5. graphique haut droit : Nombre de pièces
   #---------------------------------------------
-  g.res.nbp <- barChart_agate(df = df,var.barChart = "res_nbPiece",
+  g.res.nbp <- barChart_agate_plotly(df = df,var.barChart = "res_nbPiece",
                               zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # VI.6. graphique bas gauche : Surface
   #------------------------------------
-  g.res.surf <- barChart_agate(df = df,var.barChart = "res_surface",
+  g.res.surf <- barChart_agate_plotly(df = df,var.barChart = "res_surface",
                                zone.etude = zone.etude,zone.compare = zone.compare,lstIndicateur = lstIndicateur)
   
   # VI.7. tableau bas droit : Équipements
