@@ -1,25 +1,28 @@
 # Agate
-Application Guyane Antilles de sTatistiques infracommunalEs
 
-Agate est une application développée en Rshiny à destination des agents du SED et des UED aux Antilles-Guyane. Elle offre une interface graphique conviviale permettant de calculer et de visualiser sur une zone (à dessiner au préalable) un ensemble d'indicateurs statistiques. Un prototype est en cours de développement. 
+## Application en Guyane et aux Antilles de sTatistiques infracommunalEs
 
-## Fonctionnalités du prototype
+Agate est une application développée en Rshiny à destination des agents du SED et des DAR aux Antilles-Guyane. 
+Elle offre une interface graphique conviviale permettant de calculer et de visualiser sur une zone (à dessiner au préalable) un ensemble d'indicateurs statistiques. 
 
-### Actuelles
+Son développement s'est achevé en juillet 2019. 
 
-* Import d'une carte au format ShapeFile
-* Série d'indicateurs statistiques issus du RP (2013, 2014 et 2015)
-* Visualisation d'un tableau de bord spécifique à chaque zone
-* Comparaison des résultats avec une autre zone (région, commune, commune hors zone)
-* Exploration des données détaillées
-* Export des données détaillées au format **xlsx** lisible par calc
-* Qualité des données dans chaque zone (Intervalles de confiance et coefficient de variation) issue des travaux de L. Delta
-* Gestion du secret statistique primaire et secondaire
+## Fonctionnalités
 
-### A venir
+* Caractérisation d'un zonage à façon ou d'une zone prédéfinie aux Antilles-Guyane à l'aide d'indicateurs issus du recensement de la population géolocalisé
+* Estimation de la qualité des indicateurs
 
+## Zones prédéfinies
 
-* Ajout de zones prédéfinies
-* Ajout de nouvelles sources de données (BPE, FIDELI et CAF)
-* Tutoriel interactif
-* Documentation des travaux de qualité
+* Niveau département/région : Guadeloupe, Martinique, Guyane, Saint-Martin et Saint-Barthélémy
+* Niveau communes
+* Niveau QPV (Quartiers prioritaires de la politique de la ville)
+
+## Zonages à façon
+
+Il est possible de dessiner simplement un zonage à façon à l'adresse suivante : 
+[geojson.io](http://geojson.io/) 
+
+## Sources
+
+* Recensement de la population niveau logement et individus 2013, 2014 et 2015
