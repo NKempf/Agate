@@ -1,5 +1,11 @@
 server = function(input, output, session) {
   
+  # Pararmètres statistiques
+  #---------------------------------------------------------------------------------------------------------------------------
+  group.predefenie <- c("Departements","Communes","QPV")
+  
+  
+  
   # Reactive Values
   #----------------------------------------------------------------------------------------------------------------------------
   rv <- reactiveValues(AgateMap = NULL,
@@ -7,6 +13,8 @@ server = function(input, output, session) {
                        importUserMap = NULL,
                        zone.active = NULL,
                        zone.etude = NULL,
+                       group.etude = NULL,
+                       departement.etude = NULL,
                        zone.comparaison = NULL,
                        df.zone.etude=NULL,
                        pyramide.etude = NULL,
@@ -22,37 +30,83 @@ server = function(input, output, session) {
   output$llo_agateMap <- renderLeaflet({
     leaflet("agateMap",
             options = leafletOptions(zoomControl = TRUE,# Gestion du niveau de zoom
-                                     minZoom = 1, maxZoom = 15)) %>% 
+                                     minZoom = 1, maxZoom = 16)) %>% 
       # Fonds de carte
       #---------------
       # addTiles()%>%
       addTiles(group = "OSM (default)") %>%
       addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
-      addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
       fitBounds(lng1 = -65,lat1 = 18,lng2 = -45,lat2 = 3) %>%
       
       # Carte de chaleur
       addHeatmap(data = heat.pts,group = "heatpts",lng = ~x, lat = ~y,
                  # intensity = ~nivviem,
                  blur = 60, radius = 30) %>%
+      
+      # Départements
+      addPolygons(data=dep.dom,opacity = 4,group = "Departements",
+                  color = "#FF4E50 ", stroke = TRUE, weight = 2,
+                  fill = TRUE, fillOpacity = 0.10,
+                  label = ~idZonage.name,
+                  highlightOptions = highlightOptions(
+                    color = "#F9D423", opacity = 1, weight = 3, fillOpacity = 0,
+                    bringToFront = TRUE, sendToBack = TRUE),
+                  layerId = ~idZonage) %>%
+      # Communes
+      addPolygons(data=com.dom,opacity = 3,group = "Communes",
+                  color = "#2F9599", stroke = TRUE, weight = 2,
+                  fill = TRUE, fillOpacity = 0.01,
+                  label = ~paste(idZonage.name),
+                  highlightOptions = highlightOptions(
+                    color = "#F26B38", opacity = 1, weight = 3, fillOpacity = 0,
+                    bringToFront = FALSE, sendToBack = TRUE),
+                  layerId = ~idZonage) %>%
+      # QPV
+      addPolygons(data=qpv,opacity = 4,group = "QPV",
+                  color = "#CC527A", stroke = TRUE, weight = 2,
+                  fill = TRUE, fillOpacity = 0.01,
+                  label = ~paste(idZonage.name),
+                  highlightOptions = highlightOptions(
+                    color = "#A8A7A7", opacity = 1, weight = 3, fillOpacity = 0,
+                    bringToFront = TRUE, sendToBack = TRUE),
+                  layerId = ~idZonage) %>%
+
+      
+      # Controles sur carte
       addLayersControl(
-        baseGroups = c("OSM (default)", "Satellite", "Toner Lite"),
-        overlayGroups = c("Départements","Communes","QPV"),
+        baseGroups = c("OSM (default)", "Satellite"),
+        overlayGroups = c("Departements","Communes","QPV"),
         options = layersControlOptions(collapsed = FALSE),
         position = "bottomleft"
       ) %>% 
-      hideGroup("heatpts")
+      hideGroup(c("heatpts"
+                ,"Departements"
+                ,"Communes","QPV"
+                ))
   })
 
   # Zoom sur click
   observeEvent(input$llo_agateMap_shape_click, {
-    if(!is.null(rv$AgateMap)){
+    
+    if(input$llo_agateMap_shape_click$group == "Departements"){
+      mapSelect <- dep.dom[dep.dom@data$idZonage == input$llo_agateMap_shape_click$id,]
+    }
+    if(input$llo_agateMap_shape_click$group == "Communes"){
+      mapSelect <- com.dom[com.dom@data$idZonage == input$llo_agateMap_shape_click$id,]
+    }
+    if(input$llo_agateMap_shape_click$group == "QPV"){
+      mapSelect <- qpv[qpv@data$idZonage == input$llo_agateMap_shape_click$id,]
+    }
+    
+    if(input$llo_agateMap_shape_click$group == "Zone utilisateur"){
       mapSelect <- rv$AgateMap[rv$AgateMap@data$idZonage == input$llo_agateMap_shape_click$id,]
-
+    }
+    
+    if(!is.null(mapSelect)){
       mapSelect.bbox <- as.data.frame(bbox(mapSelect))
       zoom_lng <- (mapSelect.bbox$max[1] - mapSelect.bbox$min[1])/2
       zoom_lat <- (mapSelect.bbox$max[2] - mapSelect.bbox$min[2])/2
-
+      
       leafletProxy("llo_agateMap") %>%
         fitBounds(lng1 = mapSelect.bbox$min[1] - zoom_lng,
                   lat1 = mapSelect.bbox$max[2] + zoom_lat,
@@ -74,31 +128,72 @@ server = function(input, output, session) {
 
   # Affichage d'un zonage
   observeEvent(rv$AgateMap,{
-
+    
     if(!is.null(rv$AgateMap)){
-
-      if(input$rg_typeZone == 1){
-        zone <- rv$AgateMap@data$idZonage
-        names(zone) <- rv$AgateMap@data$idZonage.name
-        updatePickerInput(session = session,inputId = "pi_userMapSelect",choices = zone,selected = zone)
-      }
-
+      
+      # MAJ de la liste des zones
+          # if(input$rg_typeZone == 1){
+            zone <- rv$AgateMap@data$idZonage
+            names(zone) <- rv$AgateMap@data$idZonage.name
+            updatePickerInput(session = session,inputId = "pi_userMapSelect",choices = zone,selected = zone)
+          # }
+      
+      
       if(!is.null(rv$AgateMap@data$idZonage) & !is.null(rv$AgateMap@data$idZonage.name)){
         rv$AgateMap <- spTransform(rv$AgateMap, "+init=epsg:4326")
         AgateMap.bbox <- as.data.frame(bbox(rv$AgateMap))
+        
+        # MAJ de leaflet
         leafletProxy("llo_agateMap") %>%
           clearShapes() %>%
+         
+           # Départements
+          addPolygons(data=dep.dom,opacity = 4,group = "Departements",
+                      color = "#FF4E50 ", stroke = TRUE, weight = 2,
+                      fill = TRUE, fillOpacity = 0.10,
+                      label = ~idZonage.name,
+                      highlightOptions = highlightOptions(
+                        color = "#F9D423", opacity = 1, weight = 3, fillOpacity = 0,
+                        bringToFront = TRUE, sendToBack = TRUE),
+                      layerId = ~idZonage) %>%
+          # Communes
+          addPolygons(data=com.dom,opacity = 3,group = "Communes",
+                      color = "#2F9599", stroke = TRUE, weight = 2,
+                      fill = TRUE, fillOpacity = 0.01,
+                      label = ~paste(idZonage.name),
+                      highlightOptions = highlightOptions(
+                        color = "#F26B38", opacity = 1, weight = 3, fillOpacity = 0,
+                        bringToFront = FALSE, sendToBack = TRUE),
+                      layerId = ~idZonage) %>%
+          # QPV
+          addPolygons(data=qpv,opacity = 4,group = "QPV",
+                      color = "#CC527A", stroke = TRUE, weight = 2,
+                      fill = TRUE, fillOpacity = 0.01,
+                      label = ~paste(idZonage.name),
+                      highlightOptions = highlightOptions(
+                        color = "#A8A7A7", opacity = 1, weight = 3, fillOpacity = 0,
+                        bringToFront = TRUE, sendToBack = TRUE),
+                      layerId = ~idZonage) %>%
+          # Zoom sur la zone utilisateur
           fitBounds(lng1 = AgateMap.bbox$min[1],lat1 = AgateMap.bbox$max[2],lng2 = AgateMap.bbox$max[1],lat2 = AgateMap.bbox$min[2]) %>%
-          addPolygons(data=rv$AgateMap,opacity = 3,
+          # Zone utilisateur
+          addPolygons(data=rv$AgateMap,opacity = 3,group = "Zone utilisateur",
                       color = "green", stroke = TRUE, weight = 2,
                       fill = TRUE, fillOpacity = 0.2,
                       label = ~paste(idZonage.name),
                       highlightOptions = highlightOptions(
                         color = "#ff2052", opacity = 1, weight = 3, fillOpacity = 0.5,
                         bringToFront = TRUE, sendToBack = TRUE),
-                      layerId = ~paste(idZonage))
-      }
-    }
+                      layerId = ~idZonage) %>% 
+          addLayersControl(
+            baseGroups = c("OSM (default)", "Satellite"),
+            overlayGroups = c("Departements","Communes","QPV","Zone utilisateur"),
+            options = layersControlOptions(collapsed = FALSE),
+            position = "bottomleft"
+          )
+        
+      } # end if
+    } # end if
   })
 
   # Import d'une carte utilisateur
@@ -106,7 +201,7 @@ server = function(input, output, session) {
 
     rv$importUserMap <- NULL
 
-    if(input$rg_typeZone == 1){
+    # if(input$rg_typeZone == 1){
 
       user.files <- input$fi_userMap
 
@@ -123,7 +218,7 @@ server = function(input, output, session) {
         updateSelectInput(session = session,inputId = "si_userMap_id",choices = lst_var,selected = lst_var[1])
         updateSelectInput(session = session,inputId = "si_userMap_name",choices = lst_var,selected = lst_var[2])
       }
-    }
+    # }
   })
 
   # Mise a jour des variables identifiant et libellé
@@ -166,7 +261,6 @@ server = function(input, output, session) {
       print(rv$userMap@proj4string)
 
       rv$AgateMap <- rv$userMap
-      print(rv$AgateMap@proj4string)
     }
   })
 
@@ -179,9 +273,9 @@ server = function(input, output, session) {
   })
 
   # Affichage / réduction du menu de navigation de la carte
-  observeEvent(c(input$pt_hideMenu,input$rg_typeZone), {
+  observeEvent(c(input$pt_hideMenu), {
 
-    if (input$rg_typeZone == 1) {
+    # if (input$rg_typeZone == 1) {
       shinyjs::hide("fr_predOption")
 
       if(input$pt_hideMenu){
@@ -191,133 +285,197 @@ server = function(input, output, session) {
         shinyjs::hide("fr_utilimportMap")
         shinyjs::hide("fr_utilStat")
       }
-    }
-    else{
-      shinyjs::hide("fr_utilimportMap")
-      shinyjs::hide("fr_utilStat")
-
-      if(input$pt_hideMenu){
-        shinyjs::show("fr_predOption")
-      }else{
-        shinyjs::hide("fr_predOption")
-      }
-    }
+    # }
+    # else{
+    #   shinyjs::hide("fr_utilimportMap")
+    #   shinyjs::hide("fr_utilStat")
+    # 
+    #   if(input$pt_hideMenu){
+    #     shinyjs::show("fr_predOption")
+    #   }else{
+    #     shinyjs::hide("fr_predOption")
+    #   }
+    # }
   })
 
 
 
   # Zone utilisateur ou predefinie
-  observeEvent(input$rg_typeZone,{
-    # Init
-    rv$zone.etude <- NULL
-    rv$pyramide.etude <- NULL
-    rv$zone.comparaison <- NULL
-    rv$dash.indicateur <- NULL
-    rv$zone.etude.previous <- NULL
+  # observeEvent(input$rg_typeZone,{
+  #   # Init
+  #   rv$zone.etude <- NULL
+  #   rv$pyramide.etude <- NULL
+  #   rv$zone.comparaison <- NULL
+  #   rv$dash.indicateur <- NULL
+  #   rv$zone.etude.previous <- NULL
+  # 
+  #   if(input$rg_typeZone == 1){
+  #     updateSelectInput(session,"si_zonePred",selected = c(4))
+  # 
+  # 
+  #   }else{
+  #     # shinyjs::show("si_zonePred")
+  #     # shinyjs::show("ab_modal")
+  #     # shinyjs::hide("ddb_import")
+  #     # shinyjs::hide("ddb_userMapStat")
+  #   }
+  # })
 
-    if(input$rg_typeZone == 1){
-      updateSelectInput(session,"si_zonePred",selected = c(4))
 
-
-    }else{
-      # shinyjs::show("si_zonePred")
-      # shinyjs::show("ab_modal")
-      # shinyjs::hide("ddb_import")
-      # shinyjs::hide("ddb_userMapStat")
-    }
-  })
-
-
-  observeEvent(input$si_zonePred,{
-    if(input$si_zonePred != ""){
-      if(as.numeric(input$si_zonePred) == 1) {
-        updateSelectInput(session,"si_zonePred_dep",choices = c("Tous les départements"="all",
-                                                                "Guadeloupe" = "971","Martinique" = "972","Guyane" = "973",
-                                                                "Saint-Barthélemy" = "977",
-                                                                "Saint-Martin" = "978"))
-      }else{
-        updateSelectInput(session,"si_zonePred_dep",choices = c("Tous les départements"="all",
-                                                                "Guadeloupe" = "971","Martinique" = "972","Guyane" = "973"))
-      }
-    }
-  })
+  # observeEvent(input$si_zonePred,{
+  #   if(input$si_zonePred != ""){
+  #     if(as.numeric(input$si_zonePred) == 1) {
+  #       updateSelectInput(session,"si_zonePred_dep",choices = c("Tous les départements"="all",
+  #                                                               "Guadeloupe" = "971","Martinique" = "972","Guyane" = "973",
+  #                                                               "Saint-Barthélemy" = "977",
+  #                                                               "Saint-Martin" = "978"))
+  #     }else{
+  #       updateSelectInput(session,"si_zonePred_dep",choices = c("Tous les départements"="all",
+  #                                                               "Guadeloupe" = "971","Martinique" = "972","Guyane" = "973"))
+  #     }
+  #   }
+  # })
 
 
   # PREDEFINIE : Selection de la zone a afficher
-  observeEvent(c(input$si_zonePred_dep,input$si_zonePred),{
-
-    # Init parameters
-    rv$zone.etude <- NULL
-    rv$pyramide.etude <- NULL
-    rv$zone.comparaison <- NULL
-    rv$dash.indicateur <- NULL
-
-    if(input$si_zonePred_dep != "") {
-      switch(as.numeric(input$si_zonePred),
-             { # Département
-               print(!exists("dep.dom"))
-
-               if(!exists("dep.dom")){
-                 print("Chargement de la carte departement")
-                 load("data/zonesPred/zp_departements.RData")
-               }
-
-               if(input$si_zonePred_dep != "all"){
-                 rv$AgateMap <- dep.dom[dep.dom@data$dep == input$si_zonePred_dep,]
-               }else{
-                 rv$AgateMap <- dep.dom
-               }
-
-               print(rv$AgateMap)
-
-             },
-             { # Commune
-               print("Chargement de la carte commune")
-
-               if(input$si_zonePred_dep != "all"){
-                 rv$AgateMap <- com.dom[com.dom@data$dep == input$si_zonePred_dep,]
-               }else{
-                 rv$AgateMap <- com.dom
-               }
-
-             },
-             {
-               if(!exists("qpv")){
-                 print("Chargement de la carte QPV")
-                 load("data/zonesPred/zp_qpv.RData")
-               }
-
-               if(input$si_zonePred_dep != "all"){
-                 rv$AgateMap <- qpv[qpv@data$dep == input$si_zonePred_dep,]
-               }else{
-                 rv$AgateMap <- qpv
-               }
-             },
-             {
-               if(!is.null(rv$userMap)){
-                 rv$AgateMap <- rv$userMap
-               }else{
-                 print("En attente d'une carte utilisateur...")
-               }
-             })
-    }
-  })
+  # observeEvent(c(input$si_zonePred_dep,input$si_zonePred),{
+  # 
+  #   # Init parameters
+  #   rv$zone.etude <- NULL
+  #   rv$pyramide.etude <- NULL
+  #   rv$zone.comparaison <- NULL
+  #   rv$dash.indicateur <- NULL
+  # 
+  #   if(input$si_zonePred_dep != "") {
+  #     switch(as.numeric(input$si_zonePred),
+  #            { # Département
+  #              print(!exists("dep.dom"))
+  # 
+  #              if(!exists("dep.dom")){
+  #                print("Chargement de la carte departement")
+  #                load("data/zonesPred/zp_departements.RData")
+  #              }
+  # 
+  #              if(input$si_zonePred_dep != "all"){
+  #                rv$AgateMap <- dep.dom[dep.dom@data$dep == input$si_zonePred_dep,]
+  #              }else{
+  #                rv$AgateMap <- dep.dom
+  #              }
+  # 
+  #              print(rv$AgateMap)
+  # 
+  #            },
+  #            { # Commune
+  #              print("Chargement de la carte commune")
+  # 
+  #              if(input$si_zonePred_dep != "all"){
+  #                rv$AgateMap <- com.dom[com.dom@data$dep == input$si_zonePred_dep,]
+  #              }else{
+  #                rv$AgateMap <- com.dom
+  #              }
+  # 
+  #            },
+  #            {
+  #              if(!exists("qpv")){
+  #                print("Chargement de la carte QPV")
+  #                load("data/zonesPred/zp_qpv.RData")
+  #              }
+  # 
+  #              if(input$si_zonePred_dep != "all"){
+  #                rv$AgateMap <- qpv[qpv@data$dep == input$si_zonePred_dep,]
+  #              }else{
+  #                rv$AgateMap <- qpv
+  #              }
+  #            },
+  #            {
+  #              if(!is.null(rv$userMap)){
+  #                rv$AgateMap <- rv$userMap
+  #              }else{
+  #                print("En attente d'une carte utilisateur...")
+  #              }
+  #            })
+  #   }
+  # })
 
   # Ouverture du dashboard
   observeEvent(input$llo_agateMap_shape_click,{
+    
+    # MAJ Paramètre d'études
+    rv$zone.etude = input$llo_agateMap_shape_click$id
+    rv$group.etude = input$llo_agateMap_shape_click$group
+    
+    print(rv$zone.etude)
 
-    if(input$rg_typeZone == 1){
+    
+    # Département d'études
+    if(rv$group.etude == "Departements"){
+      rv$departement.etude = ifelse(rv$zone.etude %in% c("971","977","978"),"971",rv$zone.etude)
+    }
+    if(rv$group.etude == "Communes"){
+      rv$departement.etude = unique(com.dom@data$dep[com.dom@data$idZonage == rv$zone.etude])
+    }
+    if(rv$group.etude == "QPV"){
+      rv$departement.etude = unique(qpv@data$dep[qpv@data$idZonage == rv$zone.etude])
+    }
+    if(rv$group.etude == "Zone utilisateur"){
+      rv$departement.etude = unique(rv$zonage.com.user$dep[rv$zonage.com.user$idZonage == rv$zone.etude])
+    }
+    
+    print(rv$departement.etude)
+    
+    # Si la carte est une carte prédéfinie
+    if(rv$group.etude %in% group.predefenie){
+      
+      # Preparation des données à afficher
+      df <- read_fst("data/zonesPred/indicateur_stat.fst") %>%
+        filter(idZonage == rv$zone.etude & substr(source,4,5) == rv$source.an)
+      df2 <- df %>%
+        filter(nomVariable %in% c("emp_typeActivite","sco_popSco2","sco_diplome","log_cat","log_ach_constru",
+                                  "log_bati","res_nbPiece","res_surface")) %>%
+        mutate(type.indicateur = "part_p")
+      
+      rv$df.zone.etude <- bind_rows(df,df2)
+      
+      rv$pyramide.etude <- read_fst("data/zonesPred/pyramide.fst") %>%
+        filter(idZonage == rv$zone.etude & substr(source,4,5) == rv$source.an)
+      
+      updateSelectInput(session, "si_typeZone",
+                        choices = pred.choice[pred.choice != 4],
+                        selected = 1
+      )
+      
+      # Ouverture du Dashboard
+      toggleModal(session, "bs_dashboard", toggle = "toggle")
+      
+    }
+    
+    # Carte utilisateur
+    if(rv$group.etude == "Zone utilisateur"){
       if(!is.null(rv$zonage.com.user)){
-
+        
         if(input$llo_agateMap_shape_click$id %in% rv$zonage.com.user$idZonage){
-
+          
           if(rv$zonage.com.user$appariement_diff[rv$zonage.com.user$idZonage == input$llo_agateMap_shape_click$id]){
+            
+            print(paste0("Zone étude : ",rv$zone.etude))
+            
+            rv$df.zone.etude <- rv$df.zone.user %>%
+              filter(idZonage == rv$zone.etude)
+            rv$pyramide.etude <- rv$pyramide.user %>%
+              filter(idZonage == rv$zone.etude)
+            
+            # MAJ liste des zones de comparaisons
+            updateSelectInput(session, "si_typeZone",
+                              choices = pred.choice,
+                              selected = 1
+            )
+            
+            # Ouverture du dashboard
             toggleModal(session, "bs_dashboard", toggle = "toggle")
-            rv$zone.etude <- input$llo_agateMap_shape_click$id
-
+            
           }else{
             rv$zone.etude <- NULL
-
+            
             shinyWidgets::sendSweetAlert(
               session = session,
               title = "Données non diffusable", text = "La qualité de l'appariement entre le recensement de la population et l'enquête cartographique est insuffisante",
@@ -333,81 +491,70 @@ server = function(input, output, session) {
           )
         }
       }
-      # else{
-      #   rv$zone.etude <- NULL
-      #   shinyWidgets::sendSweetAlert(
-      #     session = session,
-      #     title = "Absence de données", text = "Merci d'effectuer le calcul des indicateurs statistiques avant de pouvoir afficher le tableau de bord.",
-      #     type = "warning"
-      #   )
-      # }
-    }else{
-      if(input$si_zonePred == 4){
-        shinyWidgets::sendSweetAlert(
-          session = session,
-          title = "Tableau de bord non disponible", text = "Basculer côté utilisateur pour ouvrir le tableau de bord.",
-          type = "warning"
-        )
-      }else{
-        print("Zonage prédéfini")
-        rv$zone.etude <- input$llo_agateMap_shape_click$id
-        print(rv$zone.etude)
-        toggleModal(session, "bs_dashboard", toggle = "toggle")
-      }
-
     }
   })
+  
+  
 
   # Mise a jour des listes de comparaison dashboard
-  observeEvent(c(input$si_typeZone,rv$zone.etude,input$rg_typeZone),{
-
+  observeEvent(c(input$si_typeZone,rv$zone.etude),{
+    
     # init
-    rv$zone.comparaison <- NULL
-    rv$dash.indicateur <- NULL
+    # rv$zone.comparaison <- NULL
+    # rv$dash.indicateur <- NULL
     updateSelectInput(session, "si_zone",
                       choices = ""
     )
-
-
+    
+    # Si la zone d'étude n'est pas nulle
     if(!is.null(rv$zone.etude)){
-
-      if(input$rg_typeZone == 1){
-
-        if(!is.null(rv$df.zone.user)){
-
-          if(input$si_typeZone == 4){
-            test <- !rv$df.zone.user$idZonage %in% rv$zone.etude
-            cat <- unique(rv$df.zone.user$idZonage[test])
-            names(cat) <- unique(rv$df.zone.user$idZonage.name[test])
-          }else{
-            test <- lstZonePreType$zone.pred == input$si_typeZone &
-              lstZonePreType$dep %in% c(0,rv$zonage.com.user$dep[rv$zonage.com.user$idZonage == rv$zone.etude]) &
-              lstZonePreType$idZonage != rv$zone.etude
-            cat <- lstZonePreType$idZonage[test]
-            names(cat) <- lstZonePreType$idZonage.name[test]
-          }
-        }
-      }else{
-        test <- lstZonePreType$zone.pred == input$si_typeZone &
-          lstZonePreType$dep %in% c(0,rv$AgateMap@data$dep[rv$AgateMap@data$idZonage == rv$zone.etude]) &
-          lstZonePreType$idZonage != rv$zone.etude
-        cat <- lstZonePreType$idZonage[test]
-        names(cat) <- lstZonePreType$idZonage.name[test]
+      
+      if(input$si_typeZone == 1){
+        df <- lstZonePreType %>% 
+          filter(zone.pred == input$si_typeZone & idZonage != rv$zone.etude)
+        print(df)
+        cat <- df$idZonage
+        names(cat) <- df$idZonage.name
       }
+      
+      if(input$si_typeZone %in% c(2,3)){
+        df <- lstZonePreType %>% 
+          filter(zone.pred == input$si_typeZone & idZonage != rv$zone.etude & dep == rv$departement.etude)
+        print(df)
+        cat <- df$idZonage
+        names(cat) <- df$idZonage.name
+      }
+      
+      if(input$si_typeZone %in% c(4)){
+        test <- !rv$df.zone.user$idZonage %in% rv$zone.etude
+        cat <- unique(rv$df.zone.user$idZonage[test])
+        names(cat) <- unique(rv$df.zone.user$idZonage.name[test])
+      }
+
+      print(cat)
+      
+      # MAJ de la liste
+      valeur.select <- ifelse(!is.na(match(rv$departement.etude,cat)),match(rv$departement.etude,cat)[1],1)
+      
+      print(valeur.select)
       updateSelectInput(session, "si_zone",
-                        choices = cat
+                        choices = cat,
+                        selected = cat[valeur.select][1]
       )
+      
+      print(cat[valeur.select])
+      print(rv$zone.comparaison)
+      print(input$si_zone)
     }
   })
-
+  
   # III. Indicateurs statistiques sur userMap
   #--------------------------------------------------------------------------------------------------------------------------------------------------------------
 
   observeEvent(input$ab_userStat,{
 
 
-
-    if(!is.null(rv$userMap) & input$rg_typeZone == 1){
+    if(!is.null(rv$userMap)){
 
       withProgress(message = "Creation de l'identifiant",style = "notification", value = 0, {
 
@@ -448,64 +595,28 @@ server = function(input, output, session) {
   # IV. Dashboard
   #--------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-  # Selection des données d'études
-  observeEvent(rv$zone.etude,{
-
-    if(!is.null(rv$zone.etude)){
-
-      if(input$rg_typeZone == 1){
-        if(!is.null(rv$df.zone.user)){
-
-          print(paste0("Zone étude : ",rv$zone.etude))
-
-          rv$df.zone.etude <- rv$df.zone.user %>%
-            filter(idZonage == rv$zone.etude)
-          rv$pyramide.etude <- rv$pyramide.user %>%
-            filter(idZonage == rv$zone.etude)
-
-          updateSelectInput(session, "si_typeZone",
-                            choices = pred.choice,
-                            selected = 1
-          )
-        }
-      }else{
-        df <- read_fst("data/zonesPred/indicateur_stat.fst") %>%
-          filter(zone.pred == input$si_zonePred & idZonage == rv$zone.etude & substr(source,4,5) == rv$source.an)
-        df2 <- df %>%
-          filter(nomVariable %in% c("emp_typeActivite","sco_popSco2","sco_diplome","log_cat","log_ach_constru",
-                                    "log_bati","res_nbPiece","res_surface")) %>%
-          mutate(type.indicateur = "part_p")
-
-        rv$df.zone.etude <- bind_rows(df,df2)
-
-        rv$pyramide.etude <- read_fst("data/zonesPred/pyramide.fst") %>%
-          filter(zone.pred == input$si_zonePred & idZonage == rv$zone.etude & substr(source,4,5) == rv$source.an)
-        updateSelectInput(session, "si_typeZone",
-                          choices = pred.choice[pred.choice != 4],
-                          selected = 1
-        )
-      }
-    }
-
-  })
-
   # Données de comparaison et indicateurs du dashboard
-  observeEvent(c(input$si_typeZone,input$si_zone,rv$zone.etude),{
-
+ 
+  observeEvent(c(
+    # input$si_typeZone,
+                 input$si_zone
+    # ,rv$zone.etude
+    ),{
+    
     rv$zone.comparaison <- input$si_zone
-
+    
     if(!is.null(rv$zone.etude) & !is.null(rv$zone.comparaison) & input$si_zone != ""){
-
+      
       print(paste0("zone comparaison : ",rv$zone.comparaison))
-
-      if(input$rg_typeZone == 1){
-
+      
+      if(rv$group.etude == "Zone utilisateur"){
+        
         if(input$si_typeZone == 4){
-
+          
           if(!is.null(rv$df.zone.user)){
             df.dashboard <- rv$df.zone.user %>% filter(idZonage %in% c(rv$zone.etude,rv$zone.comparaison))
             pyr.dashboard <- rv$pyramide.user %>% filter(idZonage %in% c(rv$zone.etude,rv$zone.comparaison))
-
+            
             rv$dash.indicateur <- stat.dashboard_agate(df = df.dashboard,zone.etude = rv$zone.etude,
                                                        zone.compare = rv$zone.comparaison, lstIndicateur = lstIndicateur,
                                                        pyramide_tr = pyr.dashboard)
@@ -518,30 +629,30 @@ server = function(input, output, session) {
                                       "log_bati","res_nbPiece","res_surface")) %>%
             mutate(type.indicateur = "part_p")
           df <- bind_rows(df,df2)
-
+          
           pyr <- read_fst("data/zonesPred/pyramide.fst") %>%
             filter(zone.pred == input$si_typeZone & idZonage == rv$zone.comparaison & substr(source,4,5) == rv$source.an)
-
+          
           # Temporaire
           df.dashboard <- bind_rows(rv$df.zone.etude,df)
           pyr.dashboard <- bind_rows(rv$pyramide.etude,pyr)
-
+          
           rv$dash.indicateur <- stat.dashboard_agate(df = df.dashboard,zone.etude = rv$zone.etude,
                                                      zone.compare = rv$zone.comparaison, lstIndicateur = lstIndicateur,
                                                      pyramide_tr = pyr.dashboard)
         }
-
+        
       }else{
         if(input$si_typeZone == 4){
           if(!is.null(rv$df.zone.user)){
             df.dashboard <- rv$df.zone.user %>% filter(idZonage %in% c(rv$zone.etude,rv$zone.comparaison))
             pyr.dashboard <- rv$pyramide.user %>% filter(idZonage %in% c(rv$zone.etude,rv$zone.comparaison))
-
+            
             rv$dash.indicateur <- stat.dashboard_agate(df = df.dashboard,zone.etude = rv$zone.etude,
                                                        zone.compare = rv$zone.comparaison, lstIndicateur = lstIndicateur,
                                                        pyramide_tr = pyr.dashboard)
           }
-
+          
         }else{
           df <- read_fst("data/zonesPred/indicateur_stat.fst") %>%
             filter(zone.pred == input$si_typeZone & idZonage == rv$zone.comparaison & substr(source,4,5) == rv$source.an)
@@ -550,14 +661,14 @@ server = function(input, output, session) {
                                       "log_bati","res_nbPiece","res_surface")) %>%
             mutate(type.indicateur = "part_p")
           df <- bind_rows(df,df2)
-
+          
           pyr <- read_fst("data/zonesPred/pyramide.fst") %>%
             filter(zone.pred == input$si_typeZone & idZonage == rv$zone.comparaison & substr(source,4,5) == rv$source.an)
-
+          
           # Temporaire
           df.dashboard <- bind_rows(rv$df.zone.etude,df)
           pyr.dashboard <- bind_rows(rv$pyramide.etude,pyr)
-
+          
           rv$dash.indicateur <- stat.dashboard_agate(df = df.dashboard,zone.etude = rv$zone.etude,
                                                      zone.compare = rv$zone.comparaison, lstIndicateur = lstIndicateur,
                                                      pyramide_tr = pyr.dashboard)
@@ -565,6 +676,7 @@ server = function(input, output, session) {
       }
     } # end Test1
   })
+  
 
   # Source
   sourceDash <- reactive({
@@ -959,7 +1071,7 @@ server = function(input, output, session) {
                     element = c(NA,
                                 "#llo_agateMap",
                                 "#ap_controls",
-                                "#rg_typeZone",
+                                # "#rg_typeZone",
                                 ".input-group",
                                 "#si_userMap_id + .selectize-control",
                                 "#si_userMap_name + .selectize-control",
@@ -985,8 +1097,8 @@ server = function(input, output, session) {
                       # 2
                       "Menu de gestion des cartes et des indicateurs statistiques",
                       # 3
-                      "Selectionner 'Utilisateur' permet d'importer manuellement une carte. Selectionner 'Prédéfini' permet de visualiser les données associées à
-                    des zonages administratifs comme les départements, les communes et les quartiers prioritaires de la politique de la ville",
+                    #   "Selectionner 'Utilisateur' permet d'importer manuellement une carte. Selectionner 'Prédéfini' permet de visualiser les données associées à
+                    # des zonages administratifs comme les départements, les communes et les quartiers prioritaires de la politique de la ville",
                       # 4
                       "Les cartes à importer doivent être au format Shapefile. Il faut selectionner les quatre fichiers associés (*.shp, *.shx, *.dbf, *.prj).",
                       # 5
@@ -1042,7 +1154,5 @@ server = function(input, output, session) {
     )
   })
   
-  
-  
-  
+
 } # End server

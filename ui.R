@@ -20,14 +20,14 @@ ui <- tagList(
                         draggable = TRUE,top = 20, right = 10,width = 300,#height = 500,
                         useSweetAlert(),
                         # h3("Navigation"),
-                        fluidRow(id="fr_typeZone",
-                                 radioGroupButtons(
-                                   inputId = "rg_typeZone",
-                                   choices = c("Utilisateur" = 1,
-                                               "Prédéfini" = 2),
-                                   justified = TRUE
-                                 )
-                        ),
+                        # fluidRow(id="fr_typeZone",
+                        #          radioGroupButtons(
+                        #            inputId = "rg_typeZone",
+                        #            choices = c("Utilisateur" = 1,
+                        #                        "Prédéfini" = 2),
+                        #            justified = TRUE
+                        #          )
+                        # ),
                         # I.1.2.1 UTILISATEUR
                         fluidRow(id = "fr_utilimportMap",
                                  column(12,
@@ -70,21 +70,21 @@ ui <- tagList(
                                  ))
                         ,
                         # I.1.2.2 Zones prédéfinies
-                        hidden(
-                          fluidRow(id = "fr_predOption",
-                                   column(12,
-                                          selectInput("si_zonePred", "Selectionner une maille",
-                                                      choices = c("",pred.choice),
-                                                      selected =c(4)
-                                          ),
-                                          
-                                          selectInput("si_zonePred_dep", "Selectionner une zone géographique",
-                                                      choices = "",
-                                                      selected = ""
-                                          ) 
-                                   )
-                          )
-                        ),
+                        # hidden(
+                        #   fluidRow(id = "fr_predOption",
+                        #            column(12,
+                        #                   selectInput("si_zonePred", "Selectionner une maille",
+                        #                               choices = c("",pred.choice),
+                        #                               selected =c(4)
+                        #                   ),
+                        #                   
+                        #                   selectInput("si_zonePred_dep", "Selectionner une zone géographique",
+                        #                               choices = "",
+                        #                               selected = ""
+                        #                   ) 
+                        #            )
+                        #   )
+                        # ),
                         # Affichage / réduction du menu
                         prettyToggle(
                           inputId = "pt_hideMenu",
@@ -291,7 +291,7 @@ ui <- tagList(
                                    inputs = dropdownButton(inputId = "ddb_compare" ,
                                                            selectInput("si_typeZone", "Type de zone",
                                                                        choices = pred.choice,
-                                                                       selected = c(4)),
+                                                                       selected = c(1)),
                                                            selectInput("si_zone", "Zone de comparaison",
                                                                        choices = c("Choice" =""),
                                                                        selected = c("")),
@@ -374,7 +374,8 @@ ui <- tagList(
                # # III.2. Qualité du RP
                # #---------------------
                # tabPanel("Qualité du RP",
-               #          withMathJax(includeMarkdown(qualiteRpFile))
+               #          # withMathJax(includeMarkdown(qualiteRpFile))
+               #          htmlOutput("inc")
                # )
                
                

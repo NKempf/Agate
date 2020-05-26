@@ -25,9 +25,9 @@ zonaRoute <- function(route,dep="973",route_conserv = NULL){
   library(rgeos) 
   library(rgdal) 
   
-  # Changement du système de projection : Utilisation de epsg:3857 
+  # Changement du système de projection : Utilisation de EPSG:3857 
   route <- spTransform(x = route,
-                       CRSobj = CRS("+init=epsg:3857"))
+                       CRSobj = CRS("+init=EPSG:3857"))
   ###############################
   ### Gestion du cas Guyanais ###
   # Selection des routes sur le territoire Guyanais 
@@ -38,9 +38,9 @@ zonaRoute <- function(route,dep="973",route_conserv = NULL){
                       layer = "DepD973",
                       encoding="utf8",
                       stringsAsFactors = FALSE)
-    # Changement du système de projection : Utilisation de epsg:3857 
+    # Changement du système de projection : Utilisation de EPSG:3857 
     guyReg <- spTransform(x = guyReg,
-                          CRSobj = CRS("+init=epsg:3857"))
+                          CRSobj = CRS("+init=EPSG:3857"))
     
     # Selection des routes sur le territoire Guyanais
     # Routes : repérage des routes en intersection avec la Guyane
@@ -133,7 +133,7 @@ zonaRouteNode <- function(route){
   # Ajout de la table attributaire a la couche noeud
   noeud_rout <- SpatialPointsDataFrame(coords = noeud_rout@coords,data = node)
   # Ajout du système de projection adéquat
-  noeud_rout@proj4string <-CRS("+init=epsg:3857")
+  noeud_rout@proj4string <-CRS("+init=EPSG:3857")
   
   
 ### Ajout des informations des noeuds à la couche route ### 
@@ -182,7 +182,7 @@ zonaRouteNode <- function(route){
 # MAJ : 20.06.2018
 #
 #######################################################
-zonaPts <- function(pts.sp,zonage,CRSagate = "+init=epsg:3857"){
+zonaPts <- function(pts.sp,zonage,CRSagate = "+init=EPSG:3857"){
   
   #### Changement du système de projection
   pts.sp <- spTransform(x = pts.sp,CRSobj = CRS(CRSagate))
@@ -224,9 +224,9 @@ zonaGridSecret <- function(points,poly,seuil=5){
   library(rgeos) 
   library(plyr)
   
-  #### Changement du système de projection : Utilisation de epsg:3857 
-  points <- spTransform(x = points,CRSobj = CRS("+init=epsg:3857"))
-  poly <- spTransform(x = poly,CRSobj = CRS("+init=epsg:3857"))
+  #### Changement du système de projection : Utilisation de EPSG:3857 
+  points <- spTransform(x = points,CRSobj = CRS("+init=EPSG:3857"))
+  poly <- spTransform(x = poly,CRSobj = CRS("+init=EPSG:3857"))
   
   #######################################     
   ### Poly : préparation de la base #####
@@ -306,9 +306,9 @@ zonaIlot <- function(ilot,zonage,recouvrement = 90){
   library(rgeos)
   library(raster)
   
-  #### Changement du système de projection : Utilisation de epsg:3857 
-  ilot <- spTransform(x = ilot,CRSobj = CRS("+init=epsg:3857"))
-  zonage <- spTransform(x = zonage,CRSobj = CRS("+init=epsg:3857"))
+  #### Changement du système de projection : Utilisation de EPSG:3857 
+  ilot <- spTransform(x = ilot,CRSobj = CRS("+init=EPSG:3857"))
+  zonage <- spTransform(x = zonage,CRSobj = CRS("+init=EPSG:3857"))
   
   # Selection des variables  
   ilot@data <- ilot@data[,c("depcom","ilot99")]

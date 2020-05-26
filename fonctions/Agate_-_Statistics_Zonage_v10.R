@@ -25,7 +25,7 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
   #                                   Cartographie                                       #
   #--------------------------------------------------------------------------------------#
   
-  zonage <- spTransform(zonage, "+init=epsg:3857")
+  zonage <- spTransform(zonage, "+init=EPSG:3857")
   
   # 1. Intersection zone + communes
   zoneInter <- gIntersects(zonage,com.dom,byid = TRUE)
@@ -44,7 +44,7 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
     select(idx,C_IMM,com,x,y,nb_logn.ril)
   
   coordinates(rpa.geo) <- ~x+y
-  rpa.geo@proj4string <- CRS("+init=epsg:3857")
+  rpa.geo@proj4string <- CRS("+init=EPSG:3857")
   
   # incProgress(amount = 0.1,message = "Zone dans laquelle chaque logement se situe")
   
@@ -119,7 +119,7 @@ agate_statRp <- function(rp.an,zonage,zone.pred,zoneType = "",group_var,com.dom,
     filter(com %in% com.dom.select & C_ANNEE_COL %in% unique(rpi$C_ANNEE_COL)) %>% 
     select(-C_ANNEE_COL)
   coordinates(ril) <- ~x+y
-  ril@proj4string <- CRS("+init=epsg:3857")
+  ril@proj4string <- CRS("+init=EPSG:3857")
   ril.geo <- ril[!duplicated(ril@data$idx),]
   ril.geo <- zonaPts(pts.sp = ril.geo,zonage = zonage)
   ril <- ril@data %>% 
@@ -369,16 +369,17 @@ agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",grou
   #--------------------------------------------------------------------------------------#
   #                                   Cartographie                                       #
   #--------------------------------------------------------------------------------------#
-  
-  zonage <- spTransform(zonage, "+init=epsg:3857")
-  
+
+  zonage <- spTransform(zonage, "+init=EPSG:3857")
+  com.dom <- spTransform(com.dom, "+init=EPSG:3857")
+
   # 1. Intersection zone + communes
   zoneInter <- gIntersects(zonage,com.dom,byid = TRUE)
   test <- apply(zoneInter, 1, function(x){
     test <- sum(x)
     return(ifelse(test>0,TRUE,FALSE))}) 
   com.dom.select <- com.dom@data$idZonage[test]
-  
+
   # 2. adresses
   rpa <- read_fst(rpaPath) %>%
     filter(com %in% com.dom.select)
@@ -388,16 +389,21 @@ agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",grou
     mutate(idx = C_IMM) %>% 
     select(idx,C_IMM,com,x,y,nb_logn.ril)
   
+
   coordinates(rpa.geo) <- ~x+y
-  rpa.geo@proj4string <- CRS("+init=epsg:3857")
-  
+  rpa.geo@proj4string <- CRS("+init=EPSG:3857")
+
   incProgress(amount = 0.01,message = "Zone dans laquelle chaque logement se situe")
-  
+
+  print("1")
+    
   # 3. Intersection entre le recensement de la population géolocalisé et les zones d'études
   pts.sp <- zonaPts(pts.sp = rpa.geo,zonage = zonage)
   pts.df <- pts.sp@data %>% 
     mutate(idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com,zoneType), idZonage)) %>%   
     select(-idx,-com)
+  
+  print("2")
   
   incProgress(amount = 0.05,message = "Ajout de la zone aux données du RP")
   
@@ -413,6 +419,8 @@ agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",grou
            idZonage = ifelse(is.na(idZonage) | idZonage == "Hors zonage",paste0("horsZon",com,zoneType), idZonage),
            idZonage.name = ifelse(is.na(idZonage.name) & substr(idZonage,1,7) == "horsZon",
                                   paste0(com.lib," (hors zone ",zoneType,")"),idZonage.name))
+  
+  print("3")
   
   rpl <- read_fst(rplPath) %>% 
     select(-com.lib) %>% 
@@ -464,7 +472,7 @@ agate_statRp.shiny <- function(session,rp.an,zonage,zone.pred,zoneType = "",grou
     filter(com %in% com.dom.select & C_ANNEE_COL %in% unique(rpi$C_ANNEE_COL)) %>% 
     select(-C_ANNEE_COL)
   coordinates(ril) <- ~x+y
-  ril@proj4string <- CRS("+init=epsg:3857")
+  ril@proj4string <- CRS("+init=EPSG:3857")
   ril.geo <- ril[!duplicated(ril@data$idx),]
   ril.geo <- zonaPts(pts.sp = ril.geo,zonage = zonage)
   ril <- ril@data %>% 

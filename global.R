@@ -39,8 +39,17 @@ names(typInd) <- lstTypeIndicateur$labelTypeIndicateur
 # heatPoints
 load("data/heatpoints/heatpoints.Rdata") 
 
+# Départements
+load("data/zonesPred/zp_departements.RData")
+dep.dom <- spTransform(dep.dom, "+init=epsg:4326")
+
 # Communes
 load("data/zonesPred/zp_communes.RData")
+com.dom <- spTransform(com.dom, "+init=epsg:4326")
+
+# QPV
+load("data/zonesPred/zp_qpv.RData")
+qpv <- spTransform(qpv, "+init=epsg:4326")
 
 # Markdown files
 # qualiteRpFile <- "Other programs/3 Documentation/1 Agate documentation/2 Qualite RP/NoteQualite.Rmd"
@@ -57,10 +66,11 @@ navbarPageWithInputs <- function(..., inputs) {
 }
 
 
-
-
-
-
+# # Correctif de bases
+# lstZonePreType <- lstZonePreType %>% 
+#   mutate(dep2 = dep,
+#          dep = ifelse(dep == 0, idZonage, dep),
+#          dep = ifelse(idZonage %in% c("977","978"),"971",dep))
 
 
 
