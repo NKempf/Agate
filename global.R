@@ -29,6 +29,8 @@ source("fonctions/Agate_-_Qualite_du_RP.R",encoding = "UTF-8")
 source("fonctions/Agate_-_statistiscal_disclosure.R",encoding = "UTF-8")
 source("fonctions/Agate_-_Statistics_Zonage_v10.R",encoding = "UTF-8")
 
+# Test de maj
+
 # Label et choix
 load("data/ListeIndicateurs/lstIndicateur.RData")
 dmn <- lstDomaine$domaine
